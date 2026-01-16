@@ -1,0 +1,691 @@
+<script lang="ts">
+	import { onDestroy } from 'svelte';
+	import { wwise } from '$lib/wwise/connection.svelte';
+	import {
+		Play,
+		Radio,
+		Square,
+		Trash2,
+		Copy,
+		ChevronDown,
+		BookOpen,
+		Plug,
+		LoaderCircle
+	} from 'lucide-svelte';
+	import Alert from '$lib/components/alert.svelte';
+	import MonacoEditor from '$lib/components/monaco-editor.svelte';
+	import JSON5 from 'json5';
+
+	// Types
+	interface WaapiItem {
+		uri: string;
+	}
+
+	interface LogEntry {
+		id: number;
+		type: 'call' | 'subscribe' | 'result' | 'event' | 'error';
+		timestamp: Date;
+		uri?: string;
+		data: unknown;
+	}
+
+	interface ActiveSubscription {
+		uri: string;
+		unsubscribe: () => Promise<void>;
+	}
+
+	// Connection state
+	let host = $state('localhost');
+	let port = $state(8080);
+
+	async function handleConnect() {
+		await wwise.connect(host, port);
+	}
+
+	// State
+	let mode = $state<'call' | 'subscribe'>('call');
+	let functions = $state<WaapiItem[]>([]);
+	let topics = $state<WaapiItem[]>([]);
+	let selectedUri = $state('');
+	let argsCode = $state('{}');
+	let optionsCode = $state('{}');
+	let isLoading = $state(false);
+	let logs = $state<LogEntry[]>([]);
+	let subscriptions = $state<ActiveSubscription[]>([]);
+	let logIdCounter = 0;
+	let showRecipes = $state(false);
+	let showDropdown = $state(false);
+	let highlightedIndex = $state(-1);
+
+	// Monaco editor refs
+	let argsEditor = $state<MonacoEditor | null>(null);
+	let optionsEditor = $state<MonacoEditor | null>(null);
+
+	// Recipes for quick start
+	const recipes = [
+		{
+			name: 'Get Selected Objects',
+			uri: 'ak.wwise.ui.getSelectedObjects',
+			args: '{}',
+			options: `{
+  return: ["id", "name", "type", "path"]
+}`,
+			mode: 'call' as const
+		},
+		{
+			name: 'Get Project Info',
+			uri: 'ak.wwise.core.getInfo',
+			args: '{}',
+			options: '{}',
+			mode: 'call' as const
+		},
+		{
+			name: 'Search by Name',
+			uri: 'ak.wwise.core.object.get',
+			args: `{
+  from: {
+    search: ["name:MySound"]
+  }
+}`,
+			options: `{
+  return: ["id", "name", "type", "path"]
+}`,
+			mode: 'call' as const
+		},
+		{
+			name: 'Get Object by ID',
+			uri: 'ak.wwise.core.object.get',
+			args: `{
+  from: {
+    id: ["paste-object-id-here"]
+  }
+}`,
+			options: `{
+  return: ["id", "name", "type", "@Volume", "@Pitch"]
+}`,
+			mode: 'call' as const
+		},
+		{
+			name: 'Selection Changed',
+			uri: 'ak.wwise.ui.selectionChanged',
+			args: '{}',
+			options: `{
+  return: ["id", "name", "type"]
+}`,
+			mode: 'subscribe' as const
+		},
+		{
+			name: 'Object Created',
+			uri: 'ak.wwise.core.object.created',
+			args: '{}',
+			options: `{
+  return: ["id", "name", "type", "path"]
+}`,
+			mode: 'subscribe' as const
+		}
+	];
+
+	// Filter recipes based on current mode
+	const filteredRecipes = $derived(recipes.filter((r) => r.mode === mode));
+
+	// Available items based on mode
+	const availableItems = $derived(mode === 'call' ? functions : topics);
+
+	// Filter items for dropdown - fuzzy match ignoring dots/underscores
+	let searchQuery = $state('');
+	const filteredItems = $derived.by(() => {
+		const query = searchQuery.toLowerCase();
+		// Show all when empty or exactly matches selected
+		if (!query || query === selectedUri.toLowerCase()) return availableItems;
+		// Fuzzy: remove separators for matching
+		const normalizedQuery = query.replace(/[._-]/g, '');
+		return availableItems.filter((item) => {
+			const uri = item.uri.toLowerCase();
+			// Try exact substring first
+			if (uri.includes(query)) return true;
+			// Then try normalized (no separators)
+			return uri.replace(/[._-]/g, '').includes(normalizedQuery);
+		});
+	});
+
+	// Reset highlight when filtered items change
+	$effect(() => {
+		void filteredItems;
+		highlightedIndex = -1;
+	});
+
+	// Select URI helper
+	function selectUri(uri: string) {
+		selectedUri = uri;
+		searchQuery = uri;
+		showDropdown = false;
+		highlightedIndex = -1;
+	}
+
+	// Handle keyboard navigation
+	function handleKeydown(e: KeyboardEvent) {
+		if (!showDropdown) {
+			if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+				showDropdown = true;
+				e.preventDefault();
+			}
+			return;
+		}
+
+		const items = filteredItems.slice(0, 50);
+		switch (e.key) {
+			case 'ArrowDown':
+				e.preventDefault();
+				highlightedIndex = highlightedIndex < items.length - 1 ? highlightedIndex + 1 : 0;
+				break;
+			case 'ArrowUp':
+				e.preventDefault();
+				highlightedIndex = highlightedIndex > 0 ? highlightedIndex - 1 : items.length - 1;
+				break;
+			case 'Enter':
+				e.preventDefault();
+				if (highlightedIndex >= 0 && items[highlightedIndex]) {
+					selectUri(items[highlightedIndex].uri);
+				} else if (searchQuery) {
+					// Accept custom URI
+					selectUri(searchQuery);
+				}
+				break;
+			case 'Escape':
+				e.preventDefault();
+				showDropdown = false;
+				searchQuery = selectedUri;
+				highlightedIndex = -1;
+				break;
+			case 'Tab':
+				showDropdown = false;
+				if (!searchQuery) searchQuery = selectedUri;
+				break;
+		}
+	}
+
+	// Fetch available functions and topics
+	async function fetchWaapiSchema() {
+		if (!wwise.isConnected) return;
+
+		try {
+			const [funcs, tops] = await Promise.all([wwise.getFunctions(), wwise.getTopics()]);
+			functions = (funcs ?? []).filter((f) => f?.uri).sort((a, b) => a.uri.localeCompare(b.uri));
+			topics = (tops ?? []).filter((t) => t?.uri).sort((a, b) => a.uri.localeCompare(b.uri));
+
+			// Set default selection
+			if (!selectedUri && functions.length > 0) {
+				selectUri('ak.wwise.core.getInfo');
+			}
+		} catch (e) {
+			addLog('error', { message: 'Failed to fetch WAAPI schema', error: String(e) });
+		}
+	}
+
+	// Add log entry
+	function addLog(type: LogEntry['type'], data: unknown, uri?: string) {
+		logs = [
+			{
+				id: logIdCounter++,
+				type,
+				timestamp: new Date(),
+				uri,
+				data
+			},
+			...logs
+		].slice(0, 100); // Keep last 100 entries
+	}
+
+	// Execute call
+	async function executeCall() {
+		if (!wwise.isConnected || !selectedUri) return;
+
+		isLoading = true;
+
+		try {
+			const args = JSON5.parse(argsCode);
+			const options = JSON5.parse(optionsCode);
+
+			addLog('call', { args, options }, selectedUri);
+
+			const result = await wwise.call(selectedUri, args, options);
+			addLog('result', result, selectedUri);
+		} catch (e) {
+			addLog('error', { message: String(e) }, selectedUri);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	// Execute subscription
+	async function executeSubscribe() {
+		if (!wwise.isConnected || !selectedUri) return;
+
+		// Check if already subscribed
+		if (subscriptions.some((s) => s.uri === selectedUri)) {
+			addLog('error', { message: 'Already subscribed to this topic' }, selectedUri);
+			return;
+		}
+
+		isLoading = true;
+
+		try {
+			const options = JSON5.parse(optionsCode);
+
+			addLog('subscribe', { options }, selectedUri);
+
+			const sub = await wwise.subscribe(
+				selectedUri,
+				(data) => {
+					addLog('event', data, selectedUri);
+				},
+				options
+			);
+
+			subscriptions = [...subscriptions, { uri: selectedUri, unsubscribe: sub.unsubscribe }];
+		} catch (e) {
+			addLog('error', { message: String(e) }, selectedUri);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	// Unsubscribe
+	async function unsubscribe(uri: string) {
+		const sub = subscriptions.find((s) => s.uri === uri);
+		if (sub) {
+			await sub.unsubscribe();
+			subscriptions = subscriptions.filter((s) => s.uri !== uri);
+			addLog('result', { message: 'Unsubscribed' }, uri);
+		}
+	}
+
+	// Unsubscribe all
+	async function unsubscribeAll() {
+		for (const sub of subscriptions) {
+			await sub.unsubscribe();
+		}
+		subscriptions = [];
+		addLog('result', { message: 'Unsubscribed from all topics' });
+	}
+
+	// Clear logs
+	function clearLogs() {
+		logs = [];
+	}
+
+	// Copy to clipboard
+	async function copyToClipboard(text: string) {
+		await navigator.clipboard.writeText(text);
+	}
+
+	// Apply recipe
+	function applyRecipe(recipe: (typeof recipes)[number]) {
+		if (recipe.mode) mode = recipe.mode;
+		selectUri(recipe.uri);
+		argsCode = recipe.args;
+		optionsCode = recipe.options;
+		argsEditor?.setValue(recipe.args);
+		optionsEditor?.setValue(recipe.options);
+		showRecipes = false;
+	}
+
+	// Format timestamp
+	function formatTime(date: Date): string {
+		return date.toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 3 });
+	}
+
+	// Get log color
+	function getLogColor(type: LogEntry['type']): string {
+		switch (type) {
+			case 'call':
+				return 'text-blue-500';
+			case 'subscribe':
+				return 'text-purple-500';
+			case 'result':
+				return 'text-green-500';
+			case 'event':
+				return 'text-wwise';
+			case 'error':
+				return 'text-red-500';
+			default:
+				return 'text-muted';
+		}
+	}
+
+	// Watch connection changes
+	$effect(() => {
+		if (wwise.isConnected) {
+			fetchWaapiSchema();
+		}
+	});
+
+	// Cleanup on destroy
+	onDestroy(() => {
+		// Unsubscribe from all
+		for (const sub of subscriptions) {
+			sub.unsubscribe();
+		}
+	});
+</script>
+
+<div class="flex flex-col gap-6 h-full">
+	{#if !wwise.isConnected}
+		<!-- Connect Section -->
+		<div class="p-6 border border-base rounded-xl bg-base max-w-md">
+			<div class="mb-4 flex gap-3 items-center">
+				<div class="rounded-lg bg-wwise/15 flex h-12 w-12 items-center justify-center">
+					<Plug size={24} class="text-wwise" />
+				</div>
+				<div>
+					<h3 class="text-base font-semibold m-0">Connect to Wwise</h3>
+					<p class="text-sm text-muted m-0">Enter your WAAPI server details</p>
+				</div>
+			</div>
+
+			<div class="space-y-4">
+				<div class="gap-3 grid grid-cols-3">
+					<div class="col-span-2">
+						<label for="waapi-host" class="text-xs text-muted font-medium mb-1 block">Host</label>
+						<input
+							id="waapi-host"
+							type="text"
+							bind:value={host}
+							placeholder="localhost"
+							spellcheck="false"
+							class="text-sm px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+						/>
+					</div>
+					<div>
+						<label for="waapi-port" class="text-xs text-muted font-medium mb-1 block">Port</label>
+						<input
+							id="waapi-port"
+							type="number"
+							bind:value={port}
+							placeholder="8080"
+							class="text-sm px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+						/>
+					</div>
+				</div>
+
+				<button
+					onclick={handleConnect}
+					disabled={wwise.status === 'connecting'}
+					class="text-sm text-white font-medium px-4 py-2 rounded-lg bg-wwise flex gap-2 w-full transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					{#if wwise.status === 'connecting'}
+						<LoaderCircle size={16} class="animate-spin" />
+						Connecting...
+					{:else}
+						<Plug size={16} />
+						Connect
+					{/if}
+				</button>
+
+				{#if wwise.error}
+					<Alert variant="error">{wwise.error}</Alert>
+				{/if}
+			</div>
+
+			<p class="text-xs text-muted mb-0 mt-4">
+				Add <code class="text-wwise px-1 py-0.5 rounded bg-wwise/10">https://wwiser.app</code> to
+				<strong>User Preferences → Allow browser connections from</strong>.
+			</p>
+		</div>
+	{:else}
+		<div class="flex flex-1 flex-col gap-4 min-h-0">
+			<!-- Mode Toggle & URI Selection -->
+			<div class="flex flex-wrap gap-3 items-start">
+				<!-- Mode Toggle -->
+				<div class="p-1 rounded-lg bg-surface-100 flex dark:bg-surface-800">
+					<button
+						onclick={() => (mode = 'call')}
+						class={[
+							'px-4 h-8 rounded-md text-sm font-medium transition-all',
+							mode === 'call' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
+						]}
+					>
+						Call
+					</button>
+					<button
+						onclick={() => (mode = 'subscribe')}
+						class={[
+							'px-4 h-8 rounded-md text-sm font-medium transition-all',
+							mode === 'subscribe' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
+						]}
+					>
+						Subscribe
+					</button>
+				</div>
+
+				<!-- URI Selection -->
+				<div class="flex-1 min-w-64">
+					<div class="relative">
+						<input
+							type="text"
+							bind:value={searchQuery}
+							placeholder="Search {mode === 'call' ? 'functions' : 'topics'}..."
+							spellcheck="false"
+							autocomplete="off"
+							class="text-sm font-mono px-3 border rounded-lg bg-surface-50 h-10 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20 {selectedUri &&
+							searchQuery === selectedUri
+								? 'text-wwise border-wwise/30'
+								: 'text-base border-base'}"
+							onfocus={(e) => {
+								showDropdown = true;
+								if (!searchQuery) searchQuery = selectedUri;
+								// Select all text so typing replaces it
+								e.currentTarget.select();
+							}}
+							oninput={() => {
+								// Reopen dropdown when typing
+								if (!showDropdown) showDropdown = true;
+							}}
+							onblur={() =>
+								setTimeout(() => {
+									showDropdown = false;
+									highlightedIndex = -1;
+									// Restore or accept URI
+									const match = availableItems.find((item) => item.uri === searchQuery);
+									if (match) {
+										selectedUri = match.uri;
+									} else if (!searchQuery) {
+										searchQuery = selectedUri;
+									} else if (searchQuery !== selectedUri) {
+										// Allow custom URI
+										selectedUri = searchQuery;
+									}
+								}, 150)}
+							onkeydown={handleKeydown}
+						/>
+						{#if showDropdown && filteredItems.length > 0}
+							<div
+								class="mt-1 border border-base rounded-lg bg-base max-h-64 shadow-lg left-0 right-0 top-full absolute z-10 overflow-y-auto"
+							>
+								{#each filteredItems.slice(0, 50) as item, i (item.uri)}
+									<button
+										class="text-sm px-3 py-2 text-left w-full transition-colors {i ===
+										highlightedIndex
+											? 'text-wwise bg-wwise/20'
+											: selectedUri === item.uri
+												? 'text-wwise bg-wwise/10'
+												: 'text-base hover:bg-surface-100 dark:hover:bg-surface-800'}"
+										onmouseenter={() => (highlightedIndex = i)}
+										onclick={() => selectUri(item.uri)}
+									>
+										<span class="text-xs font-mono">{item.uri}</span>
+									</button>
+								{/each}
+							</div>
+						{:else if showDropdown && searchQuery && filteredItems.length === 0}
+							<div
+								class="mt-1 p-2 border border-base rounded-lg bg-base shadow-lg left-0 right-0 top-full absolute z-10"
+							>
+								<div class="text-sm text-muted px-1 py-1">No matches found</div>
+							</div>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Recipes -->
+				<div class="relative">
+					<button
+						onclick={() => (showRecipes = !showRecipes)}
+						class="text-sm text-base font-medium px-4 rounded-lg bg-surface-100 flex gap-2 h-10 transition-colors items-center dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700"
+					>
+						<BookOpen size={16} />
+						Recipes
+						<ChevronDown size={14} class={showRecipes ? 'rotate-180' : ''} />
+					</button>
+					{#if showRecipes}
+						<div
+							class="mt-1 border border-base rounded-lg bg-base w-72 shadow-lg right-0 top-full absolute z-10"
+						>
+							{#each filteredRecipes as recipe (recipe.name)}
+								<button
+									class="text-sm px-3 py-2 text-left border-b border-base w-full transition-colors last:border-b-0 hover:bg-surface-100 dark:hover:bg-surface-800"
+									onclick={() => applyRecipe(recipe)}
+								>
+									<span class="text-base font-medium block">{recipe.name}</span>
+									<span class="text-xs text-muted font-mono">{recipe.uri}</span>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
+				<!-- Execute Button -->
+				{#if mode === 'call'}
+					<button
+						onclick={executeCall}
+						disabled={!selectedUri || isLoading}
+						class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex gap-2 h-10 transition-colors items-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						<Play size={16} />
+						{isLoading ? 'Calling...' : 'Execute'}
+					</button>
+				{:else}
+					<button
+						onclick={executeSubscribe}
+						disabled={!selectedUri || isLoading}
+						class="text-sm text-white font-medium px-5 rounded-lg bg-purple-600 flex gap-2 h-10 transition-colors items-center hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						<Radio size={16} />
+						{isLoading ? 'Subscribing...' : 'Subscribe'}
+					</button>
+				{/if}
+			</div>
+
+			<!-- Editors -->
+			<div class="gap-4 grid grid-cols-1 lg:grid-cols-2">
+				<!-- Arguments Editor -->
+				<div class="space-y-2">
+					<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
+						Arguments
+					</span>
+					<MonacoEditor
+						bind:this={argsEditor}
+						value={argsCode}
+						onchange={(v) => (argsCode = v)}
+						height="8rem"
+					/>
+				</div>
+
+				<!-- Options Editor -->
+				<div class="space-y-2">
+					<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
+						Options
+					</span>
+					<MonacoEditor
+						bind:this={optionsEditor}
+						value={optionsCode}
+						onchange={(v) => (optionsCode = v)}
+						height="8rem"
+					/>
+				</div>
+			</div>
+
+			<!-- Active Subscriptions -->
+			{#if subscriptions.length > 0}
+				<div class="space-y-2">
+					<div class="flex items-center justify-between">
+						<span class="text-[10px] text-muted tracking-wider font-medium uppercase">
+							Active Subscriptions ({subscriptions.length})
+						</span>
+						<button
+							onclick={unsubscribeAll}
+							class="text-xs text-red-500 transition-colors hover:text-red-400"
+						>
+							Unsubscribe All
+						</button>
+					</div>
+					<div class="flex flex-wrap gap-2">
+						{#each subscriptions as sub (sub.uri)}
+							<div
+								class="text-xs text-purple-600 font-mono px-2 py-1 rounded-full bg-purple-500/10 flex gap-2 items-center dark:text-purple-400"
+							>
+								<Radio size={12} class="animate-pulse" />
+								{sub.uri}
+								<button
+									onclick={() => unsubscribe(sub.uri)}
+									class="transition-colors hover:text-red-500"
+								>
+									<Square size={12} />
+								</button>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			<!-- Console Output -->
+			<div class="flex flex-1 flex-col min-h-0">
+				<div class="mb-2 flex items-center justify-between">
+					<span class="text-[10px] text-muted tracking-wider font-medium uppercase">
+						Console ({logs.length})
+					</span>
+					<button
+						onclick={clearLogs}
+						class="text-xs text-muted flex gap-1 transition-colors items-center hover:text-base"
+					>
+						<Trash2 size={12} />
+						Clear
+					</button>
+				</div>
+				<div
+					class="text-xs font-mono p-3 border border-base rounded-lg bg-zinc-900 flex-1 min-h-48 overflow-y-auto space-y-2 dark:bg-zinc-950"
+				>
+					{#if logs.length === 0}
+						<div class="text-surface-500">No logs yet. Execute a call or subscribe to a topic.</div>
+					{:else}
+						{#each logs as log (log.id)}
+							<div class="group">
+								<div class="flex gap-2 items-start">
+									<span class="text-surface-500 shrink-0">{formatTime(log.timestamp)}</span>
+									<span class={[getLogColor(log.type), 'shrink-0 uppercase font-semibold']}>
+										[{log.type}]
+									</span>
+									{#if log.uri}
+										<span class="text-surface-400 shrink-0">{log.uri}</span>
+									{/if}
+									<button
+										onclick={() => copyToClipboard(JSON.stringify(log.data, null, 2))}
+										class="text-surface-500 opacity-0 transition-opacity hover:text-surface-300 group-hover:opacity-100"
+									>
+										<Copy size={12} />
+									</button>
+								</div>
+								<pre
+									class="text-surface-300 mt-1 pl-20 whitespace-pre-wrap break-all">{JSON.stringify(
+										log.data,
+										null,
+										2
+									)}</pre>
+							</div>
+						{/each}
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>
