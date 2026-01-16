@@ -1,4 +1,4 @@
-import { defineConfig, presetWind4 } from 'unocss';
+import { defineConfig, presetWind4, presetWebFonts } from 'unocss';
 
 export default defineConfig({
 	presets: [
@@ -7,6 +7,13 @@ export default defineConfig({
 				reset: true
 			},
 			dark: 'class'
+		}),
+		presetWebFonts({
+			provider: 'google', // default provider
+			fonts: {
+				// these will extend the default theme
+				sans: 'Open Sans:100,400,500,600,700,900',
+			},
 		})
 	],
 	theme: {
