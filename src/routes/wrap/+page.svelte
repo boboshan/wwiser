@@ -293,7 +293,7 @@
 
 <div class="flex flex-col gap-6">
 	<!-- Header -->
-	<div class="flex gap-4 items-center justify-between">
+	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<p class="text-sm text-muted leading-relaxed m-0">
 			Create parent containers for selected objects. Objects in different work units will get
 			separate containers.
@@ -302,7 +302,7 @@
 			<button
 				onclick={refreshSelection}
 				disabled={!wwise.isConnected || isLoading}
-				class="text-sm text-base font-medium px-4 rounded-lg bg-surface-100 flex gap-2 h-10 transition-colors items-center dark:bg-surface-800 hover:bg-surface-200 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-700"
+				class="text-sm text-base font-medium px-4 rounded-lg bg-surface-100 flex flex-1 gap-2 h-10 transition-colors items-center justify-center sm:flex-none dark:bg-surface-800 hover:bg-surface-200 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-700"
 			>
 				<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
 				{isLoading ? 'Loading...' : 'Get Selection'}
@@ -310,7 +310,7 @@
 			<button
 				onclick={executeWrap}
 				disabled={!wwise.isConnected || wrappableObjects.length === 0 || isExecuting}
-				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex gap-2 h-10 transition-colors items-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
+				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center sm:flex-none hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
 			>
 				<Package size={16} />
 				{isExecuting ? 'Wrapping...' : 'Wrap Objects'}
