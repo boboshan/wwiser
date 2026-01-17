@@ -1,17 +1,9 @@
 <script lang="ts" module>
 	import { SliderState } from './volume-slider.svelte';
+	import { getTypeDisplayName } from '$lib/components/badge.svelte';
 
 	// Volume property types
 	type VolumeProperty = 'Volume' | 'BusVolume' | 'OutputBusVolume';
-
-	// Type name formatting map
-	const TYPE_NAMES: Record<string, string> = {
-		ActorMixer: 'Actor-Mixer',
-		BlendContainer: 'Blend Container',
-		RandomSequenceContainer: 'Random Sequence',
-		SwitchContainer: 'Switch Container',
-		AuxBus: 'Aux Bus'
-	};
 
 	// VolumeContribution class - encapsulates all volume state and logic
 	export class VolumeContribution {
@@ -99,15 +91,14 @@
 
 		// Get formatted type name
 		get typeName(): string {
-			return TYPE_NAMES[this.type] ?? this.type;
+			return getTypeDisplayName(this.type);
 		}
 
-		// Get type badge color
-		get typeColor(): string {
-			if (this.category === 'self') return 'bg-wwise/10 text-wwise';
-			if (this.type === 'Bus' || this.type === 'AuxBus')
-				return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
-			return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
+		// Get badge variant for type
+		get badgeVariant(): 'wwise' | 'blue' | 'purple' {
+			if (this.category === 'self') return 'wwise';
+			if (this.type === 'Bus' || this.type === 'AuxBus') return 'blue';
+			return 'purple';
 		}
 	}
 </script>
@@ -117,6 +108,7 @@
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
 	import { Volume2, ChevronRight } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
+	import Badge from '$lib/components/badge.svelte';
 	import VolumeSlider from './volume-slider.svelte';
 
 	// Types
@@ -557,10 +549,7 @@
 								: ''}"
 						/>
 						<div class="flex flex-1 gap-2 min-w-0 items-center">
-							<span
-								class="text-xs text-wwise font-medium px-2 py-0.5 rounded-full bg-wwise/10 shrink-0"
-								>{TYPE_NAMES[item.object.type] ?? item.object.type}</span
-							>
+							<Badge variant="wwise">{getTypeDisplayName(item.object.type)}</Badge>
 							<span class="text-sm text-base font-medium truncate">{item.object.name}</span>
 						</div>
 						<div class="text-xs flex shrink-0 gap-4 items-center">
@@ -599,11 +588,9 @@
 											<div class="text-xs py-1.5 space-y-1.5">
 												<div class="flex items-center justify-between">
 													<div class="flex gap-2 items-center">
-														<span
-															class="text-xs font-medium px-2 py-0.5 rounded-full {contrib.typeColor}"
-														>
+														<Badge variant={contrib.badgeVariant}>
 															{contrib.typeName}
-														</span>
+														</Badge>
 														<span class="text-base">{contrib.name}</span>
 														{#if contrib.outputBusName}
 															<span class="text-[10px] text-blue-500">{contrib.outputBusName}</span>
@@ -646,11 +633,9 @@
 											<div class="text-xs py-1.5 space-y-1.5">
 												<div class="flex items-center justify-between">
 													<div class="flex gap-2 items-center">
-														<span
-															class="text-xs font-medium px-2 py-0.5 rounded-full {contrib.typeColor}"
-														>
+														<Badge variant={contrib.badgeVariant}>
 															{contrib.typeName}
-														</span>
+														</Badge>
 														<span class="text-base">{contrib.name}</span>
 														{#if contrib.outputBusName}
 															<span class="text-[10px] text-blue-500">{contrib.outputBusName}</span>

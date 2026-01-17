@@ -1,19 +1,11 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { wwise } from '$lib/wwise/connection.svelte';
-	import {
-		Play,
-		Radio,
-		Square,
-		Trash2,
-		Copy,
-		ChevronDown,
-		BookOpen,
-		Plug,
-		LoaderCircle
-	} from 'lucide-svelte';
+	import { Play, Radio, Square, Trash2, Copy, Plug, LoaderCircle } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import MonacoEditor from '$lib/components/monaco-editor.svelte';
+	import Combobox from '$lib/components/combobox.svelte';
+	import Select from '$lib/components/select.svelte';
 	import JSON5 from 'json5';
 
 	// Types
@@ -47,15 +39,13 @@
 	let functions = $state<WaapiItem[]>([]);
 	let topics = $state<WaapiItem[]>([]);
 	let selectedUri = $state('');
+	let selectedRecipe = $state('');
 	let argsCode = $state('{}');
 	let optionsCode = $state('{}');
 	let isLoading = $state(false);
 	let logs = $state<LogEntry[]>([]);
 	let subscriptions = $state<ActiveSubscription[]>([]);
 	let logIdCounter = 0;
-	let showRecipes = $state(false);
-	let showDropdown = $state(false);
-	let highlightedIndex = $state(-1);
 
 	// Monaco editor refs
 	let argsEditor = $state<MonacoEditor | null>(null);
@@ -125,84 +115,20 @@
 		}
 	];
 
-	// Filter recipes based on current mode
-	const filteredRecipes = $derived(recipes.filter((r) => r.mode === mode));
+	// Recipe items for Select component based on current mode
+	const recipeItems = $derived(
+		recipes
+			.filter((r) => r.mode === mode)
+			.map((r) => ({ label: r.name, value: r.name, description: r.uri }))
+	);
 
-	// Available items based on mode
-	const availableItems = $derived(mode === 'call' ? functions : topics);
-
-	// Filter items for dropdown - fuzzy match ignoring dots/underscores
-	let searchQuery = $state('');
-	const filteredItems = $derived.by(() => {
-		const query = searchQuery.toLowerCase();
-		// Show all when empty or exactly matches selected
-		if (!query || query === selectedUri.toLowerCase()) return availableItems;
-		// Fuzzy: remove separators for matching
-		const normalizedQuery = query.replace(/[._-]/g, '');
-		return availableItems.filter((item) => {
-			const uri = item.uri.toLowerCase();
-			// Try exact substring first
-			if (uri.includes(query)) return true;
-			// Then try normalized (no separators)
-			return uri.replace(/[._-]/g, '').includes(normalizedQuery);
-		});
-	});
-
-	// Reset highlight when filtered items change
-	$effect(() => {
-		void filteredItems;
-		highlightedIndex = -1;
-	});
-
-	// Select URI helper
-	function selectUri(uri: string) {
-		selectedUri = uri;
-		searchQuery = uri;
-		showDropdown = false;
-		highlightedIndex = -1;
-	}
-
-	// Handle keyboard navigation
-	function handleKeydown(e: KeyboardEvent) {
-		if (!showDropdown) {
-			if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-				showDropdown = true;
-				e.preventDefault();
-			}
-			return;
-		}
-
-		const items = filteredItems.slice(0, 50);
-		switch (e.key) {
-			case 'ArrowDown':
-				e.preventDefault();
-				highlightedIndex = highlightedIndex < items.length - 1 ? highlightedIndex + 1 : 0;
-				break;
-			case 'ArrowUp':
-				e.preventDefault();
-				highlightedIndex = highlightedIndex > 0 ? highlightedIndex - 1 : items.length - 1;
-				break;
-			case 'Enter':
-				e.preventDefault();
-				if (highlightedIndex >= 0 && items[highlightedIndex]) {
-					selectUri(items[highlightedIndex].uri);
-				} else if (searchQuery) {
-					// Accept custom URI
-					selectUri(searchQuery);
-				}
-				break;
-			case 'Escape':
-				e.preventDefault();
-				showDropdown = false;
-				searchQuery = selectedUri;
-				highlightedIndex = -1;
-				break;
-			case 'Tab':
-				showDropdown = false;
-				if (!searchQuery) searchQuery = selectedUri;
-				break;
-		}
-	}
+	// Available items based on mode for Combobox
+	const comboboxItems = $derived(
+		(mode === 'call' ? functions : topics).map((item) => ({
+			label: item.uri,
+			value: item.uri
+		}))
+	);
 
 	// Fetch available functions and topics
 	async function fetchWaapiSchema() {
@@ -215,7 +141,7 @@
 
 			// Set default selection
 			if (!selectedUri && functions.length > 0) {
-				selectUri('ak.wwise.core.getInfo');
+				selectedUri = 'ak.wwise.core.getInfo';
 			}
 		} catch (e) {
 			addLog('error', { message: 'Failed to fetch WAAPI schema', error: String(e) });
@@ -319,15 +245,21 @@
 		await navigator.clipboard.writeText(text);
 	}
 
-	// Apply recipe
-	function applyRecipe(recipe: (typeof recipes)[number]) {
-		if (recipe.mode) mode = recipe.mode;
-		selectUri(recipe.uri);
+	// Apply recipe values (uri, args, options) to the UI
+	function applyRecipeValues(recipe: (typeof recipes)[number]) {
+		selectedUri = recipe.uri;
 		argsCode = recipe.args;
 		optionsCode = recipe.options;
 		argsEditor?.setValue(recipe.args);
 		optionsEditor?.setValue(recipe.options);
-		showRecipes = false;
+	}
+
+	// Apply recipe by name (called from Select onchange)
+	function applyRecipe(recipeName: string) {
+		const recipe = recipes.find((r) => r.name === recipeName);
+		if (!recipe) return;
+		if (recipe.mode) mode = recipe.mode;
+		applyRecipeValues(recipe);
 	}
 
 	// Format timestamp
@@ -439,7 +371,15 @@
 				<!-- Mode Toggle -->
 				<div class="p-1 rounded-lg bg-surface-200 flex dark:bg-surface-800">
 					<button
-						onclick={() => (mode = 'call')}
+						onclick={() => {
+							mode = 'call';
+							const recipe = recipes.find((r) => r.name === selectedRecipe && r.mode === 'call');
+							if (recipe) {
+								applyRecipeValues(recipe);
+							} else {
+								selectedUri = '';
+							}
+						}}
 						class={[
 							'px-4 h-8 rounded-md text-sm font-medium transition-all',
 							mode === 'call' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
@@ -448,7 +388,17 @@
 						Call
 					</button>
 					<button
-						onclick={() => (mode = 'subscribe')}
+						onclick={() => {
+							mode = 'subscribe';
+							const recipe = recipes.find(
+								(r) => r.name === selectedRecipe && r.mode === 'subscribe'
+							);
+							if (recipe) {
+								applyRecipeValues(recipe);
+							} else {
+								selectedUri = '';
+							}
+						}}
 						class={[
 							'px-4 h-8 rounded-md text-sm font-medium transition-all',
 							mode === 'subscribe' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
@@ -460,98 +410,24 @@
 
 				<!-- URI Selection -->
 				<div class="flex-1 min-w-64">
-					<div class="relative">
-						<input
-							type="text"
-							bind:value={searchQuery}
-							placeholder="Search {mode === 'call' ? 'functions' : 'topics'}..."
-							spellcheck="false"
-							autocomplete="off"
-							class="text-sm font-mono px-3 border rounded-lg bg-surface-50 h-10 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20 {selectedUri &&
-							searchQuery === selectedUri
-								? 'text-wwise border-wwise/30'
-								: 'text-base border-base'}"
-							onfocus={(e) => {
-								showDropdown = true;
-								if (!searchQuery) searchQuery = selectedUri;
-								// Select all text so typing replaces it
-								e.currentTarget.select();
-							}}
-							oninput={() => {
-								// Reopen dropdown when typing
-								if (!showDropdown) showDropdown = true;
-							}}
-							onblur={() =>
-								setTimeout(() => {
-									showDropdown = false;
-									highlightedIndex = -1;
-									// Restore or accept URI
-									const match = availableItems.find((item) => item.uri === searchQuery);
-									if (match) {
-										selectedUri = match.uri;
-									} else if (!searchQuery) {
-										searchQuery = selectedUri;
-									} else if (searchQuery !== selectedUri) {
-										// Allow custom URI
-										selectedUri = searchQuery;
-									}
-								}, 150)}
-							onkeydown={handleKeydown}
-						/>
-						{#if showDropdown && filteredItems.length > 0}
-							<div
-								class="mt-1 border border-base rounded-lg bg-base max-h-64 shadow-lg left-0 right-0 top-full absolute z-10 overflow-y-auto"
-							>
-								{#each filteredItems.slice(0, 50) as item, i (item.uri)}
-									<button
-										class="text-sm px-3 py-2 text-left w-full transition-colors {i ===
-										highlightedIndex
-											? 'text-wwise bg-wwise/20'
-											: selectedUri === item.uri
-												? 'text-wwise bg-wwise/10'
-												: 'text-base hover:bg-surface-100 dark:hover:bg-surface-800'}"
-										onmouseenter={() => (highlightedIndex = i)}
-										onclick={() => selectUri(item.uri)}
-									>
-										<span class="text-xs font-mono">{item.uri}</span>
-									</button>
-								{/each}
-							</div>
-						{:else if showDropdown && searchQuery && filteredItems.length === 0}
-							<div
-								class="mt-1 p-2 border border-base rounded-lg bg-base shadow-lg left-0 right-0 top-full absolute z-10"
-							>
-								<div class="text-sm text-muted px-1 py-1">No matches found</div>
-							</div>
-						{/if}
-					</div>
+					<Combobox
+						id="uri-selector"
+						items={comboboxItems}
+						bind:value={selectedUri}
+						placeholder="Search {mode === 'call' ? 'functions' : 'topics'}..."
+						allowCustomValue={true}
+					/>
 				</div>
 
 				<!-- Recipes -->
-				<div class="relative">
-					<button
-						onclick={() => (showRecipes = !showRecipes)}
-						class="text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex gap-2 h-10 transition-colors items-center dark:bg-surface-800 hover:bg-surface-300 dark:hover:bg-surface-700"
-					>
-						<BookOpen size={16} />
-						Recipes
-						<ChevronDown size={14} class={showRecipes ? 'rotate-180' : ''} />
-					</button>
-					{#if showRecipes}
-						<div
-							class="mt-1 border border-base rounded-lg bg-base w-64 shadow-lg right-0 top-full absolute z-10 overflow-hidden"
-						>
-							{#each filteredRecipes as recipe (recipe.name)}
-								<button
-									class="text-xs px-3 py-2 text-left border-b border-base w-full transition-colors last:border-b-0 hover:bg-surface-100 dark:hover:bg-surface-800"
-									onclick={() => applyRecipe(recipe)}
-								>
-									<span class="text-base text-sm font-medium block">{recipe.name}</span>
-									<span class="text-[11px] text-muted font-mono">{recipe.uri}</span>
-								</button>
-							{/each}
-						</div>
-					{/if}
+				<div class="w-48">
+					<Select
+						id="recipe-selector"
+						items={recipeItems}
+						bind:value={selectedRecipe}
+						placeholder="Recipes"
+						onchange={applyRecipe}
+					/>
 				</div>
 
 				<!-- Execute Button -->
@@ -661,22 +537,24 @@
 						{#each logs as log (log.id)}
 							<div class="group">
 								<div class="flex gap-2 items-start">
-									<span class="text-surface-400 dark:text-surface-500 shrink-0">{formatTime(log.timestamp)}</span>
+									<span class="text-surface-400 shrink-0 dark:text-surface-500"
+										>{formatTime(log.timestamp)}</span
+									>
 									<span class={[getLogColor(log.type), 'shrink-0 uppercase font-semibold']}>
 										[{log.type}]
 									</span>
 									{#if log.uri}
-										<span class="text-surface-500 dark:text-surface-400 shrink-0">{log.uri}</span>
+										<span class="text-surface-500 shrink-0 dark:text-surface-400">{log.uri}</span>
 									{/if}
 									<button
 										onclick={() => copyToClipboard(JSON.stringify(log.data, null, 2))}
-										class="text-surface-400 opacity-0 transition-opacity hover:text-surface-600 dark:hover:text-surface-300 group-hover:opacity-100"
+										class="text-surface-400 opacity-0 transition-opacity hover:text-surface-600 group-hover:opacity-100 dark:hover:text-surface-300"
 									>
 										<Copy size={12} />
 									</button>
 								</div>
 								<pre
-									class="text-surface-700 dark:text-surface-300 mt-1 pl-20 whitespace-pre-wrap break-all">{JSON.stringify(
+									class="text-surface-700 mt-1 pl-20 whitespace-pre-wrap break-all dark:text-surface-300">{JSON.stringify(
 										log.data,
 										null,
 										2

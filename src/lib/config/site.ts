@@ -44,10 +44,17 @@ export const navigation: NavItem[] = [
 	},
 	{
 		id: 'volume',
-		name: 'Effective Volume',
+		name: 'Volume',
 		description: 'Calculate cumulative volume',
 		icon: 'volume',
 		href: '/volume'
+	},
+	{
+		id: 'rename',
+		name: 'Rename',
+		description: 'Batch rename from clipboard',
+		icon: 'edit',
+		href: '/rename'
 	}
 ];
 

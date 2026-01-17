@@ -13,9 +13,9 @@ export default defineConfig({
 			fonts: {
 				sans: {
 					name: 'Open Sans',
-					weights: ['100', '400', '500', '600', '700', '900'],
-				},
-			},
+					weights: ['100', '400', '500', '600', '700', '900']
+				}
+			}
 		})
 	],
 	theme: {

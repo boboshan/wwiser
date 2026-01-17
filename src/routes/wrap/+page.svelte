@@ -6,8 +6,10 @@
 		type ContainerType,
 		type WwiseObject
 	} from '$lib/wwise/connection.svelte';
-	import { RefreshCw, Package, ChevronDown } from 'lucide-svelte';
+	import { RefreshCw, Package } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
+	import Select from '$lib/components/select.svelte';
+	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
 
 	// Types that cannot be wrapped at all
 	const NON_WRAPPABLE_TYPES = ['Project'];
@@ -66,14 +68,8 @@
 	let statusMessage = $state('');
 	let statusType = $state<'info' | 'success' | 'error'>('info');
 
-	// Container type dropdown state
-	let showContainerDropdown = $state(false);
-	let containerHighlightedIndex = $state(-1);
-
-	// Get selected container label
-	const selectedContainerLabel = $derived(
-		CONTAINER_TYPES.find((t) => t.value === containerType)?.label || 'Select...'
-	);
+	// Convert CONTAINER_TYPES to Select items
+	const containerItems = CONTAINER_TYPES.map((t) => ({ label: t.label, value: t.value }));
 
 	// Filter out non-wrappable objects based on selected container type
 	const wrappableObjects = $derived(
@@ -311,7 +307,7 @@
 			<button
 				onclick={refreshSelection}
 				disabled={!wwise.isConnected || isLoading}
-				class="text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex flex-1 gap-2 h-10 transition-colors items-center justify-center sm:flex-none dark:bg-surface-800 hover:bg-surface-300 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-700"
+				class="text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex flex-1 gap-2 h-10 transition-colors items-center justify-center dark:bg-surface-800 hover:bg-surface-300 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed dark:hover:bg-surface-700"
 			>
 				<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
 				{isLoading ? 'Loading...' : 'Get Selection'}
@@ -319,7 +315,7 @@
 			<button
 				onclick={executeWrap}
 				disabled={!wwise.isConnected || wrappableObjects.length === 0 || isExecuting}
-				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center sm:flex-none hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
+				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed"
 			>
 				<Package size={16} />
 				{isExecuting ? 'Wrapping...' : 'Wrap Objects'}
@@ -334,43 +330,13 @@
 			<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
 				Container Type
 			</span>
-			<div class="relative max-w-xs">
-				<button
-					type="button"
-					onclick={() => (showContainerDropdown = !showContainerDropdown)}
-					onblur={() => setTimeout(() => {
-						showContainerDropdown = false;
-						containerHighlightedIndex = -1;
-					}, 150)}
-					class="text-sm text-base px-3 pr-8 border border-base rounded-lg bg-surface-50 flex h-10 w-full transition-colors items-center focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
-				>
-					{selectedContainerLabel}
-					<ChevronDown size={14} class="text-muted right-3 absolute {showContainerDropdown ? 'rotate-180' : ''}" />
-				</button>
-				{#if showContainerDropdown}
-					<div
-						class="mt-1 border border-base rounded-lg bg-base max-h-64 shadow-lg left-0 right-0 top-full absolute z-10 overflow-y-auto"
-					>
-						{#each CONTAINER_TYPES as type, i (type.value)}
-							<button
-								type="button"
-								class="text-sm px-3 py-2 text-left w-full transition-colors {i === containerHighlightedIndex
-									? 'text-wwise bg-wwise/20'
-									: containerType === type.value
-										? 'text-wwise bg-wwise/10'
-										: 'text-base hover:bg-surface-100 dark:hover:bg-surface-800'}"
-								onmouseenter={() => (containerHighlightedIndex = i)}
-								onmouseleave={() => (containerHighlightedIndex = -1)}
-								onclick={() => {
-									containerType = type.value;
-									showContainerDropdown = false;
-								}}
-							>
-								{type.label}
-							</button>
-						{/each}
-					</div>
-				{/if}
+			<div class="max-w-xs">
+				<Select
+					items={containerItems}
+					bind:value={containerType}
+					placeholder="Select container..."
+					id="container-type"
+				/>
 			</div>
 		</div>
 
@@ -474,9 +440,9 @@
 					{@const parentPath = getParentPath(key)}
 					<div class="p-4 border border-base rounded-lg bg-base">
 						<div class="mb-2 flex gap-2 items-center">
-							<span class="text-xs text-wwise font-medium px-2 py-0.5 rounded-full bg-wwise/10">
+							<Badge variant="wwise">
 								{CONTAINER_TYPES.find((t) => t.value === containerType)?.label}
-							</span>
+							</Badge>
 							<span class="text-sm text-base font-medium">
 								{previewNames.get(key) || 'NewContainer'}
 							</span>
@@ -487,7 +453,7 @@
 						<div class="pl-3 border-l-2 border-surface-200 space-y-1 dark:border-surface-700">
 							{#each objects as obj (obj.id)}
 								<div class="text-xs text-muted">
-									<span class="text-subtle">{obj.type}:</span>
+									<span class="text-subtle">{getTypeDisplayName(obj.type)}:</span>
 									<span class="text-base ml-1">{obj.name}</span>
 								</div>
 							{/each}
