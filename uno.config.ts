@@ -9,10 +9,12 @@ export default defineConfig({
 			dark: 'class'
 		}),
 		presetWebFonts({
-			provider: 'google', // default provider
+			provider: 'google',
 			fonts: {
-				// these will extend the default theme
-				sans: 'Open Sans:100,400,500,600,700,900',
+				sans: {
+					name: 'Open Sans',
+					weights: ['100', '400', '500', '600', '700', '900'],
+				},
 			},
 		})
 	],
