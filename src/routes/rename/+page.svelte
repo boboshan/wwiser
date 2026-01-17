@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
-	import { RefreshCw, Pencil, ClipboardPaste } from 'lucide-svelte';
+	import { RefreshCw, Pencil, ClipboardPaste, Copy } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
 
@@ -73,6 +73,17 @@
 			statusMessage = 'Failed to read clipboard. Please allow clipboard access.';
 			statusType = 'error';
 		}
+	}
+
+	function pasteFromSelection() {
+		if (selectedObjects.length === 0) {
+			statusMessage = 'No objects selected. Get selection first.';
+			statusType = 'error';
+			return;
+		}
+		namesText = selectedObjects.map((obj) => obj.name).join('\n');
+		statusMessage = `Populated ${selectedObjects.length} name(s) from selection`;
+		statusType = 'info';
 	}
 
 	async function executeRename() {
@@ -156,13 +167,23 @@
 			<span class="text-[10px] text-muted tracking-wider font-medium uppercase">
 				New Names (from Clipboard)
 			</span>
-			<button
-				onclick={pasteFromClipboard}
-				class="text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20"
-			>
-				<ClipboardPaste size={14} />
-				Paste from Clipboard
-			</button>
+			<div class="flex gap-2">
+				<button
+					onclick={pasteFromSelection}
+					disabled={selectedObjects.length === 0}
+					class="text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20 disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					<Copy size={14} />
+					Paste from Selection
+				</button>
+				<button
+					onclick={pasteFromClipboard}
+					class="text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20"
+				>
+					<ClipboardPaste size={14} />
+					Paste from Clipboard
+				</button>
+			</div>
 		</div>
 		<textarea
 			bind:value={namesText}

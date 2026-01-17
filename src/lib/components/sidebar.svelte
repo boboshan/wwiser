@@ -64,7 +64,7 @@
 >
 	<!-- Logo -->
 	<div class="p-5 border-b border-base flex items-center justify-between">
-		<a href="/app" class="group no-underline flex gap-3 items-center">
+		<a href="/" class="group no-underline flex gap-3 items-center">
 			<div class="flex shrink-0 h-10 w-10">
 				<img src={logo} alt="Wwiser" class="h-full w-full" />
 			</div>
