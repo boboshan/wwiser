@@ -74,7 +74,7 @@
 		value={slider.value.toFixed(1)}
 		onchange={handleNumberCommit}
 		{disabled}
-		class="text-[11px] font-mono px-1.5 py-0.5 text-right outline-none rounded border-none bg-surface-100 w-14 dark:bg-surface-900 focus:ring-1 focus:ring-wwise/50 {getVolumeColor(
+		class="text-[11px] font-mono px-1.5 py-0.5 text-right outline-none rounded border-none bg-surface-200 w-14 dark:bg-surface-800 focus:ring-1 focus:ring-wwise/50 {getVolumeColor(
 			slider.value
 		)} disabled:opacity-50"
 	/>

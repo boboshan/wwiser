@@ -437,7 +437,7 @@
 			<!-- Mode Toggle & URI Selection -->
 			<div class="flex flex-wrap gap-3 items-start">
 				<!-- Mode Toggle -->
-				<div class="p-1 rounded-lg bg-surface-100 flex dark:bg-surface-800">
+				<div class="p-1 rounded-lg bg-surface-200 flex dark:bg-surface-800">
 					<button
 						onclick={() => (mode = 'call')}
 						class={[
@@ -531,7 +531,7 @@
 				<div class="relative">
 					<button
 						onclick={() => (showRecipes = !showRecipes)}
-						class="text-sm text-base font-medium px-4 rounded-lg bg-surface-100 flex gap-2 h-10 transition-colors items-center dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700"
+						class="text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex gap-2 h-10 transition-colors items-center dark:bg-surface-800 hover:bg-surface-300 dark:hover:bg-surface-700"
 					>
 						<BookOpen size={16} />
 						Recipes
@@ -539,15 +539,15 @@
 					</button>
 					{#if showRecipes}
 						<div
-							class="mt-1 border border-base rounded-lg bg-base w-72 shadow-lg right-0 top-full absolute z-10"
+							class="mt-1 border border-base rounded-lg bg-base w-64 shadow-lg right-0 top-full absolute z-10 overflow-hidden"
 						>
 							{#each filteredRecipes as recipe (recipe.name)}
 								<button
-									class="text-sm px-3 py-2 text-left border-b border-base w-full transition-colors last:border-b-0 hover:bg-surface-100 dark:hover:bg-surface-800"
+									class="text-xs px-3 py-2 text-left border-b border-base w-full transition-colors last:border-b-0 hover:bg-surface-100 dark:hover:bg-surface-800"
 									onclick={() => applyRecipe(recipe)}
 								>
-									<span class="text-base font-medium block">{recipe.name}</span>
-									<span class="text-xs text-muted font-mono">{recipe.uri}</span>
+									<span class="text-base text-sm font-medium block">{recipe.name}</span>
+									<span class="text-[11px] text-muted font-mono">{recipe.uri}</span>
 								</button>
 							{/each}
 						</div>
@@ -653,30 +653,30 @@
 					</button>
 				</div>
 				<div
-					class="text-xs font-mono p-3 border border-base rounded-lg bg-zinc-900 flex-1 min-h-48 overflow-y-auto space-y-2 dark:bg-zinc-950"
+					class="text-xs font-mono p-3 border border-base rounded-lg bg-surface-100 flex-1 min-h-48 overflow-y-auto space-y-2 dark:bg-surface-950"
 				>
 					{#if logs.length === 0}
-						<div class="text-surface-500">No logs yet. Execute a call or subscribe to a topic.</div>
+						<div class="text-surface-400">No logs yet. Execute a call or subscribe to a topic.</div>
 					{:else}
 						{#each logs as log (log.id)}
 							<div class="group">
 								<div class="flex gap-2 items-start">
-									<span class="text-surface-500 shrink-0">{formatTime(log.timestamp)}</span>
+									<span class="text-surface-400 dark:text-surface-500 shrink-0">{formatTime(log.timestamp)}</span>
 									<span class={[getLogColor(log.type), 'shrink-0 uppercase font-semibold']}>
 										[{log.type}]
 									</span>
 									{#if log.uri}
-										<span class="text-surface-400 shrink-0">{log.uri}</span>
+										<span class="text-surface-500 dark:text-surface-400 shrink-0">{log.uri}</span>
 									{/if}
 									<button
 										onclick={() => copyToClipboard(JSON.stringify(log.data, null, 2))}
-										class="text-surface-500 opacity-0 transition-opacity hover:text-surface-300 group-hover:opacity-100"
+										class="text-surface-400 opacity-0 transition-opacity hover:text-surface-600 dark:hover:text-surface-300 group-hover:opacity-100"
 									>
 										<Copy size={12} />
 									</button>
 								</div>
 								<pre
-									class="text-surface-300 mt-1 pl-20 whitespace-pre-wrap break-all">{JSON.stringify(
+									class="text-surface-700 dark:text-surface-300 mt-1 pl-20 whitespace-pre-wrap break-all">{JSON.stringify(
 										log.data,
 										null,
 										2

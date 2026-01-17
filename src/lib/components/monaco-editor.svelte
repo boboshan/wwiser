@@ -19,50 +19,51 @@
 
 			const monaco = await import('monaco-editor');
 
-			// Define custom theme matching our design system
+			// Define dark theme matching our design system
 			monaco.editor.defineTheme('wwiser-dark', {
 				base: 'vs-dark',
 				inherit: true,
 				rules: [
-					{ token: 'string.key.json', foreground: 'ff7f00' },
-					{ token: 'string.value.json', foreground: '98c379' },
-					{ token: 'number', foreground: 'd19a66' },
-					{ token: 'keyword', foreground: 'c678dd' }
+					{ token: 'string.key.json', foreground: '93b4ff' }, // wwise-300
+					{ token: 'string.value.json', foreground: '86efac' }, // green-300
+					{ token: 'number', foreground: 'fcd34d' }, // amber-300
+					{ token: 'keyword', foreground: 'c4b5fd' } // violet-300
 				],
 				colors: {
-					'editor.background': '#09090b', // zinc-950 - matches console
-					'editor.foreground': '#a1a1aa', // zinc-400
-					'editor.lineHighlightBackground': '#18181b',
-					'editor.selectionBackground': '#3f3f46',
-					'editorCursor.foreground': '#ff7f00',
-					'editorLineNumber.foreground': '#52525b',
-					'editorIndentGuide.background': '#27272a',
-					'scrollbarSlider.background': '#27272a80',
-					'scrollbarSlider.hoverBackground': '#3f3f4680',
-					'scrollbarSlider.activeBackground': '#52525b80'
+					'editor.background': '#09090b', // surface-950 - darker than page bg
+					'editor.foreground': '#d4d4d8', // surface-300
+					'editor.lineHighlightBackground': '#3f3f46', // surface-700
+					'editor.selectionBackground': '#52525b', // surface-600
+					'editorCursor.foreground': '#3069ff', // wwise
+					'editorLineNumber.foreground': '#71717a', // surface-500
+					'editorIndentGuide.background': '#3f3f46', // surface-700
+					'scrollbarSlider.background': '#52525b80',
+					'scrollbarSlider.hoverBackground': '#71717a80',
+					'scrollbarSlider.activeBackground': '#a1a1aa80'
 				}
 			});
 
+			// Define light theme - distinct from page background
 			monaco.editor.defineTheme('wwiser-light', {
 				base: 'vs',
 				inherit: true,
 				rules: [
-					{ token: 'string.key.json', foreground: 'c45500' },
-					{ token: 'string.value.json', foreground: '50a14f' },
-					{ token: 'number', foreground: '986801' },
-					{ token: 'keyword', foreground: 'a626a4' }
+					{ token: 'string.key.json', foreground: '1340e1' }, // wwise-700
+					{ token: 'string.value.json', foreground: '16a34a' }, // green-600
+					{ token: 'number', foreground: 'd97706' }, // amber-600
+					{ token: 'keyword', foreground: '7c3aed' } // violet-600
 				],
 				colors: {
-					'editor.background': '#18181b', // zinc-900 - code always dark
-					'editor.foreground': '#a1a1aa', // zinc-400
-					'editor.lineHighlightBackground': '#27272a',
-					'editor.selectionBackground': '#3f3f46',
-					'editorCursor.foreground': '#ff7f00',
-					'editorLineNumber.foreground': '#52525b',
-					'editorIndentGuide.background': '#27272a',
-					'scrollbarSlider.background': '#27272a80',
-					'scrollbarSlider.hoverBackground': '#3f3f4680',
-					'scrollbarSlider.activeBackground': '#52525b80'
+					'editor.background': '#f4f4f5', // surface-100 - distinct from page bg
+					'editor.foreground': '#3f3f46', // surface-700
+					'editor.lineHighlightBackground': '#e4e4e7', // surface-200
+					'editor.selectionBackground': '#bfd3ff', // wwise-200
+					'editorCursor.foreground': '#3069ff', // wwise
+					'editorLineNumber.foreground': '#a1a1aa', // surface-400
+					'editorIndentGuide.background': '#e4e4e7', // surface-200
+					'scrollbarSlider.background': '#d4d4d880',
+					'scrollbarSlider.hoverBackground': '#a1a1aa80',
+					'scrollbarSlider.activeBackground': '#71717a80'
 				}
 			});
 
@@ -219,12 +220,13 @@
 
 <style>
 	.monaco-editor-container {
-		/* Code editors always use dark background for better readability */
-		background: #18181b; /* zinc-900 */
+		/* Light mode - distinct from page background (surface-100) */
+		background: #f4f4f5;
 	}
 
 	:global(.dark) .monaco-editor-container {
-		background: #09090b; /* zinc-950 */
+		/* Dark mode - surface-950 for contrast against page bg */
+		background: #09090b;
 	}
 
 	/* Hide Monaco's focus outline - we use our own */

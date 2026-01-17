@@ -18,33 +18,34 @@ export default defineConfig({
 	],
 	theme: {
 		colors: {
-			// Wwise Logo Blues
+			// Wwise Logo Blues - Primary brand color
 			wwise: {
 				DEFAULT: '#3069ff',
-				50: '#e8f0ff',
-				100: '#d4e2ff',
-				200: '#b0c8ff',
-				300: '#8baeff',
-				400: '#6895ff',
+				50: '#eff4ff',
+				100: '#dbe6ff',
+				200: '#bfd3ff',
+				300: '#93b4ff',
+				400: '#6090ff',
 				500: '#3069ff',
-				600: '#2654ff',
-				700: '#2444f0',
-				800: '#243dd8',
-				900: '#1a2eb0'
+				600: '#1a4ff5',
+				700: '#1340e1',
+				800: '#1635b6',
+				900: '#18318f',
+				950: '#141f57'
 			},
-			// Surface colors - neutral with very subtle cool hint
+			// Surface colors - neutral grays for modern look
 			surface: {
-				50: '#fafaf9',
-				100: '#f5f5f4',
-				200: '#e6e5e3',
-				300: '#d5d4d1',
-				400: '#a5a4a0',
-				500: '#757471',
-				600: '#545350',
-				700: '#403f3d',
-				800: '#2a2928',
-				900: '#1c1b1a',
-				950: '#121111'
+				50: '#fafafa',
+				100: '#f4f4f5',
+				200: '#e4e4e7',
+				300: '#d4d4d8',
+				400: '#a1a1aa',
+				500: '#71717a',
+				600: '#52525b',
+				700: '#3f3f46',
+				800: '#27272a',
+				900: '#18181b',
+				950: '#09090b'
 			}
 		}
 	},
@@ -52,7 +53,7 @@ export default defineConfig({
 		// Surface utilities - light/dark mode support
 		'bg-base': 'bg-white dark:bg-surface-950',
 		'bg-elevated': 'bg-surface-50 dark:bg-surface-900',
-		'bg-muted': 'bg-surface-100 dark:bg-surface-800',
+		'bg-muted': 'bg-surface-200 dark:bg-surface-800',
 		'border-base': 'border-surface-200 dark:border-surface-800',
 		'border-subtle': 'border-surface-100 dark:border-surface-800/50',
 		// Text utilities - proper hierarchy with light/dark mode

@@ -98,7 +98,7 @@
 				<div class="p-4">
 					<div class="mb-4 flex gap-3 items-center">
 						<div
-							class="rounded-lg bg-surface-100 flex h-10 w-10 items-center justify-center dark:bg-surface-800"
+							class="rounded-lg bg-surface-200 flex h-10 w-10 items-center justify-center dark:bg-surface-800"
 						>
 							<Plug size={20} class="text-muted" />
 						</div>

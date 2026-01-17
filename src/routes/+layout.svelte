@@ -101,7 +101,7 @@
 		</header>
 
 		<!-- Scrollable Content Area -->
-		<main class="p-4 bg-surface-100 flex-1 overflow-y-auto lg:p-8 md:p-6 dark:bg-surface-900">
+		<main class="p-4 bg-surface-50 flex-1 overflow-y-auto lg:p-8 md:p-6 dark:bg-surface-900">
 			<div class="mx-auto flex flex-col h-full max-w-6xl">
 				{@render children()}
 			</div>

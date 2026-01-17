@@ -104,7 +104,7 @@
 						'rounded-md p-2 transition-colors',
 						currentTool === explore.id
 							? 'bg-wwise/15 text-wwise'
-							: 'bg-surface-100 dark:bg-surface-800 text-surface-500'
+							: 'bg-surface-200 dark:bg-surface-800 text-surface-500'
 					]}
 				>
 					<Icon class="h-4 w-4" />
@@ -136,7 +136,7 @@
 							'rounded-md p-2 transition-colors',
 							currentTool === tool.id
 								? 'bg-wwise/15 text-wwise'
-								: 'bg-surface-100 dark:bg-surface-800 text-surface-500'
+								: 'bg-surface-200 dark:bg-surface-800 text-surface-500'
 						]}
 					>
 						<Icon class="h-4 w-4" />
@@ -172,7 +172,7 @@
 				<line x1="10" y1="14" x2="21" y2="3" />
 			</svg>
 		</a>
-		<div class="p-0.5 rounded-lg bg-surface-100 flex dark:bg-surface-800">
+		<div class="p-0.5 rounded-lg bg-surface-200 flex dark:bg-surface-800">
 			<button
 				onclick={() => setTheme('light')}
 				class={[
