@@ -1,8 +1,13 @@
 <script lang="ts" module>
-	export interface ComboboxItem {
+	export interface GroupedComboboxItem {
 		label: string;
 		value: string;
 		disabled?: boolean;
+	}
+
+	export interface GroupedComboboxGroup {
+		label: string;
+		items: GroupedComboboxItem[];
 	}
 </script>
 
@@ -11,7 +16,7 @@
 	import { useMachine, normalizeProps } from '@zag-js/svelte';
 
 	interface Props {
-		items: ComboboxItem[];
+		groups: GroupedComboboxGroup[];
 		value?: string;
 		placeholder?: string;
 		disabled?: boolean;
@@ -21,35 +26,60 @@
 	}
 
 	let {
-		items: allItems,
+		groups,
 		value = $bindable(),
 		placeholder = 'Search...',
 		disabled = false,
 		id,
-		allowCustomValue = true,
+		allowCustomValue = false,
 		onchange
 	}: Props = $props();
 
-	let filteredItems = $state.raw<ComboboxItem[]>(allItems);
+	// Flatten groups for filtering
+	const allItems = $derived(
+		groups.flatMap((g) => g.items.map((item) => ({ ...item, group: g.label })))
+	);
+
+	// Initialize filtered groups from derived
+	const initialGroups = $derived(
+		groups.map((g) => ({ ...g, items: g.items.map((item) => ({ ...item, group: g.label })) }))
+	);
+
+	let filterQuery = $state('');
+
+	const filteredGroups = $derived.by(() => {
+		if (!filterQuery) return initialGroups;
+		const query = filterQuery.toLowerCase();
+		const filtered = initialGroups
+			.map((g) => ({
+				...g,
+				items: g.items.filter(
+					(item) =>
+						item.label.toLowerCase().includes(query) ||
+						item.value.toLowerCase().includes(query)
+				)
+			}))
+			.filter((g) => g.items.length > 0);
+		return filtered.length > 0 ? filtered : initialGroups;
+	});
+
+	const flatFiltered = $derived(filteredGroups.flatMap((g) => g.items));
 
 	const collection = $derived(
 		combobox.collection({
-			items: filteredItems,
+			items: flatFiltered,
 			itemToString: (item) => item.label,
 			itemToValue: (item) => item.value,
 			isItemDisabled: (item) => item.disabled ?? false
 		})
 	);
 
-	// Derive the display label from the current value
-	const displayLabel = $derived(allItems.find((item) => item.value === value)?.label ?? '');
-
 	const service = useMachine(combobox.machine, () => ({
 		id,
 		collection,
 		openOnClick: true,
 		value: value ? [value] : [],
-		inputValue: displayLabel,
+		inputValue: allItems.find((i) => i.value === value)?.label ?? '',
 		allowCustomValue,
 		inputBehavior: 'autohighlight' as const,
 		onValueChange(details) {
@@ -59,17 +89,12 @@
 		},
 		onInputValueChange({ inputValue, reason }) {
 			if (reason === 'input-change') {
-				const query = inputValue.toLowerCase();
-				const filtered = allItems.filter(
-					(item) =>
-						item.label.toLowerCase().includes(query) || item.value.toLowerCase().includes(query)
-				);
-				filteredItems = filtered.length > 0 ? filtered : allItems;
+				filterQuery = inputValue;
 			}
 		},
 		onOpenChange(details) {
 			if (details.open) {
-				filteredItems = allItems;
+				filterQuery = '';
 			}
 		},
 		disabled,
@@ -99,18 +124,23 @@
 
 	<div {...api.getPositionerProps()}>
 		{#if api.open}
-			{#if filteredItems.length > 0}
+			{#if flatFiltered.length > 0}
 				<ul
 					{...api.getContentProps()}
 					class="mt-1 border border-base rounded-lg bg-base max-h-64 w-full shadow-lg z-50 overflow-x-hidden overflow-y-auto"
 				>
-					{#each filteredItems.slice(0, 50) as item (item.value)}
-						<li
-							{...api.getItemProps({ item })}
-							class="data-disabled:opacity-50 data-disabled:cursor-not-allowed text-sm px-3 py-2 cursor-pointer transition-colors data-highlighted:text-wwise data-[state=checked]:text-wwise data-highlighted:bg-wwise/20 data-[state=checked]:bg-wwise/10"
-						>
-							<span {...api.getItemTextProps({ item })}>{item.label}</span>
+					{#each filteredGroups as group (group.label)}
+						<li class="px-3 py-1.5 text-[10px] text-muted tracking-wider font-medium uppercase bg-surface-50 sticky top-0 dark:bg-surface-800 border-b border-base">
+							{group.label}
 						</li>
+						{#each group.items as item (item.value)}
+							<li
+								{...api.getItemProps({ item })}
+								class="data-disabled:opacity-50 data-disabled:cursor-not-allowed text-sm px-3 py-2 cursor-pointer transition-colors data-highlighted:text-wwise data-[state=checked]:text-wwise data-highlighted:bg-wwise/20 data-[state=checked]:bg-wwise/10"
+							>
+								<span {...api.getItemTextProps({ item })}>{item.label}</span>
+							</li>
+						{/each}
 					{/each}
 				</ul>
 			{:else}

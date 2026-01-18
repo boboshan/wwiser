@@ -200,11 +200,12 @@
 	<!-- Status -->
 	{#if statusMessage}
 		<div
-			class="text-sm px-4 py-3 rounded-lg flex gap-2 items-center {statusType === 'success'
-				? 'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400'
-				: statusType === 'error'
-					? 'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400'
-					: 'text-wwise border border-wwise/20 bg-wwise/10'}"
+			class={[
+				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
+				statusType === 'success' && 'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
+				statusType === 'error' && 'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
+				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
+			]}
 		>
 			{statusMessage}
 		</div>

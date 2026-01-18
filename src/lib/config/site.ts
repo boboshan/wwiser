@@ -30,7 +30,7 @@ export interface NavItem {
 	id: string;
 	name: string;
 	description: string;
-	icon: 'package' | 'volume' | 'edit' | 'terminal' | 'settings';
+	icon: 'package' | 'volume' | 'edit' | 'terminal' | 'settings' | 'git-branch';
 	href: string;
 }
 
@@ -41,6 +41,13 @@ export const navigation: NavItem[] = [
 		description: 'Create parent containers',
 		icon: 'package',
 		href: '/wrap'
+	},
+	{
+		id: 'assign',
+		name: 'Assign',
+		description: 'Assign switch children',
+		icon: 'git-branch',
+		href: '/assign'
 	},
 	{
 		id: 'volume',
@@ -79,6 +86,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Wrap Objects',
 		description:
 			'Quickly wrap selected Wwise objects in parent containers. Automatically group by naming patterns and create Random, Sequence, or Switch containers.'
+	},
+	assign: {
+		title: 'Assign Switch Children',
+		description:
+			'Automatically assign children of switch containers to their corresponding switches based on naming patterns. Configure switch groups and preview assignments before applying.'
 	},
 	volume: {
 		title: 'Effective Volume Calculator',

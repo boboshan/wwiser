@@ -83,7 +83,7 @@
 				{#each items as item (item.value)}
 					<li
 						{...api.getItemProps({ item })}
-						class="data-disabled:opacity-50 data-disabled:cursor-not-allowed text-sm px-3 py-2 flex cursor-pointer transition-colors items-center justify-between data-[highlighted]:text-wwise data-[state=checked]:text-wwise data-[highlighted]:bg-wwise/20 data-[state=checked]:bg-wwise/10"
+						class="data-disabled:opacity-50 data-disabled:cursor-not-allowed text-sm px-3 py-2 flex cursor-pointer transition-colors items-center justify-between data-highlighted:text-wwise data-[state=checked]:text-wwise data-highlighted:bg-wwise/20 data-[state=checked]:bg-wwise/10"
 					>
 						<div class="flex flex-col min-w-0">
 							<span class="text-sm" {...api.getItemTextProps({ item })}>{item.label}</span>

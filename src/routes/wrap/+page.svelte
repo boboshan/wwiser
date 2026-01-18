@@ -348,9 +348,12 @@
 			<div class="gap-2 grid sm:grid-cols-3">
 				{#each NAMING_RULES as rule (rule.value)}
 					<label
-						class="p-3 border rounded-lg cursor-pointer transition-all {namingRule === rule.value
-							? 'border-wwise bg-wwise/5 ring-1 ring-wwise/20'
-							: 'border-base bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'}"
+						class={[
+							'p-3 border rounded-lg cursor-pointer transition-all',
+							namingRule === rule.value
+								? 'border-wwise bg-wwise/5 ring-1 ring-wwise/20'
+								: 'border-base bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
+						]}
 					>
 						<input type="radio" bind:group={namingRule} value={rule.value} class="sr-only" />
 						<p class="text-sm text-base font-medium m-0">{rule.label}</p>
@@ -400,11 +403,12 @@
 	<!-- Status -->
 	{#if statusMessage}
 		<div
-			class="text-sm px-4 py-3 rounded-lg flex gap-2 items-center {statusType === 'success'
-				? 'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400'
-				: statusType === 'error'
-					? 'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400'
-					: 'text-wwise border border-wwise/20 bg-wwise/10'}"
+			class={[
+				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
+				statusType === 'success' && 'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
+				statusType === 'error' && 'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
+				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
+			]}
 		>
 			{statusMessage}
 		</div>
@@ -435,19 +439,22 @@
 					>{wrappableObjects.length} object{wrappableObjects.length !== 1 ? 's' : ''}</span
 				>
 			</div>
-			<div class="pr-1 max-h-80 overflow-y-auto space-y-2">
+			<div class="space-y-2">
 				{#each groupedByParent as [key, objects] (key)}
 					{@const parentPath = getParentPath(key)}
 					<div class="p-4 border border-base rounded-lg bg-base">
-						<div class="mb-2 flex gap-2 items-center">
+						<div class="flex gap-2 items-center">
 							<Badge variant="wwise">
 								{CONTAINER_TYPES.find((t) => t.value === containerType)?.label}
 							</Badge>
-							<span class="text-sm text-base font-medium">
+							<span class="text-sm text-base font-medium truncate flex-1">
 								{previewNames.get(key) || 'NewContainer'}
 							</span>
+							<span class="text-xs px-2 py-0.5 rounded-full shrink-0 bg-wwise/10 text-wwise">
+								{objects.length} child{objects.length !== 1 ? 'ren' : ''}
+							</span>
 						</div>
-						<div class="text-xs text-muted mb-3 truncate" title={parentPath}>
+						<div class="text-xs text-muted mt-2 mb-3 truncate" title={parentPath}>
 							{parentPath}
 						</div>
 						<div class="pl-3 border-l-2 border-surface-200 space-y-1 dark:border-surface-700">

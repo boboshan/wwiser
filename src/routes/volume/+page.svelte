@@ -526,7 +526,12 @@
 
 	<!-- Results -->
 	{#if volumeData.length > 0}
-		<div class="space-y-2">
+		<section class="space-y-3">
+			<div class="flex items-center justify-between">
+				<h3 class="text-[10px] text-muted tracking-wider font-medium uppercase m-0">Results</h3>
+				<span class="text-xs text-muted">{volumeData.length} object{volumeData.length !== 1 ? 's' : ''}</span>
+			</div>
+			<div class="space-y-2">
 			{#each volumeData as item (item.object.id)}
 				{@const hierarchyContribs = item.contributions.filter(
 					(c) => c.category === 'self' || c.category === 'ancestor'
@@ -536,10 +541,10 @@
 				{@const busSum = busContribs.reduce((s, c) => s + c.total, 0)}
 				{@const isExpanded = expandedRows.has(item.object.id)}
 
-				<div class="border border-base rounded-xl bg-base overflow-hidden">
+				<div class="p-4 border border-base rounded-lg bg-base">
 					<!-- Main row -->
 					<button
-						class="px-4 py-3 text-left flex gap-3 w-full cursor-pointer transition-colors items-center hover:bg-surface-50 dark:hover:bg-surface-800/50"
+						class="w-full flex items-center gap-2 text-left"
 						onclick={() => toggleRow(item.object.id)}
 					>
 						<ChevronRight
@@ -574,7 +579,7 @@
 
 					<!-- Expanded details -->
 					{#if isExpanded}
-						<div class="px-4 pb-4 pt-1 space-y-4">
+						<div class="mt-3 pt-3 border-t border-base space-y-4">
 							<!-- Hierarchy contributions -->
 							{#if hierarchyContribs.length > 0}
 								<div>
@@ -674,7 +679,8 @@
 					{/if}
 				</div>
 			{/each}
-		</div>
+			</div>
+		</section>
 	{/if}
 
 	<!-- Status Message -->

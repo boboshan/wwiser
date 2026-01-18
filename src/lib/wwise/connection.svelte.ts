@@ -121,6 +121,14 @@ class WwiseConnection {
 			return this.isConnected;
 		}
 
+		// Check for HTTPS mixed content issue
+		if (window.location.protocol === 'https:') {
+			this.status = 'error';
+			this.error =
+				'Cannot connect from HTTPS. Wwise WAAPI only supports insecure WebSocket (ws://). Please access this site via HTTP instead.';
+			return false;
+		}
+
 		this.#host = host;
 		this.#port = port;
 		this.status = 'connecting';
@@ -266,6 +274,135 @@ class WwiseConnection {
 			{ return: returns }
 		);
 		return result?.return?.[0] ?? null;
+	}
+
+	async getObjects(
+		query: { id?: string[]; path?: string[]; search?: string[]; ofType?: string[] },
+		returns: string[] = ['id', 'name', 'type', 'path']
+	): Promise<WwiseObject[]> {
+		const result = await this.call<{ return: WwiseObject[] }>(
+			'ak.wwise.core.object.get',
+			{ from: query },
+			{ return: returns }
+		);
+		return result?.return ?? [];
+	}
+
+	async getChildren(
+		objectId: string,
+		returns: string[] = ['id', 'name', 'type', 'path']
+	): Promise<WwiseObject[]> {
+		const result = await this.call<{ return: WwiseObject[] }>(
+			'ak.wwise.core.object.get',
+			{
+				from: { id: [objectId] },
+				transform: [{ select: ['children'] }]
+			},
+			{ return: returns }
+		);
+		return result?.return ?? [];
+	}
+
+	async getProperty<T = unknown>(objectId: string, property: string): Promise<T | null> {
+		const result = await this.call<{ return: Array<{ [key: string]: T }> }>(
+			'ak.wwise.core.object.get',
+			{ from: { id: [objectId] } },
+			{ return: [property] }
+		);
+		return result?.return?.[0]?.[property] ?? null;
+	}
+
+	async setProperty(objectId: string, property: string, value: unknown): Promise<void> {
+		await this.call('ak.wwise.core.object.setProperty', {
+			object: objectId,
+			property,
+			value
+		});
+	}
+
+	async setReference(objectId: string, reference: string, value: string | null): Promise<void> {
+		await this.call('ak.wwise.core.object.setReference', {
+			object: objectId,
+			reference,
+			value
+		});
+	}
+
+	async getReference(objectId: string, reference: string): Promise<WwiseObject | null> {
+		const result = await this.call<{ return: Array<{ [key: string]: WwiseObject }> }>(
+			'ak.wwise.core.object.get',
+			{ from: { id: [objectId] } },
+			{ return: [`@${reference}`] }
+		);
+		return result?.return?.[0]?.[`@${reference}`] ?? null;
+	}
+
+	// -------------------------------------------------------------------------
+	// Switch Container Operations
+	// -------------------------------------------------------------------------
+
+	async getAllSwitchGroups(): Promise<WwiseObject[]> {
+		return this.getObjects(
+			{ ofType: ['SwitchGroup'] },
+			['id', 'name', 'type', 'path']
+		);
+	}
+
+	async getAllStateGroups(): Promise<WwiseObject[]> {
+		return this.getObjects(
+			{ ofType: ['StateGroup'] },
+			['id', 'name', 'type', 'path']
+		);
+	}
+
+	async getSwitchGroupOrStateGroup(objectId: string): Promise<WwiseObject | null> {
+		// Get the SwitchGroupOrStateGroup reference from a switch container
+		return this.getReference(objectId, 'SwitchGroupOrStateGroup');
+	}
+
+	async setSwitchGroupOrStateGroup(containerId: string, groupId: string): Promise<void> {
+		await this.setReference(containerId, 'SwitchGroupOrStateGroup', groupId);
+	}
+
+	async getDefaultSwitchOrState(containerId: string): Promise<WwiseObject | null> {
+		return this.getReference(containerId, 'DefaultSwitchOrState');
+	}
+
+	async setDefaultSwitchOrState(containerId: string, switchOrStateId: string): Promise<void> {
+		await this.setReference(containerId, 'DefaultSwitchOrState', switchOrStateId);
+	}
+
+	async getSwitchContainerAssignments(
+		containerId: string
+	): Promise<Array<{ child: string; stateOrSwitch: string }>> {
+		const result = await this.call<{
+			return: Array<{ child: string; stateOrSwitch: string }>;
+		}>('ak.wwise.core.switchContainer.getAssignments', {
+			id: containerId
+		});
+		return result?.return ?? [];
+	}
+
+	async assignSwitchContainerChild(
+		containerId: string,
+		childId: string,
+		switchOrStateId: string
+	): Promise<void> {
+		await this.call('ak.wwise.core.switchContainer.addAssignment', {
+			stateOrSwitch: switchOrStateId,
+			child: childId
+		});
+	}
+
+	async removeSwitchContainerAssignment(
+		containerId: string,
+		childId: string,
+		switchOrStateId: string
+	): Promise<void> {
+		await this.call('ak.wwise.core.switchContainer.removeAssignment', {
+			stateOrSwitch: switchOrStateId,
+			child: childId
+		});
 	}
 
 	// -------------------------------------------------------------------------

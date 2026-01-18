@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Package, FilePen, X, Sun, Moon, Monitor, Volume2, Terminal } from 'lucide-svelte';
+	import { Package, FilePen, X, Sun, Moon, Monitor, Volume2, Terminal, GitBranch } from 'lucide-svelte';
 	import logo from '$lib/assets/logo.svg';
 	import wwiserTitle from '$lib/assets/wwiser.svg';
 	import { type NavItem, siteConfig } from '$lib/config/site';
@@ -29,7 +29,8 @@
 		package: Package,
 		edit: FilePen,
 		volume: Volume2,
-		terminal: Terminal
+		terminal: Terminal,
+		'git-branch': GitBranch
 	};
 
 	function closeSidebar() {
