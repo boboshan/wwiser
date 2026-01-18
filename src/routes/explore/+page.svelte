@@ -416,6 +416,9 @@
 						bind:value={selectedUri}
 						placeholder="Search {mode === 'call' ? 'functions' : 'topics'}..."
 						allowCustomValue={true}
+						variant="accent"
+						inputClass="font-mono"
+						itemClass="font-mono"
 					/>
 				</div>
 

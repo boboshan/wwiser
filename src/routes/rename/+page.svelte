@@ -247,7 +247,7 @@
 								: 'opacity-40'}"
 						>
 							<span class="text-xs text-muted w-6 shrink-0">{i + 1}</span>
-							<Badge>{getTypeDisplayName(obj.type)}</Badge>
+						<Badge variant="wwise">{getTypeDisplayName(obj.type)}</Badge>
 							<div class="flex-1 min-w-0 flex items-center gap-3">
 								<span class="text-sm text-base font-mono truncate">{obj.name}</span>
 								{#if willRename}

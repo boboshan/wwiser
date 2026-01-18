@@ -496,9 +496,9 @@
 				{#each unconfigured as sc (sc.container.id)}
 					{@const selectedGroupId = pendingGroups.get(sc.container.id)}
 					{@const selectedDefaultId = pendingDefaults.get(sc.container.id)}
-					<div class="p-4 border border-amber-500/30 rounded-xl bg-amber-500/5 space-y-4">
+					<div class="p-4 border border-amber-500/30 rounded-xl bg-amber-900/10 space-y-4">
 						<div class="flex items-center gap-2">
-							<Badge>Switch Container</Badge>
+							<Badge variant="amber">Switch Container</Badge>
 							<span class="text-sm font-medium truncate">{sc.container.name}</span>
 						</div>
 						<div class="grid gap-4 sm:grid-cols-2 sm:items-end">

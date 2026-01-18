@@ -23,7 +23,7 @@
 		return TYPE_DISPLAY_NAMES[type] ?? type;
 	}
 
-	export type BadgeVariant = 'default' | 'wwise' | 'purple' | 'blue' | 'green' | 'red';
+	export type BadgeVariant = 'default' | 'wwise' | 'purple' | 'blue' | 'green' | 'red' | 'amber';
 </script>
 
 <script lang="ts">
@@ -41,7 +41,8 @@
 		purple: 'text-purple-600 bg-purple-500/10 dark:text-purple-400',
 		blue: 'text-blue-600 bg-blue-500/10 dark:text-blue-400',
 		green: 'text-green-600 bg-green-500/10 dark:text-green-400',
-		red: 'text-red-600 bg-red-500/10 dark:text-red-400'
+		red: 'text-red-600 bg-red-500/10 dark:text-red-400',
+		amber: 'text-amber-600 bg-amber-500/10 dark:text-amber-400'
 	};
 </script>
 

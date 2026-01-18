@@ -18,6 +18,9 @@
 		id: string;
 		allowCustomValue?: boolean;
 		onchange?: (value: string) => void;
+		variant?: 'default' | 'accent';
+		inputClass?: string;
+		itemClass?: string;
 	}
 
 	let {
@@ -27,7 +30,10 @@
 		disabled = false,
 		id,
 		allowCustomValue = true,
-		onchange
+		onchange,
+		variant = 'default',
+		inputClass = '',
+		itemClass = ''
 	}: Props = $props();
 
 	let filteredItems = $state.raw<ComboboxItem[]>(allItems);
@@ -92,7 +98,8 @@
 			autocomplete="off"
 			class={[
 				'text-sm px-3 border rounded-lg bg-surface-50 h-10 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-wwise/20',
-				api.value.length > 0 ? 'text-wwise border-wwise/30' : 'text-base border-base'
+				variant === 'accent' && api.value.length > 0 ? 'text-wwise border-wwise/30' : 'text-base border-base',
+				inputClass
 			]}
 		/>
 	</div>
@@ -107,7 +114,10 @@
 					{#each filteredItems.slice(0, 50) as item (item.value)}
 						<li
 							{...api.getItemProps({ item })}
-							class="data-disabled:opacity-50 data-disabled:cursor-not-allowed text-sm px-3 py-2 cursor-pointer transition-colors data-highlighted:text-wwise data-[state=checked]:text-wwise data-highlighted:bg-wwise/20 data-[state=checked]:bg-wwise/10"
+							class={[
+								'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed text-sm px-3 py-2 cursor-pointer transition-colors data-[highlighted]:text-wwise data-[state=checked]:text-wwise data-[highlighted]:bg-wwise/20 data-[state=checked]:bg-wwise/10',
+								itemClass
+							]}
 						>
 							<span {...api.getItemTextProps({ item })}>{item.label}</span>
 						</li>
