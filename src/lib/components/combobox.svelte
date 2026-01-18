@@ -98,7 +98,9 @@
 			autocomplete="off"
 			class={[
 				'text-sm px-3 border rounded-lg bg-surface-50 h-10 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-wwise/20',
-				variant === 'accent' && api.value.length > 0 ? 'text-wwise border-wwise/30' : 'text-base border-base',
+				variant === 'accent' && api.value.length > 0
+					? 'text-wwise border-wwise/30'
+					: 'text-base border-base',
 				inputClass
 			]}
 		/>

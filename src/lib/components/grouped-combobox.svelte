@@ -59,8 +59,7 @@
 				...g,
 				items: g.items.filter(
 					(item) =>
-						item.label.toLowerCase().includes(query) ||
-						item.value.toLowerCase().includes(query)
+						item.label.toLowerCase().includes(query) || item.value.toLowerCase().includes(query)
 				)
 			}))
 			.filter((g) => g.items.length > 0);
@@ -121,7 +120,9 @@
 			autocomplete="off"
 			class={[
 				'text-sm px-3 border rounded-lg bg-surface-50 h-10 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-wwise/20',
-				variant === 'accent' && api.value.length > 0 ? 'text-wwise border-wwise/30' : 'text-base border-base',
+				variant === 'accent' && api.value.length > 0
+					? 'text-wwise border-wwise/30'
+					: 'text-base border-base',
 				inputClass
 			]}
 		/>
@@ -135,13 +136,15 @@
 					class="mt-1 border border-base rounded-lg bg-base max-h-64 w-full shadow-lg z-50 overflow-x-hidden overflow-y-auto"
 				>
 					{#each filteredGroups as group (group.label)}
-						<li class="px-3 py-1.5 text-[10px] text-muted tracking-wider font-medium uppercase bg-surface-50 sticky top-0 dark:bg-surface-800 border-b border-base">
+						<li
+							class="text-[10px] text-muted tracking-wider font-medium px-3 py-1.5 border-b border-base bg-surface-50 uppercase top-0 sticky dark:bg-surface-800"
+						>
 							{group.label}
 						</li>
 						{#each group.items as item (item.value)}
 							<li
 								{...api.getItemProps({ item })}
-								class="data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed text-sm px-3 py-2 cursor-pointer transition-colors data-[highlighted]:text-wwise data-[state=checked]:text-wwise data-[highlighted]:bg-wwise/20 data-[state=checked]:bg-wwise/10"
+								class="text-sm px-3 py-2 cursor-pointer transition-colors data-[highlighted]:text-wwise data-[state=checked]:text-wwise data-[highlighted]:bg-wwise/20 data-[state=checked]:bg-wwise/10 data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed"
 							>
 								<span {...api.getItemTextProps({ item })}>{item.label}</span>
 							</li>

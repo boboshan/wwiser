@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteMap } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
 	import { RefreshCw, Pencil, ClipboardPaste, Copy } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
@@ -17,7 +18,7 @@
 
 	// Preview mapping: object id -> new name
 	const previewMapping = $derived.by(() => {
-		const mapping = new Map<string, string>();
+		const mapping = new SvelteMap<string, string>();
 		const count = Math.min(selectedObjects.length, clipboardNames.length);
 		for (let i = 0; i < count; i++) {
 			const obj = selectedObjects[i];
@@ -30,14 +31,10 @@
 	});
 
 	// Objects that will be renamed
-	const objectsToRename = $derived(
-		selectedObjects.filter((obj) => previewMapping.has(obj.id))
-	);
+	const objectsToRename = $derived(selectedObjects.filter((obj) => previewMapping.has(obj.id)));
 
 	// Objects that won't be renamed (no matching line or same name)
-	const skippedObjects = $derived(
-		selectedObjects.filter((obj) => !previewMapping.has(obj.id))
-	);
+	const skippedObjects = $derived(selectedObjects.filter((obj) => !previewMapping.has(obj.id)));
 
 	async function refreshSelection() {
 		if (!wwise.isConnected) {
@@ -69,7 +66,7 @@
 			const count = text.split('\n').filter((line) => line.trim()).length;
 			statusMessage = `Parsed ${count} name(s) from clipboard`;
 			statusType = 'info';
-		} catch (error) {
+		} catch {
 			statusMessage = 'Failed to read clipboard. Please allow clipboard access.';
 			statusType = 'error';
 		}
@@ -190,7 +187,7 @@
 			placeholder="Paste new names here, one per line..."
 			spellcheck="false"
 			rows={6}
-			class="text-sm text-base font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors resize-y focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+			class="text-sm text-base font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full resize-y transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
 		></textarea>
 		<p class="text-xs text-muted m-0">
 			{clipboardNames.filter((n) => n.trim()).length} name(s) parsed
@@ -202,8 +199,10 @@
 		<div
 			class={[
 				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
-				statusType === 'success' && 'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
-				statusType === 'error' && 'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
+				statusType === 'success' &&
+					'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
+				statusType === 'error' &&
+					'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
 				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
 			]}
 		>
@@ -242,17 +241,17 @@
 						{@const newName = previewMapping.get(obj.id)}
 						{@const willRename = !!newName}
 						<div
-							class="px-4 py-3 border-b border-base last:border-b-0 flex items-center gap-4 {willRename
+							class="px-4 py-3 border-b border-base flex gap-4 items-center last:border-b-0 {willRename
 								? ''
 								: 'opacity-40'}"
 						>
-							<span class="text-xs text-muted w-6 shrink-0">{i + 1}</span>
-						<Badge variant="wwise">{getTypeDisplayName(obj.type)}</Badge>
-							<div class="flex-1 min-w-0 flex items-center gap-3">
+							<span class="text-xs text-muted shrink-0 w-6">{i + 1}</span>
+							<Badge variant="wwise">{getTypeDisplayName(obj.type)}</Badge>
+							<div class="flex flex-1 gap-3 min-w-0 items-center">
 								<span class="text-sm text-base font-mono truncate">{obj.name}</span>
 								{#if willRename}
 									<span class="text-wwise shrink-0">→</span>
-									<span class="text-sm text-wwise font-mono font-medium truncate">{newName}</span>
+									<span class="text-sm text-wwise font-medium font-mono truncate">{newName}</span>
 								{:else}
 									<span class="text-xs text-muted italic">
 										{clipboardNames[i]?.trim() ? '(unchanged)' : '(no name)'}

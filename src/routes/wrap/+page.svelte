@@ -405,8 +405,10 @@
 		<div
 			class={[
 				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
-				statusType === 'success' && 'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
-				statusType === 'error' && 'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
+				statusType === 'success' &&
+					'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
+				statusType === 'error' &&
+					'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
 				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
 			]}
 		>
@@ -447,14 +449,14 @@
 							<Badge variant="wwise">
 								{CONTAINER_TYPES.find((t) => t.value === containerType)?.label}
 							</Badge>
-							<span class="text-sm text-base font-medium truncate flex-1">
+							<span class="text-sm text-base font-medium flex-1 truncate">
 								{previewNames.get(key) || 'NewContainer'}
 							</span>
-							<span class="text-xs px-2 py-0.5 rounded-full shrink-0 bg-wwise/10 text-wwise">
+							<span class="text-xs text-wwise px-2 py-0.5 rounded-full bg-wwise/10 shrink-0">
 								{objects.length} child{objects.length !== 1 ? 'ren' : ''}
 							</span>
 						</div>
-						<div class="text-xs text-muted mt-2 mb-3 truncate" title={parentPath}>
+						<div class="text-xs text-muted mb-3 mt-2 truncate" title={parentPath}>
 							{parentPath}
 						</div>
 						<div class="pl-3 border-l-2 border-surface-200 space-y-1 dark:border-surface-700">

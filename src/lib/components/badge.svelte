@@ -47,7 +47,9 @@
 </script>
 
 <span
-	class="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 {variantClasses[variant]} {className}"
+	class="text-xs font-medium px-2 py-0.5 rounded-full shrink-0 {variantClasses[
+		variant
+	]} {className}"
 >
 	{@render children()}
 </span>

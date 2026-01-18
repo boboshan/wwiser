@@ -1,10 +1,19 @@
 <script lang="ts">
-	import { SvelteMap } from 'svelte/reactivity';
+	import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
-	import { RefreshCw, GitBranch, Settings2, ChevronDown, ChevronRight, AlertCircle } from 'lucide-svelte';
+	import {
+		RefreshCw,
+		GitBranch,
+		Settings2,
+		ChevronDown,
+		ChevronRight,
+		AlertCircle
+	} from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
-	import GroupedCombobox, { type GroupedComboboxGroup } from '$lib/components/grouped-combobox.svelte';
+	import GroupedCombobox, {
+		type GroupedComboboxGroup
+	} from '$lib/components/grouped-combobox.svelte';
 	import Combobox from '$lib/components/combobox.svelte';
 
 	// Types
@@ -51,16 +60,16 @@
 	let customRegex = $state('(.+)');
 	let customListText = $state('');
 	let caseSensitive = $state(false);
-	let expandedIds = $state<Set<string>>(new Set());
+	let expandedIds = new SvelteSet<string>();
 
 	// Per-item conflict resolution
-	let itemResolutions = $state<Map<string, ConflictResolution>>(new Map());
+	let itemResolutions = new SvelteMap<string, ConflictResolution>();
 
 	// Group configuration for unconfigured containers
 	let allSwitchGroups = $state<WwiseObject[]>([]);
 	let allStateGroups = $state<WwiseObject[]>([]);
-	let pendingGroups = $state<Map<string, string>>(new Map());
-	let pendingDefaults = $state<Map<string, string>>(new Map());
+	let pendingGroups = new SvelteMap<string, string>();
+	let pendingDefaults = new SvelteMap<string, string>();
 
 	const uid = $props.id();
 
@@ -113,7 +122,9 @@
 							isNew: existing.length === 0,
 							hasConflict: existing.length > 0,
 							existingSwitchIds: existing,
-							existingSwitchNames: existing.map((id) => sc.switches.find((s) => normalizeId(s.id) === normalizeId(id))?.name ?? id)
+							existingSwitchNames: existing.map(
+								(id) => sc.switches.find((s) => normalizeId(s.id) === normalizeId(id))?.name ?? id
+							)
 						});
 					}
 				}
@@ -169,7 +180,9 @@
 							const ext = (match[1] ?? match[0]).toLowerCase();
 							if (ext === swName || swName.includes(ext)) return sw;
 						}
-					} catch {}
+					} catch {
+						// Invalid regex pattern, skip matching
+					}
 					break;
 				case 'custom_list':
 					for (const m of customMappings) {
@@ -200,10 +213,13 @@
 				wwise.getAllStateGroups()
 			]);
 			switchContainers = await Promise.all(validContainers.map(loadContainerInfo));
-			pendingGroups = new Map();
-			pendingDefaults = new Map();
+			pendingGroups.clear();
+			pendingDefaults.clear();
 			// Expand all configured containers by default
-			expandedIds = new Set(switchContainers.filter(sc => !isNullGuid(sc.switchGroup?.id)).map(sc => sc.container.id));
+			expandedIds.clear();
+			for (const sc of switchContainers) {
+				if (!isNullGuid(sc.switchGroup?.id)) expandedIds.add(sc.container.id);
+			}
 			statusMessage = `Found ${validContainers.length} switch container(s)`;
 			statusType = 'info';
 		} catch (e) {
@@ -217,16 +233,29 @@
 	async function loadContainerInfo(container: WwiseObject): Promise<SwitchContainerInfo> {
 		let switchGroup: WwiseObject | null = null;
 		let defaultSwitch: WwiseObject | null = null;
-		try { switchGroup = await wwise.getSwitchGroupOrStateGroup(container.id); } catch {}
-		try { defaultSwitch = await wwise.getDefaultSwitchOrState(container.id); } catch {}
+		try {
+			switchGroup = await wwise.getSwitchGroupOrStateGroup(container.id);
+		} catch {
+			// Container may not have a switch group configured
+		}
+		try {
+			defaultSwitch = await wwise.getDefaultSwitchOrState(container.id);
+		} catch {
+			// Container may not have a default switch configured
+		}
 
 		const children = await wwise.getChildren(container.id);
 		let switches: WwiseObject[] = [];
 		if (switchGroup?.id && !isNullGuid(switchGroup.id)) {
-			try { switches = await wwise.getChildren(switchGroup.id); } catch {}
+			try {
+				switches = await wwise.getChildren(switchGroup.id);
+			} catch {
+				// Failed to get switches from group
+			}
 		}
 
-		const existingAssignments = new Map<string, string[]>();
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
+		const existingAssignments: Map<string, string[]> = new Map();
 		try {
 			const raw = await wwise.getSwitchContainerAssignments(container.id);
 			for (const a of raw) {
@@ -235,23 +264,25 @@
 				arr.push(a.stateOrSwitch);
 				existingAssignments.set(nid, arr);
 			}
-		} catch {}
+		} catch {
+			// Failed to get existing assignments
+		}
 
 		return { container, switchGroup, defaultSwitch, children, switches, existingAssignments };
 	}
 
 	async function handleGroupSelect(containerId: string, groupId: string) {
 		pendingGroups.set(containerId, groupId);
-		pendingGroups = new Map(pendingGroups);
 		// Clear previous default selection since it's no longer valid
 		pendingDefaults.delete(containerId);
-		pendingDefaults = new Map(pendingDefaults);
 		try {
 			const switches = await wwise.getChildren(groupId);
 			switchContainers = switchContainers.map((sc) =>
 				sc.container.id === containerId ? { ...sc, switches } : sc
 			);
-		} catch {}
+		} catch {
+			// Failed to get switches from group
+		}
 	}
 
 	async function configureContainer(containerId: string) {
@@ -262,16 +293,16 @@
 			await wwise.setSwitchGroupOrStateGroup(containerId, groupId);
 			const defaultId = pendingDefaults.get(containerId);
 			if (defaultId) await wwise.setDefaultSwitchOrState(containerId, defaultId);
-			
+
 			const container = switchContainers.find((sc) => sc.container.id === containerId)?.container;
 			if (container) {
 				const newInfo = await loadContainerInfo(container);
-				switchContainers = switchContainers.map((sc) => sc.container.id === containerId ? newInfo : sc);
+				switchContainers = switchContainers.map((sc) =>
+					sc.container.id === containerId ? newInfo : sc
+				);
 			}
 			pendingGroups.delete(containerId);
 			pendingDefaults.delete(containerId);
-			pendingGroups = new Map(pendingGroups);
-			pendingDefaults = new Map(pendingDefaults);
 			statusMessage = 'Container configured';
 			statusType = 'success';
 		} catch (e) {
@@ -284,20 +315,17 @@
 
 	function setResolution(childId: string, res: ConflictResolution) {
 		itemResolutions.set(childId, res);
-		itemResolutions = new Map(itemResolutions);
 	}
 
 	function setAllResolutions(res: ConflictResolution) {
 		for (const items of previews.values()) {
 			for (const p of items) if (p.hasConflict) itemResolutions.set(p.childId, res);
 		}
-		itemResolutions = new Map(itemResolutions);
 	}
 
 	function toggleExpand(id: string) {
 		if (expandedIds.has(id)) expandedIds.delete(id);
 		else expandedIds.add(id);
-		expandedIds = new Set(expandedIds);
 	}
 
 	async function execute() {
@@ -307,7 +335,8 @@
 		statusType = 'info';
 		try {
 			await wwise.beginUndoGroup();
-			let assigned = 0, removed = 0;
+			let assigned = 0,
+				removed = 0;
 
 			for (const [containerId, items] of previews) {
 				for (const p of items) {
@@ -317,7 +346,9 @@
 							try {
 								await wwise.removeSwitchContainerAssignment(containerId, p.childId, existingId);
 								removed++;
-							} catch {}
+							} catch {
+								// Failed to remove assignment, continue
+							}
 						}
 					}
 					try {
@@ -334,9 +365,13 @@
 			statusType = 'success';
 			selectedObjects = [];
 			switchContainers = [];
-			itemResolutions = new Map();
+			itemResolutions.clear();
 		} catch (e) {
-			try { await wwise.endUndoGroup('Assign Switch Container Children (Failed)'); } catch {}
+			try {
+				await wwise.endUndoGroup('Assign Switch Container Children (Failed)');
+			} catch {
+				// Failed to end undo group
+			}
 			statusMessage = e instanceof Error ? e.message : 'Assignment failed';
 			statusType = 'error';
 		} finally {
@@ -362,11 +397,16 @@
 			</button>
 			<button
 				onclick={execute}
-				disabled={!wwise.isConnected || totalAssignments === 0 || isExecuting || unconfigured.length > 0}
+				disabled={!wwise.isConnected ||
+					totalAssignments === 0 ||
+					isExecuting ||
+					unconfigured.length > 0}
 				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed"
 			>
 				<GitBranch size={16} />
-				{isExecuting ? 'Assigning...' : `Assign${totalAssignments > 0 ? ` (${totalAssignments})` : ''}`}
+				{isExecuting
+					? 'Assigning...'
+					: `Assign${totalAssignments > 0 ? ` (${totalAssignments})` : ''}`}
 			</button>
 		</div>
 	</div>
@@ -375,7 +415,9 @@
 	<div class="p-5 border border-base rounded-xl bg-base space-y-5">
 		<!-- Rules -->
 		<fieldset class="space-y-3">
-			<legend class="text-[10px] text-muted tracking-wider font-medium uppercase">Assignment Rule</legend>
+			<legend class="text-[10px] text-muted tracking-wider font-medium uppercase"
+				>Assignment Rule</legend
+			>
 			<div class="gap-2 grid sm:grid-cols-4">
 				{#each RULES as r (r.value)}
 					<label
@@ -397,65 +439,96 @@
 		<!-- Rule-specific options -->
 		{#if rule === 'custom_regex'}
 			<div class="space-y-2">
-				<label for="{uid}-regex" class="text-[10px] text-muted tracking-wider font-medium uppercase block">Regex Pattern</label>
+				<label
+					for="{uid}-regex"
+					class="text-[10px] text-muted tracking-wider font-medium block uppercase"
+					>Regex Pattern</label
+				>
 				<input
 					id="{uid}-regex"
 					type="text"
 					bind:value={customRegex}
 					placeholder="(.+)_\d+$"
-					class="text-sm font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors focus:outline-none focus:border-wwise focus:ring-1 focus:ring-wwise/20 dark:bg-surface-800"
+					class="text-sm font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
 				/>
 				<p class="text-xs text-muted">
-					Use capture groups. Example: <code class="px-1 py-0.5 bg-surface-200 rounded text-xs dark:bg-surface-700">(.+)_var\d+</code> extracts "Grass" from "Grass_var01"
+					Use capture groups. Example: <code
+						class="text-xs px-1 py-0.5 rounded bg-surface-200 dark:bg-surface-700">(.+)_var\d+</code
+					> extracts "Grass" from "Grass_var01"
 				</p>
 			</div>
 		{:else if rule === 'custom_list'}
 			<div class="space-y-2">
-				<label for="{uid}-list" class="text-[10px] text-muted tracking-wider font-medium uppercase block">Mappings (ChildPattern, SwitchPattern)</label>
+				<label
+					for="{uid}-list"
+					class="text-[10px] text-muted tracking-wider font-medium block uppercase"
+					>Mappings (ChildPattern, SwitchPattern)</label
+				>
 				<textarea
 					id="{uid}-list"
 					bind:value={customListText}
-					placeholder="Boss_A, Cool&#10;Boss_B, Fun"
+					placeholder="Banana, Fruit"
 					rows="4"
-					class="text-sm font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors focus:outline-none focus:border-wwise focus:ring-1 focus:ring-wwise/20 dark:bg-surface-800 resize-y"
+					class="text-sm font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full resize-y transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
 				></textarea>
 				{#if customMappings.length > 0}
 					<p class="text-xs text-muted">
 						{customMappings.length} mapping{customMappings.length !== 1 ? 's' : ''}:
-						{#each customMappings.slice(0, 3) as m}
-							<span class="ml-1 px-1 py-0.5 bg-surface-200 rounded text-xs dark:bg-surface-700">{m.child}→{m.sw}</span>
+						{#each customMappings.slice(0, 3) as m, i (i)}
+							<span class="text-xs ml-1 px-1 py-0.5 rounded bg-surface-200 dark:bg-surface-700"
+								>{m.child}→{m.sw}</span
+							>
 						{/each}
-						{#if customMappings.length > 3}<span class="ml-1">+{customMappings.length - 3}</span>{/if}
+						{#if customMappings.length > 3}<span class="ml-1">+{customMappings.length - 3}</span
+							>{/if}
 					</p>
 				{/if}
 			</div>
 		{/if}
 
 		<!-- Options row -->
-		<div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-			<label class="flex items-center gap-2 cursor-pointer">
-				<input type="checkbox" bind:checked={caseSensitive} class="rounded border-base accent-wwise" />
+		<div class="text-sm flex flex-wrap gap-x-6 gap-y-2">
+			<label class="flex gap-2 cursor-pointer items-center">
+				<input
+					type="checkbox"
+					bind:checked={caseSensitive}
+					class="accent-wwise border-base rounded"
+				/>
 				<span class="text-muted">Case sensitive</span>
 			</label>
 		</div>
 
 		<!-- Bulk conflict resolution -->
 		{#if totalConflicts > 0}
-			<div class="flex flex-wrap items-center gap-3 p-3 border border-amber-500/30 bg-amber-500/5 rounded-lg text-sm">
-				<div class="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+			<div
+				class="text-sm p-3 border border-amber-500/30 rounded-lg bg-amber-500/5 flex flex-wrap gap-3 items-center"
+			>
+				<div class="text-amber-600 flex gap-2 items-center dark:text-amber-400">
 					<AlertCircle size={16} />
-					<span class="font-medium">{totalConflicts} conflict{totalConflicts !== 1 ? 's' : ''} found</span>
+					<span class="font-medium"
+						>{totalConflicts} conflict{totalConflicts !== 1 ? 's' : ''} found</span
+					>
 				</div>
-				<div class="flex gap-1 ml-auto p-1 bg-surface-100 rounded-lg dark:bg-surface-800">
+				<div class="ml-auto p-1 rounded-lg bg-surface-100 flex gap-1 dark:bg-surface-800">
 					<button
 						onclick={() => setAllResolutions('keep')}
-						class={['text-xs font-medium px-3 py-1.5 rounded-md transition-colors', bulkResolution === 'keep' ? 'bg-blue-500 text-white shadow-sm' : 'text-muted hover:text-base hover:bg-surface-200 dark:hover:bg-surface-700']}
+						class={[
+							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors',
+							bulkResolution === 'keep'
+								? 'bg-blue-500 text-white shadow-sm'
+								: 'text-muted hover:text-base hover:bg-surface-200 dark:hover:bg-surface-700'
+						]}
 					>
 						Keep All
 					</button>
 					<button
 						onclick={() => setAllResolutions('replace')}
-						class={['text-xs font-medium px-3 py-1.5 rounded-md transition-colors', bulkResolution === 'replace' ? 'bg-amber-500 text-white shadow-sm' : 'text-muted hover:text-base hover:bg-surface-200 dark:hover:bg-surface-700']}
+						class={[
+							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors',
+							bulkResolution === 'replace'
+								? 'bg-amber-500 text-white shadow-sm'
+								: 'text-muted hover:text-base hover:bg-surface-200 dark:hover:bg-surface-700'
+						]}
 					>
 						Replace All
 					</button>
@@ -469,8 +542,10 @@
 		<div
 			class={[
 				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
-				statusType === 'success' && 'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
-				statusType === 'error' && 'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
+				statusType === 'success' &&
+					'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
+				statusType === 'error' &&
+					'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
 				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
 			]}
 		>
@@ -488,7 +563,9 @@
 	<!-- Unconfigured containers -->
 	{#if unconfigured.length > 0}
 		<section>
-			<h3 class="text-[10px] tracking-wider font-medium uppercase flex items-center gap-1.5 mb-4 text-amber-600 dark:text-amber-400">
+			<h3
+				class="text-[10px] text-amber-600 tracking-wider font-medium mb-4 flex gap-1.5 uppercase items-center dark:text-amber-400"
+			>
 				<Settings2 size={14} />
 				Needs Configuration ({unconfigured.length})
 			</h3>
@@ -497,13 +574,15 @@
 					{@const selectedGroupId = pendingGroups.get(sc.container.id)}
 					{@const selectedDefaultId = pendingDefaults.get(sc.container.id)}
 					<div class="p-4 border border-amber-500/30 rounded-xl bg-amber-900/10 space-y-4">
-						<div class="flex items-center gap-2">
+						<div class="flex gap-2 items-center">
 							<Badge variant="amber">Switch Container</Badge>
 							<span class="text-sm font-medium truncate">{sc.container.name}</span>
 						</div>
-						<div class="grid gap-4 sm:grid-cols-2 sm:items-end">
+						<div class="gap-4 grid sm:grid-cols-2 sm:items-end">
 							<div class="space-y-2">
-								<span class="text-[10px] text-muted tracking-wider font-medium uppercase block">Switch/State Group</span>
+								<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
+									>Switch/State Group</span
+								>
 								<GroupedCombobox
 									groups={groupOptions}
 									value={selectedGroupId}
@@ -514,13 +593,17 @@
 							</div>
 							{#if selectedGroupId && sc.switches.length > 0}
 								<div class="space-y-2">
-									<span class="text-[10px] text-muted tracking-wider font-medium uppercase block">Default Switch (optional)</span>
+									<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
+										>Default Switch (optional)</span
+									>
 									<Combobox
 										items={sc.switches.map((s) => ({ label: s.name, value: s.id }))}
 										value={selectedDefaultId}
 										placeholder="Select default..."
 										id="{uid}-def-{sc.container.id}"
-										onchange={(v) => { pendingDefaults.set(sc.container.id, v); pendingDefaults = new Map(pendingDefaults); }}
+										onchange={(v) => {
+											pendingDefaults.set(sc.container.id, v);
+										}}
 									/>
 								</div>
 							{/if}
@@ -542,8 +625,10 @@
 	{#if configured.length > 0}
 		<section class="space-y-3">
 			<div class="flex items-center justify-between">
-				<h3 class="text-[10px] text-muted tracking-wider font-medium uppercase m-0">Preview</h3>
-				<span class="text-xs text-muted">{totalAssignments} assignment{totalAssignments !== 1 ? 's' : ''}</span>
+				<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">Preview</h3>
+				<span class="text-xs text-muted"
+					>{totalAssignments} assignment{totalAssignments !== 1 ? 's' : ''}</span
+				>
 			</div>
 			<div class="space-y-2">
 				{#each configured as sc (sc.container.id)}
@@ -554,15 +639,25 @@
 						<!-- Container header -->
 						<button
 							onclick={() => toggleExpand(sc.container.id)}
-							class="w-full flex items-center gap-2 text-left"
+							class="text-left flex gap-2 w-full items-center"
 						>
-							{#if expanded}<ChevronDown size={14} class="text-muted shrink-0" />{:else}<ChevronRight size={14} class="text-muted shrink-0" />{/if}
-							<div class="flex items-center gap-2 min-w-0 flex-1">
+							{#if expanded}<ChevronDown
+									size={14}
+									class="text-muted shrink-0"
+								/>{:else}<ChevronRight size={14} class="text-muted shrink-0" />{/if}
+							<div class="flex flex-1 gap-2 min-w-0 items-center">
 								<Badge variant="wwise">Switch Container</Badge>
 								<span class="text-sm text-base font-medium truncate">{sc.container.name}</span>
 							</div>
 							<span class="text-xs text-muted shrink-0">{sc.switchGroup?.name ?? '—'}</span>
-							<span class={['text-xs px-2 py-0.5 rounded-full shrink-0', items.length > 0 ? 'bg-wwise/10 text-wwise' : 'bg-surface-100 text-muted dark:bg-surface-700']}>
+							<span
+								class={[
+									'text-xs px-2 py-0.5 rounded-full shrink-0',
+									items.length > 0
+										? 'bg-wwise/10 text-wwise'
+										: 'bg-surface-100 text-muted dark:bg-surface-700'
+								]}
+							>
 								{items.length} match{items.length !== 1 ? 'es' : ''}
 							</span>
 						</button>
@@ -575,32 +670,55 @@
 										{#each items as p (p.childId)}
 											{@const res = itemResolutions.get(p.childId)}
 											{@const willReplace = p.hasConflict && res === 'replace'}
-											<div class={['text-sm', p.hasConflict && 'p-2 -ml-3 pl-3 rounded-r-lg bg-amber-500/5 border-l-2 border-amber-500']}>
-												<div class="flex items-center gap-2 flex-wrap">
+											<div
+												class={[
+													'text-sm',
+													p.hasConflict &&
+														'p-2 -ml-3 pl-3 rounded-r-lg bg-amber-500/5 border-l-2 border-amber-500'
+												]}
+											>
+												<div class="flex flex-wrap gap-2 items-center">
 													<span class="text-muted truncate">{p.childName}</span>
 													<span class="text-wwise">→</span>
 													<span class="text-wwise font-medium">{p.switchName}</span>
 													{#if p.hasConflict}
-														<span class={['text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0', willReplace ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'bg-blue-500/20 text-blue-600 dark:text-blue-400']}>
+														<span
+															class={[
+																'text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0',
+																willReplace
+																	? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+																	: 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+															]}
+														>
 															{willReplace ? 'replaces' : '+adds'}
 														</span>
 													{/if}
 												</div>
 												{#if p.hasConflict}
-													<div class="mt-2 flex items-center gap-2 text-xs flex-wrap">
+													<div class="text-xs mt-2 flex flex-wrap gap-2 items-center">
 														<span class="text-amber-600 dark:text-amber-400">
 															Currently assigned to: {p.existingSwitchNames.join(', ')}
 														</span>
-														<div class="flex gap-1.5 ml-auto shrink-0">
+														<div class="ml-auto flex shrink-0 gap-1.5">
 															<button
 																onclick={() => setResolution(p.childId, 'keep')}
-																class={['px-2.5 py-1 rounded-md font-medium border transition-colors', res !== 'replace' ? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700']}
+																class={[
+																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
+																	res !== 'replace'
+																		? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+																		: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																]}
 															>
 																Keep
 															</button>
 															<button
 																onclick={() => setResolution(p.childId, 'replace')}
-																class={['px-2.5 py-1 rounded-md font-medium border transition-colors', res === 'replace' ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700']}
+																class={[
+																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
+																	res === 'replace'
+																		? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+																		: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																]}
 															>
 																Replace
 															</button>
@@ -611,16 +729,20 @@
 										{/each}
 									</div>
 								{:else}
-									<p class="text-sm text-muted text-center py-2 m-0">No matches found</p>
+									<p class="text-sm text-muted m-0 py-2 text-center">No matches found</p>
 								{/if}
 
 								<!-- Unmatched children -->
 								{#if unmatched.length > 0}
 									<details class="mt-3 pt-3 border-t border-base">
-										<summary class="text-xs text-muted cursor-pointer hover:text-base transition-colors">
+										<summary
+											class="text-xs text-muted cursor-pointer transition-colors hover:text-base"
+										>
 											{unmatched.length} unmatched child{unmatched.length !== 1 ? 'ren' : ''}
 										</summary>
-										<div class="mt-2 pl-3 border-l-2 border-surface-200 space-y-1 dark:border-surface-700">
+										<div
+											class="mt-2 pl-3 border-l-2 border-surface-200 space-y-1 dark:border-surface-700"
+										>
 											{#each unmatched as c (c.id)}
 												<div class="text-xs text-muted truncate">{c.name}</div>
 											{/each}

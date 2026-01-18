@@ -528,157 +528,163 @@
 	{#if volumeData.length > 0}
 		<section class="space-y-3">
 			<div class="flex items-center justify-between">
-				<h3 class="text-[10px] text-muted tracking-wider font-medium uppercase m-0">Results</h3>
-				<span class="text-xs text-muted">{volumeData.length} object{volumeData.length !== 1 ? 's' : ''}</span>
+				<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">Results</h3>
+				<span class="text-xs text-muted"
+					>{volumeData.length} object{volumeData.length !== 1 ? 's' : ''}</span
+				>
 			</div>
 			<div class="space-y-2">
-			{#each volumeData as item (item.object.id)}
-				{@const hierarchyContribs = item.contributions.filter(
-					(c) => c.category === 'self' || c.category === 'ancestor'
-				)}
-				{@const busContribs = item.contributions.filter((c) => c.category === 'bus')}
-				{@const hierarchySum = hierarchyContribs.reduce((s, c) => s + c.total, 0)}
-				{@const busSum = busContribs.reduce((s, c) => s + c.total, 0)}
-				{@const isExpanded = expandedRows.has(item.object.id)}
+				{#each volumeData as item (item.object.id)}
+					{@const hierarchyContribs = item.contributions.filter(
+						(c) => c.category === 'self' || c.category === 'ancestor'
+					)}
+					{@const busContribs = item.contributions.filter((c) => c.category === 'bus')}
+					{@const hierarchySum = hierarchyContribs.reduce((s, c) => s + c.total, 0)}
+					{@const busSum = busContribs.reduce((s, c) => s + c.total, 0)}
+					{@const isExpanded = expandedRows.has(item.object.id)}
 
-				<div class="p-4 border border-base rounded-lg bg-base">
-					<!-- Main row -->
-					<button
-						class="w-full flex items-center gap-2 text-left"
-						onclick={() => toggleRow(item.object.id)}
-					>
-						<ChevronRight
-							size={14}
-							class="text-muted shrink-0 transition-transform duration-150 {isExpanded
-								? 'rotate-90'
-								: ''}"
-						/>
-						<div class="flex flex-1 gap-2 min-w-0 items-center">
-							<Badge variant="wwise">{getTypeDisplayName(item.object.type)}</Badge>
-							<span class="text-sm text-base font-medium truncate">{item.object.name}</span>
-						</div>
-						<div class="text-xs flex shrink-0 gap-4 items-center">
-							<div class="text-right">
-								<div class="text-[10px] text-muted uppercase">Hierarchy</div>
-								<div class="font-mono {getVolumeColor(hierarchySum)}">
-									{formatVolume(hierarchySum)}
-								</div>
+					<div class="p-4 border border-base rounded-lg bg-base">
+						<!-- Main row -->
+						<button
+							class="text-left flex gap-2 w-full items-center"
+							onclick={() => toggleRow(item.object.id)}
+						>
+							<ChevronRight
+								size={14}
+								class="text-muted shrink-0 transition-transform duration-150 {isExpanded
+									? 'rotate-90'
+									: ''}"
+							/>
+							<div class="flex flex-1 gap-2 min-w-0 items-center">
+								<Badge variant="wwise">{getTypeDisplayName(item.object.type)}</Badge>
+								<span class="text-sm text-base font-medium truncate">{item.object.name}</span>
 							</div>
-							<div class="text-right">
-								<div class="text-[10px] text-muted uppercase">Bus</div>
-								<div class="font-mono {getVolumeColor(busSum)}">{formatVolume(busSum)}</div>
-							</div>
-							<div class="text-right min-w-20">
-								<div class="text-[10px] text-muted uppercase">Effective</div>
-								<div class="font-mono font-semibold {getVolumeColor(item.effectiveVolume)}">
-									{formatVolume(item.effectiveVolume)}
-								</div>
-							</div>
-						</div>
-					</button>
-
-					<!-- Expanded details -->
-					{#if isExpanded}
-						<div class="mt-3 pt-3 border-t border-base space-y-4">
-							<!-- Hierarchy contributions -->
-							{#if hierarchyContribs.length > 0}
-								<div>
-									<div
-										class="text-[10px] text-muted tracking-wider font-medium mb-2 ml-1 uppercase"
-									>
-										Actor-Mixer Hierarchy
+							<div class="text-xs flex shrink-0 gap-4 items-center">
+								<div class="text-right">
+									<div class="text-[10px] text-muted uppercase">Hierarchy</div>
+									<div class="font-mono {getVolumeColor(hierarchySum)}">
+										{formatVolume(hierarchySum)}
 									</div>
-									<div class="pl-4 border-l-2 border-purple-500/30 space-y-3">
-										{#each hierarchyContribs as contrib (contrib.id)}
-											<div class="text-xs py-1.5 space-y-1.5">
-												<div class="flex items-center justify-between">
-													<div class="flex gap-2 items-center">
-														<Badge variant={contrib.badgeVariant}>
-															{contrib.typeName}
-														</Badge>
-														<span class="text-base">{contrib.name}</span>
-														{#if contrib.outputBusName}
-															<span class="text-[10px] text-blue-500">{contrib.outputBusName}</span>
-														{/if}
+								</div>
+								<div class="text-right">
+									<div class="text-[10px] text-muted uppercase">Bus</div>
+									<div class="font-mono {getVolumeColor(busSum)}">{formatVolume(busSum)}</div>
+								</div>
+								<div class="text-right min-w-20">
+									<div class="text-[10px] text-muted uppercase">Effective</div>
+									<div class="font-mono font-semibold {getVolumeColor(item.effectiveVolume)}">
+										{formatVolume(item.effectiveVolume)}
+									</div>
+								</div>
+							</div>
+						</button>
+
+						<!-- Expanded details -->
+						{#if isExpanded}
+							<div class="mt-3 pt-3 border-t border-base space-y-4">
+								<!-- Hierarchy contributions -->
+								{#if hierarchyContribs.length > 0}
+									<div>
+										<div
+											class="text-[10px] text-muted tracking-wider font-medium mb-2 ml-1 uppercase"
+										>
+											Actor-Mixer Hierarchy
+										</div>
+										<div class="pl-4 border-l-2 border-purple-500/30 space-y-3">
+											{#each hierarchyContribs as contrib (contrib.id)}
+												<div class="text-xs py-1.5 space-y-1.5">
+													<div class="flex items-center justify-between">
+														<div class="flex gap-2 items-center">
+															<Badge variant={contrib.badgeVariant}>
+																{contrib.typeName}
+															</Badge>
+															<span class="text-base">{contrib.name}</span>
+															{#if contrib.outputBusName}
+																<span class="text-[10px] text-blue-500"
+																	>{contrib.outputBusName}</span
+																>
+															{/if}
+														</div>
+														<span class="font-medium font-mono {getVolumeColor(contrib.total)}">
+															{formatVolume(contrib.total)}
+														</span>
 													</div>
-													<span class="font-medium font-mono {getVolumeColor(contrib.total)}">
-														{formatVolume(contrib.total)}
-													</span>
-												</div>
-												<VolumeSlider
-													label="Voice"
-													slider={contrib.volumeState}
-													disabled={isSaving}
-													oncommit={(v) => handleVolumeChange(contrib, 'Volume', v)}
-												/>
-												{#if contrib.outputBusVolumeState}
 													<VolumeSlider
-														label="OutBus"
-														slider={contrib.outputBusVolumeState}
+														label="Voice"
+														slider={contrib.volumeState}
 														disabled={isSaving}
-														oncommit={(v) => handleVolumeChange(contrib, 'OutputBusVolume', v)}
+														oncommit={(v) => handleVolumeChange(contrib, 'Volume', v)}
 													/>
-												{/if}
-											</div>
-										{/each}
+													{#if contrib.outputBusVolumeState}
+														<VolumeSlider
+															label="OutBus"
+															slider={contrib.outputBusVolumeState}
+															disabled={isSaving}
+															oncommit={(v) => handleVolumeChange(contrib, 'OutputBusVolume', v)}
+														/>
+													{/if}
+												</div>
+											{/each}
+										</div>
 									</div>
-								</div>
-							{/if}
+								{/if}
 
-							<!-- Bus chain contributions -->
-							{#if busContribs.length > 0}
-								<div>
-									<div
-										class="text-[10px] text-muted tracking-wider font-medium mb-2 ml-1 uppercase"
-									>
-										Output Bus Chain
-									</div>
-									<div class="pl-4 border-l-2 border-blue-500/30 space-y-3">
-										{#each busContribs as contrib (contrib.id)}
-											<div class="text-xs py-1.5 space-y-1.5">
-												<div class="flex items-center justify-between">
-													<div class="flex gap-2 items-center">
-														<Badge variant={contrib.badgeVariant}>
-															{contrib.typeName}
-														</Badge>
-														<span class="text-base">{contrib.name}</span>
-														{#if contrib.outputBusName}
-															<span class="text-[10px] text-blue-500">{contrib.outputBusName}</span>
-														{/if}
+								<!-- Bus chain contributions -->
+								{#if busContribs.length > 0}
+									<div>
+										<div
+											class="text-[10px] text-muted tracking-wider font-medium mb-2 ml-1 uppercase"
+										>
+											Output Bus Chain
+										</div>
+										<div class="pl-4 border-l-2 border-blue-500/30 space-y-3">
+											{#each busContribs as contrib (contrib.id)}
+												<div class="text-xs py-1.5 space-y-1.5">
+													<div class="flex items-center justify-between">
+														<div class="flex gap-2 items-center">
+															<Badge variant={contrib.badgeVariant}>
+																{contrib.typeName}
+															</Badge>
+															<span class="text-base">{contrib.name}</span>
+															{#if contrib.outputBusName}
+																<span class="text-[10px] text-blue-500"
+																	>{contrib.outputBusName}</span
+																>
+															{/if}
+														</div>
+														<span class="font-medium font-mono {getVolumeColor(contrib.total)}">
+															{formatVolume(contrib.total)}
+														</span>
 													</div>
-													<span class="font-medium font-mono {getVolumeColor(contrib.total)}">
-														{formatVolume(contrib.total)}
-													</span>
-												</div>
-												<VolumeSlider
-													label="Voice"
-													slider={contrib.voiceVolumeState!}
-													disabled={isSaving}
-													oncommit={(v) => handleVolumeChange(contrib, 'Volume', v)}
-												/>
-												<VolumeSlider
-													label="Bus"
-													slider={contrib.busVolumeState!}
-													disabled={isSaving}
-													oncommit={(v) => handleVolumeChange(contrib, 'BusVolume', v)}
-												/>
-												{#if contrib.outputBusVolumeState}
 													<VolumeSlider
-														label="OutBus"
-														slider={contrib.outputBusVolumeState}
+														label="Voice"
+														slider={contrib.voiceVolumeState!}
 														disabled={isSaving}
-														oncommit={(v) => handleVolumeChange(contrib, 'OutputBusVolume', v)}
+														oncommit={(v) => handleVolumeChange(contrib, 'Volume', v)}
 													/>
-												{/if}
-											</div>
-										{/each}
+													<VolumeSlider
+														label="Bus"
+														slider={contrib.busVolumeState!}
+														disabled={isSaving}
+														oncommit={(v) => handleVolumeChange(contrib, 'BusVolume', v)}
+													/>
+													{#if contrib.outputBusVolumeState}
+														<VolumeSlider
+															label="OutBus"
+															slider={contrib.outputBusVolumeState}
+															disabled={isSaving}
+															oncommit={(v) => handleVolumeChange(contrib, 'OutputBusVolume', v)}
+														/>
+													{/if}
+												</div>
+											{/each}
+										</div>
 									</div>
-								</div>
-							{/if}
-						</div>
-					{/if}
-				</div>
-			{/each}
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/each}
 			</div>
 		</section>
 	{/if}

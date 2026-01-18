@@ -342,17 +342,11 @@ class WwiseConnection {
 	// -------------------------------------------------------------------------
 
 	async getAllSwitchGroups(): Promise<WwiseObject[]> {
-		return this.getObjects(
-			{ ofType: ['SwitchGroup'] },
-			['id', 'name', 'type', 'path']
-		);
+		return this.getObjects({ ofType: ['SwitchGroup'] }, ['id', 'name', 'type', 'path']);
 	}
 
 	async getAllStateGroups(): Promise<WwiseObject[]> {
-		return this.getObjects(
-			{ ofType: ['StateGroup'] },
-			['id', 'name', 'type', 'path']
-		);
+		return this.getObjects({ ofType: ['StateGroup'] }, ['id', 'name', 'type', 'path']);
 	}
 
 	async getSwitchGroupOrStateGroup(objectId: string): Promise<WwiseObject | null> {
