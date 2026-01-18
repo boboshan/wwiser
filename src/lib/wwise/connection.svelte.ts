@@ -121,13 +121,8 @@ class WwiseConnection {
 			return this.isConnected;
 		}
 
-		// Check for HTTPS mixed content issue
-		if (window.location.protocol === 'https:') {
-			this.status = 'error';
-			this.error =
-				'Cannot connect from HTTPS. Wwise WAAPI only supports insecure WebSocket (ws://). Please access this site via HTTP instead.';
-			return false;
-		}
+		// Note: Browsers allow ws:// connections to localhost from HTTPS pages
+		// (localhost is considered a secure context), so we don't block HTTPS here.
 
 		this.#host = host;
 		this.#port = port;
