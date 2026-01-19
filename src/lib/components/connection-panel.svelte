@@ -155,7 +155,7 @@
 					</button>
 
 					<p class="text-xs text-muted leading-relaxed mb-0 mt-3">
-						Add <code class="text-wwise px-1 py-0.5 rounded bg-wwise/10">https://wwiser.app</code>
+						Add <code class="text-wwise px-1 py-0.5 rounded bg-wwise/10">https://wwiser.net</code>
 						to
 						<strong>User Preferences → Allow browser connections from</strong>.
 					</p>

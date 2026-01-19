@@ -164,7 +164,7 @@
 	<!-- Footer with theme toggle -->
 	<div class="px-3 py-4 border-t border-base flex items-center justify-between">
 		<a
-			href="https://roll.wwiser.app/"
+			href="https://roll.wwiser.net/"
 			target="_blank"
 			rel="noopener noreferrer"
 			class="hover-bg text-sm text-muted font-medium p-2 rounded-lg no-underline flex gap-1.5 transition-colors items-center hover:text-base"
