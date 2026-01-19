@@ -46,10 +46,11 @@ self.addEventListener('install', (event) => {
 				try {
 					const response = await fetch(url, { mode: 'cors' });
 					if (response.ok) {
+						// Store with the URL string to ensure consistent cache keys
 						await cache.put(url, response);
 					}
 				} catch {
-					// Skip CDN resources that fail to fetch during install
+					console.warn(`[SW] Failed to cache CDN resource: ${url}`);
 				}
 			}
 		})()
@@ -87,19 +88,20 @@ self.addEventListener('fetch', (event) => {
 	// Handle CDN resources: cache-first for offline support
 	if (CDN_RESOURCES.includes(request.url)) {
 		event.respondWith(
-			caches.match(request).then((cached) => {
+			// Use ignoreSearch and ignoreVary for more reliable cache matching
+			caches.match(request.url, { ignoreSearch: true, ignoreVary: true }).then((cached) => {
 				if (cached) return cached;
 				return fetch(request)
 					.then((response) => {
 						if (response.ok) {
 							const responseClone = response.clone();
 							caches.open(CACHE_NAME).then((cache) => {
-								cache.put(request, responseClone);
+								cache.put(request.url, responseClone);
 							});
 						}
 						return response;
 					})
-					.catch(() => new Response('', { status: 503 }));
+					.catch(() => new Response('Failed to load autobahn library', { status: 503 }));
 			})
 		);
 		return;
