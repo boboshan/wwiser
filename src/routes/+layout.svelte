@@ -78,7 +78,7 @@
 		</header>
 
 		<!-- Mobile header -->
-		<header class="px-4 py-3 border-b border-base bg-base flex items-center lg:hidden">
+		<header class="px-4 py-3 border-b border-base bg-base flex gap-2 items-center lg:hidden">
 			<a href="/" class="flex shrink-0">
 				<img src={logo} alt="Wwiser" class="h-7 w-7" />
 			</a>
@@ -91,9 +91,10 @@
 				<ChevronDown class="mt-0.5 h-4 w-4" />
 			</button>
 			<div class="flex-1"></div>
+			<ConnectionPanel />
 			<button
 				onclick={() => themeStore.toggle()}
-				class="p-2 rounded-lg bg-hover -mr-2"
+				class="p-2 rounded-lg bg-hover"
 				aria-label="Toggle theme"
 			>
 				<ThemeIcon class="h-5 w-5" />

@@ -85,7 +85,14 @@ self.addEventListener('fetch', (event) => {
 				})
 				.catch(async () => {
 					const cached = await caches.match(request);
-					return cached ?? (await caches.match('/')) ?? new Response('Offline', { status: 503 });
+					if (cached) return cached;
+					// For prerendered SPA, serve the cached index page for any route
+					const indexPage = await caches.match('/');
+					if (indexPage) return indexPage;
+					return new Response('Offline', {
+						status: 503,
+						headers: { 'Content-Type': 'text/plain' }
+					});
 				})
 		);
 		return;

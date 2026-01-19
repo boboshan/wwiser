@@ -1,8 +1,13 @@
 <script lang="ts">
-	// This page redirects to /app via +page.server.ts
-	// Placeholder content in case redirect doesn't happen (e.g., during prerendering)
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+
+	// Client-side redirect for PWA/prerender compatibility
+	onMount(() => {
+		goto('/explore', { replaceState: true });
+	});
 </script>
 
 <div class="text-muted bg-base flex h-screen items-center justify-center">
-	<p>Redirecting to app...</p>
+	<p>Redirecting...</p>
 </div>
