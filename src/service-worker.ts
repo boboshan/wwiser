@@ -11,15 +11,31 @@ const CACHE_NAME = `${APP_NAME}-${version}`;
 // Assets to cache on install
 const PRECACHE_ASSETS = [
 	...build, // Built JS/CSS from /_app/
-	...files  // Static files from /static/
+	...files // Static files from /static/
 ];
+
+// App routes to cache for offline access
+const APP_ROUTES = ['/', '/wrap', '/volume', '/rename', '/assign', '/explore'];
 
 // Install: precache app shell
 self.addEventListener('install', (event) => {
 	event.waitUntil(
-		caches.open(CACHE_NAME).then((cache) => {
-			return cache.addAll(PRECACHE_ASSETS);
-		})
+		(async () => {
+			const cache = await caches.open(CACHE_NAME);
+			// Cache static assets
+			await cache.addAll(PRECACHE_ASSETS);
+			// Cache app routes (HTML pages)
+			for (const route of APP_ROUTES) {
+				try {
+					const response = await fetch(route);
+					if (response.ok) {
+						await cache.put(route, response);
+					}
+				} catch {
+					// Skip routes that fail to fetch during install
+				}
+			}
+		})()
 	);
 	// Activate immediately
 	self.skipWaiting();
@@ -76,7 +92,10 @@ self.addEventListener('fetch', (event) => {
 	}
 
 	// For static assets: cache-first with network fallback
-	if (url.pathname.startsWith('/_app/') || url.pathname.match(/\.(js|css|woff2?|png|jpg|svg|ico)$/)) {
+	if (
+		url.pathname.startsWith('/_app/') ||
+		url.pathname.match(/\.(js|css|woff2?|png|jpg|svg|ico)$/)
+	) {
 		event.respondWith(
 			caches.match(request).then((cached) => {
 				if (cached) return cached;

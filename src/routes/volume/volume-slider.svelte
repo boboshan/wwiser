@@ -109,7 +109,7 @@
 		oninput={handleSliderInput}
 		onchange={handleSliderChange}
 		{disabled}
-		class="accent-wwise h-1 w-28 sm:w-40 cursor-pointer disabled:opacity-50"
+		class="accent-wwise h-1 w-28 cursor-pointer disabled:opacity-50 sm:w-40"
 	/>
 	<input
 		type="number"
