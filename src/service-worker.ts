@@ -17,6 +17,12 @@ const PRECACHE_ASSETS = [
 // App routes to cache for offline access
 const APP_ROUTES = ['/', '/wrap', '/volume', '/rename', '/assign', '/explore'];
 
+// External CDN resources to cache for offline use
+const CDN_RESOURCES = [
+	'https://unpkg.com/autobahn-browser@22.11.1/autobahn.min.js',
+	'https://cdn.jsdelivr.net/npm/autobahn-browser@22.11.1/autobahn.min.js'
+];
+
 // Install: precache app shell
 self.addEventListener('install', (event) => {
 	event.waitUntil(
@@ -33,6 +39,17 @@ self.addEventListener('install', (event) => {
 					}
 				} catch {
 					// Skip routes that fail to fetch during install
+				}
+			}
+			// Cache CDN resources for offline use
+			for (const url of CDN_RESOURCES) {
+				try {
+					const response = await fetch(url, { mode: 'cors' });
+					if (response.ok) {
+						await cache.put(url, response);
+					}
+				} catch {
+					// Skip CDN resources that fail to fetch during install
 				}
 			}
 		})()
@@ -64,11 +81,32 @@ self.addEventListener('fetch', (event) => {
 	// Skip non-GET requests
 	if (request.method !== 'GET') return;
 
-	// Skip external requests
-	if (url.origin !== self.location.origin) return;
-
 	// Skip WebSocket connections (WAAPI)
 	if (url.protocol === 'ws:' || url.protocol === 'wss:') return;
+
+	// Handle CDN resources: cache-first for offline support
+	if (CDN_RESOURCES.includes(request.url)) {
+		event.respondWith(
+			caches.match(request).then((cached) => {
+				if (cached) return cached;
+				return fetch(request)
+					.then((response) => {
+						if (response.ok) {
+							const responseClone = response.clone();
+							caches.open(CACHE_NAME).then((cache) => {
+								cache.put(request, responseClone);
+							});
+						}
+						return response;
+					})
+					.catch(() => new Response('', { status: 503 }));
+			})
+		);
+		return;
+	}
+
+	// Skip other external requests
+	if (url.origin !== self.location.origin) return;
 
 	// For navigation requests: network-first with cache fallback
 	if (request.mode === 'navigate') {
@@ -107,15 +145,20 @@ self.addEventListener('fetch', (event) => {
 			caches.match(request).then((cached) => {
 				if (cached) return cached;
 
-				return fetch(request).then((response) => {
-					if (response.ok) {
-						const responseClone = response.clone();
-						caches.open(CACHE_NAME).then((cache) => {
-							cache.put(request, responseClone);
-						});
-					}
-					return response;
-				});
+				return fetch(request)
+					.then((response) => {
+						if (response.ok) {
+							const responseClone = response.clone();
+							caches.open(CACHE_NAME).then((cache) => {
+								cache.put(request, responseClone);
+							});
+						}
+						return response;
+					})
+					.catch(() => {
+						// Return empty response for missing static assets when offline
+						return new Response('', { status: 404 });
+					});
 			})
 		);
 		return;
@@ -135,7 +178,9 @@ self.addEventListener('fetch', (event) => {
 			})
 			.catch(async () => {
 				const cached = await caches.match(request);
-				return cached ?? new Response('Offline', { status: 503 });
+				if (cached) return cached;
+				// Return empty response instead of throwing
+				return new Response('', { status: 503 });
 			})
 	);
 });

@@ -7,7 +7,9 @@
 		Settings2,
 		ChevronDown,
 		ChevronRight,
-		AlertCircle
+		AlertCircle,
+		SkipForward,
+		Check
 	} from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
@@ -23,18 +25,23 @@
 		defaultSwitch: WwiseObject | null;
 		children: WwiseObject[];
 		switches: WwiseObject[];
-		existingAssignments: Map<string, string[]>;
+		existingAssignments: Map<string, string[]>; // childId -> switchIds[]
+		switchToChildren: Map<string, string[]>; // switchId -> childNames[]
 	}
 
 	interface AssignmentPreview {
 		childId: string;
 		childName: string;
-		switchId: string;
-		switchName: string;
+		matchedSwitches: WwiseObject[]; // All switches that match this child
+		selectedSwitchId: string; // Currently selected switch to assign
+		selectedSwitchName: string;
 		isNew: boolean;
 		hasConflict: boolean;
 		existingSwitchIds: string[];
 		existingSwitchNames: string[];
+		isSkipped: boolean;
+		// For each matched switch, which children are already assigned to it
+		switchExistingChildren: Map<string, string[]>;
 	}
 
 	type ConflictResolution = 'keep' | 'replace';
@@ -62,8 +69,14 @@
 	let caseSensitive = $state(false);
 	let expandedIds = new SvelteSet<string>();
 
-	// Per-item conflict resolution
+	// Per-item conflict resolution (child already assigned to switches)
 	let itemResolutions = new SvelteMap<string, ConflictResolution>();
+	// Per-item switch conflict resolution (switch already has children)
+	let switchResolutions = new SvelteMap<string, ConflictResolution>();
+	// Per-item skipped state
+	let skippedItems = new SvelteSet<string>();
+	// Per-item selected switch (when multiple matches)
+	let selectedSwitches = new SvelteMap<string, string>();
 
 	// Group configuration for unconfigured containers
 	let allSwitchGroups = $state<WwiseObject[]>([]);
@@ -108,23 +121,40 @@
 		for (const sc of configured) {
 			const items: AssignmentPreview[] = [];
 			for (const child of sc.children) {
-				const match = findMatch(child.name, sc.switches);
-				if (match) {
+				const matches = findAllMatches(child.name, sc.switches);
+				if (matches.length > 0) {
 					const nid = normalizeId(child.id);
 					const existing = sc.existingAssignments.get(nid) ?? [];
-					const alreadyAssigned = existing.map(normalizeId).includes(normalizeId(match.id));
-					if (!alreadyAssigned) {
+					// Filter out matches that are already assigned
+					const newMatches = matches.filter(
+						(m) => !existing.map(normalizeId).includes(normalizeId(m.id))
+					);
+					if (newMatches.length > 0) {
+						// Use selected switch if set, otherwise default to first (most specific) match
+						const selectedId = selectedSwitches.get(child.id) ?? newMatches[0].id;
+						const selectedSwitch = newMatches.find((m) => m.id === selectedId) ?? newMatches[0];
+						// Build map of which children are already assigned to each matched switch
+						const switchExistingChildren = new SvelteMap<string, string[]>();
+						for (const sw of newMatches) {
+							const existingChildren = sc.switchToChildren.get(normalizeId(sw.id)) ?? [];
+							if (existingChildren.length > 0) {
+								switchExistingChildren.set(sw.id, existingChildren);
+							}
+						}
 						items.push({
 							childId: child.id,
 							childName: child.name,
-							switchId: match.id,
-							switchName: match.name,
+							matchedSwitches: newMatches,
+							selectedSwitchId: selectedSwitch.id,
+							selectedSwitchName: selectedSwitch.name,
 							isNew: existing.length === 0,
 							hasConflict: existing.length > 0,
 							existingSwitchIds: existing,
 							existingSwitchNames: existing.map(
 								(id) => sc.switches.find((s) => normalizeId(s.id) === normalizeId(id))?.name ?? id
-							)
+							),
+							isSkipped: skippedItems.has(child.id),
+							switchExistingChildren
 						});
 					}
 				}
@@ -134,51 +164,75 @@
 		return map;
 	});
 
-	const totalAssignments = $derived([...previews.values()].reduce((s, p) => s + p.length, 0));
-	const totalConflicts = $derived.by(() => {
+	const totalAssignments = $derived.by(() => {
+		let count = 0;
+		for (const items of previews.values()) {
+			for (const p of items) {
+				if (!p.isSkipped) count++;
+			}
+		}
+		return count;
+	});
+	const totalSkipped = $derived.by(() => {
+		let count = 0;
+		for (const items of previews.values()) {
+			for (const p of items) {
+				if (p.isSkipped) count++;
+			}
+		}
+		return count;
+	});
+
+	// Count switch conflicts (switches that already have children assigned)
+	const totalSwitchConflicts = $derived.by(() => {
 		let c = 0;
 		for (const items of previews.values()) {
-			for (const p of items) if (p.hasConflict) c++;
+			for (const p of items) {
+				const existing = p.switchExistingChildren.get(p.selectedSwitchId) ?? [];
+				if (existing.length > 0) c++;
+			}
 		}
 		return c;
 	});
 
-	// Check if all conflicts have the same resolution
-	const bulkResolution = $derived.by(() => {
-		if (totalConflicts === 0) return null;
+	// Check if all switch conflicts have the same resolution
+	const bulkSwitchResolution = $derived.by(() => {
+		if (totalSwitchConflicts === 0) return null;
 		let allKeep = true;
 		let allReplace = true;
 		for (const items of previews.values()) {
 			for (const p of items) {
-				if (p.hasConflict) {
-					const res = itemResolutions.get(p.childId);
+				const existing = p.switchExistingChildren.get(p.selectedSwitchId) ?? [];
+				if (existing.length > 0) {
+					const res = switchResolutions.get(p.childId);
 					if (res === 'replace') allKeep = false;
-					else allReplace = false; // 'keep' or undefined (default to keep)
+					else allReplace = false;
 				}
 			}
 		}
 		if (allKeep) return 'keep' as const;
 		if (allReplace) return 'replace' as const;
-		return null; // mixed
+		return null;
 	});
 
-	function findMatch(childName: string, switches: WwiseObject[]): WwiseObject | null {
+	function findAllMatches(childName: string, switches: WwiseObject[]): WwiseObject[] {
 		const name = caseSensitive ? childName : childName.toLowerCase();
+		const matches: WwiseObject[] = [];
 		for (const sw of switches) {
 			const swName = caseSensitive ? sw.name : sw.name.toLowerCase();
 			switch (rule) {
 				case 'name_contains':
-					if (name.includes(swName)) return sw;
+					if (name.includes(swName)) matches.push(sw);
 					break;
 				case 'name_equals':
-					if (name === swName) return sw;
+					if (name === swName) matches.push(sw);
 					break;
 				case 'custom_regex':
 					try {
 						const match = childName.match(new RegExp(customRegex, caseSensitive ? '' : 'i'));
 						if (match) {
 							const ext = (match[1] ?? match[0]).toLowerCase();
-							if (ext === swName || swName.includes(ext)) return sw;
+							if (ext === swName || swName.includes(ext)) matches.push(sw);
 						}
 					} catch {
 						// Invalid regex pattern, skip matching
@@ -188,12 +242,16 @@
 					for (const m of customMappings) {
 						const cp = caseSensitive ? m.child : m.child.toLowerCase();
 						const sp = caseSensitive ? m.sw : m.sw.toLowerCase();
-						if (name.includes(cp) && swName.includes(sp)) return sw;
+						if (name.includes(cp) && swName.includes(sp)) {
+							matches.push(sw);
+							break; // Only add each switch once per custom mapping
+						}
 					}
 					break;
 			}
 		}
-		return null;
+		// Sort matches by name length descending (longer/more specific names first)
+		return matches.sort((a, b) => b.name.length - a.name.length);
 	}
 
 	async function loadSelection() {
@@ -215,6 +273,10 @@
 			switchContainers = await Promise.all(validContainers.map(loadContainerInfo));
 			pendingGroups.clear();
 			pendingDefaults.clear();
+			itemResolutions.clear();
+			switchResolutions.clear();
+			skippedItems.clear();
+			selectedSwitches.clear();
 			// Expand all configured containers by default
 			expandedIds.clear();
 			for (const sc of switchContainers) {
@@ -256,19 +318,38 @@
 
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
 		const existingAssignments: Map<string, string[]> = new Map();
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local variable, not reactive state
+		const switchToChildren: Map<string, string[]> = new Map();
 		try {
 			const raw = await wwise.getSwitchContainerAssignments(container.id);
 			for (const a of raw) {
-				const nid = a.child.replace(/[{}]/g, '').toLowerCase();
-				const arr = existingAssignments.get(nid) ?? [];
-				arr.push(a.stateOrSwitch);
-				existingAssignments.set(nid, arr);
+				const childNid = a.child.replace(/[{}]/g, '').toLowerCase();
+				const switchNid = a.stateOrSwitch.replace(/[{}]/g, '').toLowerCase();
+				// Child -> switches mapping
+				const childArr = existingAssignments.get(childNid) ?? [];
+				childArr.push(a.stateOrSwitch);
+				existingAssignments.set(childNid, childArr);
+				// Switch -> children mapping (store child name for display)
+				const childObj = children.find((c) => normalizeId(c.id) === childNid);
+				if (childObj) {
+					const switchArr = switchToChildren.get(switchNid) ?? [];
+					switchArr.push(childObj.name);
+					switchToChildren.set(switchNid, switchArr);
+				}
 			}
 		} catch {
 			// Failed to get existing assignments
 		}
 
-		return { container, switchGroup, defaultSwitch, children, switches, existingAssignments };
+		return {
+			container,
+			switchGroup,
+			defaultSwitch,
+			children,
+			switches,
+			existingAssignments,
+			switchToChildren
+		};
 	}
 
 	async function handleGroupSelect(containerId: string, groupId: string) {
@@ -313,13 +394,35 @@
 		}
 	}
 
-	function setResolution(childId: string, res: ConflictResolution) {
-		itemResolutions.set(childId, res);
+	function toggleSkip(childId: string) {
+		if (skippedItems.has(childId)) skippedItems.delete(childId);
+		else skippedItems.add(childId);
 	}
 
-	function setAllResolutions(res: ConflictResolution) {
+	function skipAll() {
 		for (const items of previews.values()) {
-			for (const p of items) if (p.hasConflict) itemResolutions.set(p.childId, res);
+			for (const p of items) skippedItems.add(p.childId);
+		}
+	}
+
+	function unskipAll() {
+		skippedItems.clear();
+	}
+
+	function selectSwitch(childId: string, switchId: string) {
+		selectedSwitches.set(childId, switchId);
+	}
+
+	function setSwitchResolution(childId: string, res: ConflictResolution) {
+		switchResolutions.set(childId, res);
+	}
+
+	function setAllSwitchResolutions(res: ConflictResolution) {
+		for (const items of previews.values()) {
+			for (const p of items) {
+				const existing = p.switchExistingChildren.get(p.selectedSwitchId) ?? [];
+				if (existing.length > 0) switchResolutions.set(p.childId, res);
+			}
 		}
 	}
 
@@ -340,8 +443,13 @@
 
 			for (const [containerId, items] of previews) {
 				for (const p of items) {
-					const shouldRemove = p.hasConflict && itemResolutions.get(p.childId) === 'replace';
-					if (shouldRemove) {
+					// Skip if marked as skipped
+					if (p.isSkipped) continue;
+
+					// Handle child -> switch conflict (remove child from existing switches)
+					const shouldRemoveFromSwitches =
+						p.hasConflict && itemResolutions.get(p.childId) === 'replace';
+					if (shouldRemoveFromSwitches) {
 						for (const existingId of p.existingSwitchIds) {
 							try {
 								await wwise.removeSwitchContainerAssignment(containerId, p.childId, existingId);
@@ -351,8 +459,34 @@
 							}
 						}
 					}
+
+					// Handle switch -> children conflict (remove other children from target switch)
+					const existingChildrenOnSwitch = p.switchExistingChildren.get(p.selectedSwitchId) ?? [];
+					const shouldRemoveFromSwitch =
+						existingChildrenOnSwitch.length > 0 && switchResolutions.get(p.childId) === 'replace';
+					if (shouldRemoveFromSwitch) {
+						const sc = switchContainers.find((s) => s.container.id === containerId);
+						if (sc) {
+							for (const childName of existingChildrenOnSwitch) {
+								const childObj = sc.children.find((c) => c.name === childName);
+								if (childObj) {
+									try {
+										await wwise.removeSwitchContainerAssignment(
+											containerId,
+											childObj.id,
+											p.selectedSwitchId
+										);
+										removed++;
+									} catch {
+										// Failed to remove assignment, continue
+									}
+								}
+							}
+						}
+					}
+
 					try {
-						await wwise.assignSwitchContainerChild(containerId, p.childId, p.switchId);
+						await wwise.assignSwitchContainerChild(containerId, p.childId, p.selectedSwitchId);
 						assigned++;
 					} catch (e) {
 						if (!(e instanceof Error && e.message.includes('already exists'))) throw e;
@@ -366,6 +500,9 @@
 			selectedObjects = [];
 			switchContainers = [];
 			itemResolutions.clear();
+			switchResolutions.clear();
+			skippedItems.clear();
+			selectedSwitches.clear();
 		} catch (e) {
 			try {
 				await wwise.endUndoGroup('Assign Switch Container Children (Failed)');
@@ -498,36 +635,39 @@
 			</label>
 		</div>
 
-		<!-- Bulk conflict resolution -->
-		{#if totalConflicts > 0}
+		<!-- Bulk switch conflict resolution -->
+		{#if totalSwitchConflicts > 0}
 			<div
 				class="text-sm p-3 border border-amber-500/30 rounded-lg bg-amber-500/5 flex flex-wrap gap-3 items-center"
 			>
 				<div class="text-amber-600 flex gap-2 items-center dark:text-amber-400">
 					<AlertCircle size={16} />
 					<span class="font-medium"
-						>{totalConflicts} conflict{totalConflicts !== 1 ? 's' : ''} found</span
+						>{totalSwitchConflicts} conflict{totalSwitchConflicts !== 1 ? 's' : ''}</span
 					>
 				</div>
-				<div class="ml-auto p-1 rounded-lg bg-surface-100 flex gap-1 dark:bg-surface-800">
+				<span class="text-xs text-amber-600/70 dark:text-amber-400/70"
+					>Switches already have other children</span
+				>
+				<div class="ml-auto flex gap-1.5">
 					<button
-						onclick={() => setAllResolutions('keep')}
+						onclick={() => setAllSwitchResolutions('keep')}
 						class={[
-							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors',
-							bulkResolution === 'keep'
-								? 'bg-blue-500 text-white shadow-sm'
-								: 'text-muted hover:text-base hover:bg-surface-200 dark:hover:bg-surface-700'
+							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors border',
+							bulkSwitchResolution === 'keep'
+								? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+								: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 						]}
 					>
 						Keep All
 					</button>
 					<button
-						onclick={() => setAllResolutions('replace')}
+						onclick={() => setAllSwitchResolutions('replace')}
 						class={[
-							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors',
-							bulkResolution === 'replace'
-								? 'bg-amber-500 text-white shadow-sm'
-								: 'text-muted hover:text-base hover:bg-surface-200 dark:hover:bg-surface-700'
+							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors border',
+							bulkSwitchResolution === 'replace'
+								? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+								: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 						]}
 					>
 						Replace All
@@ -624,11 +764,46 @@
 	<!-- Preview -->
 	{#if configured.length > 0}
 		<section class="space-y-3">
-			<div class="flex items-center justify-between">
+			<div class="flex gap-3 items-center justify-between">
 				<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">Preview</h3>
-				<span class="text-xs text-muted"
-					>{totalAssignments} assignment{totalAssignments !== 1 ? 's' : ''}</span
-				>
+				<div class="flex gap-3 items-center">
+					<div class="text-xs flex gap-2 items-center">
+						{#if totalSkipped > 0}
+							<span class="text-surface-500">{totalSkipped} skipped</span>
+							<span class="text-surface-300 dark:text-surface-600">·</span>
+						{/if}
+						<span class="text-muted">{totalAssignments} to assign</span>
+					</div>
+					<!-- Skip controls -->
+					{#if totalAssignments > 0 || totalSkipped > 0}
+						<div class="p-1 rounded-lg bg-surface-100 flex gap-1 dark:bg-surface-800">
+							<button
+								onclick={unskipAll}
+								disabled={totalSkipped === 0}
+								class={[
+									'text-xs font-medium px-2.5 py-1 rounded-md transition-colors',
+									totalSkipped === 0
+										? 'bg-green-500 text-white shadow-sm'
+										: 'text-muted hover:text-base hover:bg-surface-200 dark:hover:bg-surface-700 disabled:opacity-50'
+								]}
+							>
+								Include All
+							</button>
+							<button
+								onclick={skipAll}
+								disabled={totalAssignments === 0}
+								class={[
+									'text-xs font-medium px-2.5 py-1 rounded-md transition-colors',
+									totalAssignments === 0 && totalSkipped > 0
+										? 'bg-surface-400 text-white shadow-sm'
+										: 'text-muted hover:text-base hover:bg-surface-200 dark:hover:bg-surface-700 disabled:opacity-50'
+								]}
+							>
+								Skip All
+							</button>
+						</div>
+					{/if}
+				</div>
 			</div>
 			<div class="space-y-2">
 				{#each configured as sc (sc.container.id)}
@@ -668,43 +843,81 @@
 								{#if items.length > 0}
 									<div class="pl-3 border-l-2 border-surface-200 space-y-2 dark:border-surface-700">
 										{#each items as p (p.childId)}
-											{@const res = itemResolutions.get(p.childId)}
-											{@const willReplace = p.hasConflict && res === 'replace'}
-											<div
-												class={[
-													'text-sm',
-													p.hasConflict &&
-														'p-2 -ml-3 pl-3 rounded-r-lg bg-amber-500/5 border-l-2 border-amber-500'
-												]}
-											>
+											{@const switchRes = switchResolutions.get(p.childId)}
+											{@const hasMultipleMatches = p.matchedSwitches.length > 1}
+											{@const selectedSwitchExisting =
+												p.switchExistingChildren.get(p.selectedSwitchId) ?? []}
+											{@const hasSwitchConflict = selectedSwitchExisting.length > 0}
+											<div class={['text-sm py-1.5', p.isSkipped && 'opacity-50']}>
 												<div class="flex flex-wrap gap-2 items-center">
-													<span class="text-muted truncate">{p.childName}</span>
-													<span class="text-wwise">→</span>
-													<span class="text-wwise font-medium">{p.switchName}</span>
-													{#if p.hasConflict}
+													<!-- Skip toggle button -->
+													<button
+														onclick={() => toggleSkip(p.childId)}
+														class={[
+															'p-1 rounded transition-colors shrink-0',
+															p.isSkipped
+																? 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300'
+																: 'text-green-500 hover:text-green-600 dark:hover:text-green-400'
+														]}
+														title={p.isSkipped ? 'Include this assignment' : 'Skip this assignment'}
+													>
+														{#if p.isSkipped}
+															<SkipForward size={16} />
+														{:else}
+															<Check size={16} />
+														{/if}
+													</button>
+													<span
+														class={[
+															'truncate',
+															p.isSkipped ? 'text-surface-400 line-through' : 'text-muted'
+														]}>{p.childName}</span
+													>
+													<span class={p.isSkipped ? 'text-surface-400' : 'text-wwise'}>→</span>
+													{#if hasMultipleMatches && !p.isSkipped}
+														<!-- Switch selector dropdown for multiple matches -->
+														<select
+															value={p.selectedSwitchId}
+															onchange={(e) => selectSwitch(p.childId, e.currentTarget.value)}
+															class="text-sm text-wwise font-medium px-2 py-0.5 border border-wwise/30 rounded bg-wwise/5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-wwise/30"
+														>
+															{#each p.matchedSwitches as sw (sw.id)}
+																{@const swExisting = p.switchExistingChildren.get(sw.id) ?? []}
+																<option value={sw.id}
+																	>{sw.name}{swExisting.length > 0
+																		? ` (${swExisting.length} assigned)`
+																		: ''}</option
+																>
+															{/each}
+														</select>
+														<span
+															class="text-[10px] text-muted px-1.5 py-0.5 rounded bg-surface-100 dark:bg-surface-700"
+														>
+															{p.matchedSwitches.length} matches
+														</span>
+													{:else}
 														<span
 															class={[
-																'text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0',
-																willReplace
-																	? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-																	: 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
-															]}
+																'font-medium',
+																p.isSkipped ? 'text-surface-400 line-through' : 'text-wwise'
+															]}>{p.selectedSwitchName}</span
 														>
-															{willReplace ? 'replaces' : '+adds'}
-														</span>
 													{/if}
 												</div>
-												{#if p.hasConflict}
+												<!-- Show which children are already assigned to the selected switch -->
+												{#if hasSwitchConflict && !p.isSkipped}
 													<div class="text-xs mt-2 flex flex-wrap gap-2 items-center">
 														<span class="text-amber-600 dark:text-amber-400">
-															Currently assigned to: {p.existingSwitchNames.join(', ')}
+															<span class="font-medium">{p.selectedSwitchName}</span> already has: {selectedSwitchExisting.join(
+																', '
+															)}
 														</span>
 														<div class="ml-auto flex shrink-0 gap-1.5">
 															<button
-																onclick={() => setResolution(p.childId, 'keep')}
+																onclick={() => setSwitchResolution(p.childId, 'keep')}
 																class={[
 																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
-																	res !== 'replace'
+																	switchRes !== 'replace'
 																		? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
 																		: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 																]}
@@ -712,10 +925,10 @@
 																Keep
 															</button>
 															<button
-																onclick={() => setResolution(p.childId, 'replace')}
+																onclick={() => setSwitchResolution(p.childId, 'replace')}
 																class={[
 																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
-																	res === 'replace'
+																	switchRes === 'replace'
 																		? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
 																		: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 																]}
