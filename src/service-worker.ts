@@ -7,6 +7,8 @@ declare const self: ServiceWorkerGlobalScope;
 
 const APP_NAME = 'wwiser';
 const CACHE_NAME = `${APP_NAME}-${version}`;
+// Separate cache for CDN resources - survives app version updates
+const CDN_CACHE_NAME = `${APP_NAME}-cdn-v1`;
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
@@ -17,64 +19,82 @@ const PRECACHE_ASSETS = [
 // App routes to cache for offline access
 const APP_ROUTES = ['/', '/wrap', '/volume', '/rename', '/assign', '/explore'];
 
-// External CDN resources to cache for offline use
-const CDN_RESOURCES = [
+// External CDN resources - multiple sources for redundancy
+const CDN_RESOURCES = new Set([
 	'https://unpkg.com/autobahn-browser@22.11.1/autobahn.min.js',
 	'https://cdn.jsdelivr.net/npm/autobahn-browser@22.11.1/autobahn.min.js'
-];
+]);
 
+// ============================================================================
 // Install: precache app shell
+// ============================================================================
 self.addEventListener('install', (event) => {
 	event.waitUntil(
 		(async () => {
-			const cache = await caches.open(CACHE_NAME);
-			// Cache static assets
-			await cache.addAll(PRECACHE_ASSETS);
+			// Cache app assets
+			const appCache = await caches.open(CACHE_NAME);
+			await appCache.addAll(PRECACHE_ASSETS);
+
 			// Cache app routes (HTML pages)
-			for (const route of APP_ROUTES) {
-				try {
-					const response = await fetch(route);
-					if (response.ok) {
-						await cache.put(route, response);
+			await Promise.allSettled(
+				APP_ROUTES.map(async (route) => {
+					try {
+						const response = await fetch(route);
+						if (response.ok) {
+							await appCache.put(route, response);
+						}
+					} catch {
+						// Skip routes that fail during install
 					}
-				} catch {
-					// Skip routes that fail to fetch during install
-				}
-			}
-			// Cache CDN resources for offline use
-			for (const url of CDN_RESOURCES) {
-				try {
-					const response = await fetch(url, { mode: 'cors' });
-					if (response.ok) {
-						// Store with the URL string to ensure consistent cache keys
-						await cache.put(url, response);
+				})
+			);
+
+			// Cache CDN resources in separate cache
+			const cdnCache = await caches.open(CDN_CACHE_NAME);
+			await Promise.allSettled(
+				[...CDN_RESOURCES].map(async (url) => {
+					// Skip if already cached
+					const existing = await cdnCache.match(url);
+					if (existing) return;
+
+					try {
+						const response = await fetch(url, { mode: 'cors' });
+						if (response.ok) {
+							await cdnCache.put(url, response);
+						}
+					} catch {
+						// CDN might be blocked or unavailable during install
 					}
-				} catch {
-					console.warn(`[SW] Failed to cache CDN resource: ${url}`);
-				}
-			}
+				})
+			);
 		})()
 	);
-	// Activate immediately
 	self.skipWaiting();
 });
 
-// Activate: clean up old caches
+// ============================================================================
+// Activate: clean up old caches (preserve CDN cache)
+// ============================================================================
 self.addEventListener('activate', (event) => {
 	event.waitUntil(
-		caches.keys().then((cacheNames) => {
-			return Promise.all(
+		caches.keys().then((cacheNames) =>
+			Promise.all(
 				cacheNames
-					.filter((name) => name.startsWith(APP_NAME) && name !== CACHE_NAME)
+					.filter((name) => {
+						// Delete old app caches, but keep current and CDN cache
+						if (name === CACHE_NAME || name === CDN_CACHE_NAME) return false;
+						return name.startsWith(APP_NAME);
+					})
 					.map((name) => caches.delete(name))
-			);
-		})
+			)
+		)
 	);
-	// Take control of all pages immediately
 	self.clients.claim();
 });
 
-// Fetch: network-first for navigation, cache-first for static assets
+// ============================================================================
+// Fetch handler
+// ============================================================================
 self.addEventListener('fetch', (event) => {
 	const { request } = event;
 	const url = new URL(request.url);
@@ -85,104 +105,140 @@ self.addEventListener('fetch', (event) => {
 	// Skip WebSocket connections (WAAPI)
 	if (url.protocol === 'ws:' || url.protocol === 'wss:') return;
 
-	// Handle CDN resources: cache-first for offline support
-	if (CDN_RESOURCES.includes(request.url)) {
-		event.respondWith(
-			// Use ignoreSearch and ignoreVary for more reliable cache matching
-			caches.match(request.url, { ignoreSearch: true, ignoreVary: true }).then((cached) => {
-				if (cached) return cached;
-				return fetch(request)
-					.then((response) => {
-						if (response.ok) {
-							const responseClone = response.clone();
-							caches.open(CACHE_NAME).then((cache) => {
-								cache.put(request.url, responseClone);
-							});
-						}
-						return response;
-					})
-					.catch(() => new Response('Failed to load autobahn library', { status: 503 }));
-			})
-		);
+	// Handle CDN resources: stale-while-revalidate
+	if (CDN_RESOURCES.has(request.url)) {
+		event.respondWith(handleCdnRequest(request));
 		return;
 	}
 
 	// Skip other external requests
 	if (url.origin !== self.location.origin) return;
 
-	// For navigation requests: network-first with cache fallback
+	// Navigation: network-first with cache fallback
 	if (request.mode === 'navigate') {
-		event.respondWith(
-			fetch(request)
-				.then((response) => {
-					if (response.ok) {
-						const responseClone = response.clone();
-						caches.open(CACHE_NAME).then((cache) => {
-							cache.put(request, responseClone);
-						});
-					}
-					return response;
-				})
-				.catch(async () => {
-					const cached = await caches.match(request);
-					if (cached) return cached;
-					// For prerendered SPA, serve the cached index page for any route
-					const indexPage = await caches.match('/');
-					if (indexPage) return indexPage;
-					return new Response('Offline', {
-						status: 503,
-						headers: { 'Content-Type': 'text/plain' }
-					});
-				})
-		);
+		event.respondWith(handleNavigation(request));
 		return;
 	}
 
-	// For static assets: cache-first with network fallback
-	if (
-		url.pathname.startsWith('/_app/') ||
-		url.pathname.match(/\.(js|css|woff2?|png|jpg|svg|ico)$/)
-	) {
-		event.respondWith(
-			caches.match(request).then((cached) => {
-				if (cached) return cached;
-
-				return fetch(request)
-					.then((response) => {
-						if (response.ok) {
-							const responseClone = response.clone();
-							caches.open(CACHE_NAME).then((cache) => {
-								cache.put(request, responseClone);
-							});
-						}
-						return response;
-					})
-					.catch(() => {
-						// Return empty response for missing static assets when offline
-						return new Response('', { status: 404 });
-					});
-			})
-		);
+	// Static assets: cache-first
+	if (isStaticAsset(url)) {
+		event.respondWith(handleStaticAsset(request));
 		return;
 	}
 
 	// Default: network-first
-	event.respondWith(
-		fetch(request)
-			.then((response) => {
-				if (response.ok) {
-					const responseClone = response.clone();
-					caches.open(CACHE_NAME).then((cache) => {
-						cache.put(request, responseClone);
-					});
-				}
-				return response;
-			})
-			.catch(async () => {
-				const cached = await caches.match(request);
-				if (cached) return cached;
-				// Return empty response instead of throwing
-				return new Response('', { status: 503 });
-			})
-	);
+	event.respondWith(handleDefault(request));
 });
+
+// ============================================================================
+// Request handlers
+// ============================================================================
+
+/**
+ * CDN resources: stale-while-revalidate
+ * Returns cached version immediately (if available) while fetching fresh copy
+ */
+async function handleCdnRequest(request: Request): Promise<Response> {
+	const cache = await caches.open(CDN_CACHE_NAME);
+	const cached = await cache.match(request.url);
+
+	// Revalidate in background (don't await)
+	const revalidate = fetch(request, { mode: 'cors' })
+		.then((response) => {
+			if (response.ok) {
+				cache.put(request.url, response.clone());
+			}
+			return response;
+		})
+		.catch(() => null);
+
+	// Return cached immediately if available
+	if (cached) {
+		return cached;
+	}
+
+	// No cache - must wait for network
+	const response = await revalidate;
+	if (response) {
+		return response;
+	}
+
+	return new Response('CDN resource unavailable', {
+		status: 503,
+		headers: { 'Content-Type': 'text/plain' }
+	});
+}
+
+/**
+ * Navigation: network-first with cache fallback
+ */
+async function handleNavigation(request: Request): Promise<Response> {
+	try {
+		const response = await fetch(request);
+		if (response.ok) {
+			const cache = await caches.open(CACHE_NAME);
+			cache.put(request, response.clone());
+		}
+		return response;
+	} catch {
+		const cached = await caches.match(request);
+		if (cached) return cached;
+
+		// SPA fallback - serve index for any route
+		const index = await caches.match('/');
+		if (index) return index;
+
+		return new Response('Offline', {
+			status: 503,
+			headers: { 'Content-Type': 'text/plain' }
+		});
+	}
+}
+
+/**
+ * Static assets: cache-first with network fallback
+ */
+async function handleStaticAsset(request: Request): Promise<Response> {
+	const cached = await caches.match(request);
+	if (cached) return cached;
+
+	try {
+		const response = await fetch(request);
+		if (response.ok) {
+			const cache = await caches.open(CACHE_NAME);
+			cache.put(request, response.clone());
+		}
+		return response;
+	} catch {
+		return new Response('', { status: 404 });
+	}
+}
+
+/**
+ * Default: network-first with cache fallback
+ */
+async function handleDefault(request: Request): Promise<Response> {
+	try {
+		const response = await fetch(request);
+		if (response.ok) {
+			const cache = await caches.open(CACHE_NAME);
+			cache.put(request, response.clone());
+		}
+		return response;
+	} catch {
+		const cached = await caches.match(request);
+		if (cached) return cached;
+		return new Response('', { status: 503 });
+	}
+}
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+function isStaticAsset(url: URL): boolean {
+	return (
+		url.pathname.startsWith('/_app/') ||
+		/\.(js|css|woff2?|png|jpg|jpeg|gif|webp|svg|ico)$/.test(url.pathname)
+	);
+}
