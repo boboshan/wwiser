@@ -1,8 +1,8 @@
 # Wwiser - Wwise Tools
-# https://wwiser.dev
+# https://wwiser.net
 
 User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://wwiser.dev/sitemap.xml
+Sitemap: https://wwiser.net/sitemap.xml

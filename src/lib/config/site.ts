@@ -9,7 +9,7 @@ export const siteConfig = {
 	title: 'Wwiser - Modern Wwise utilities',
 	description:
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
-	url: 'https://wwiser.dev',
+	url: 'https://wwiser.net',
 	author: 'bbs',
 	version: '0.0.2',
 	keywords: [
@@ -22,7 +22,7 @@ export const siteConfig = {
 		'wwise tools'
 	],
 	social: {
-		github: 'https://github.com/bbs/wwiser'
+		github: 'https://github.com/boboshan/wwiser'
 	}
 } as const;
 
@@ -77,6 +77,11 @@ export const explore: NavItem = {
  * SEO metadata for each page
  */
 export const pageSeo: Record<string, { title: string; description: string }> = {
+	about: {
+		title: 'About',
+		description:
+			'About Wwiser - a collection of modern productivity tools for Wwise sound designers. Learn more about features and links.'
+	},
 	explore: {
 		title: 'WAAPI Explorer',
 		description:

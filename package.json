@@ -57,9 +57,10 @@
 		"wrangler": "^4.56.0"
 	},
 	"dependencies": {
-		"@zag-js/combobox": "^1.32.0",
-		"@zag-js/select": "^1.32.0",
-		"@zag-js/svelte": "^1.32.0",
+		"@zag-js/combobox": "^1.33.0",
+		"@zag-js/menu": "^1.33.0",
+		"@zag-js/select": "^1.33.0",
+		"@zag-js/svelte": "^1.33.0",
 		"json5": "^2.2.3",
 		"monaco-editor": "^0.55.1"
 	}

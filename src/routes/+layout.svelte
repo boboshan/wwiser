@@ -29,12 +29,14 @@
 	// Get current tool from URL
 	const currentToolId = $derived.by(() => {
 		const path = page.url.pathname;
+		if (path === '/about' || path.startsWith('/about/')) return 'about';
 		if (path.startsWith(explore.href)) return explore.id;
 		const tool = navigation.find((t) => path.startsWith(t.href));
-		return tool?.id ?? 'wrap';
+		return tool?.id ?? 'explore';
 	});
 
 	const currentToolName = $derived.by(() => {
+		if (currentToolId === 'about') return 'About';
 		if (currentToolId === explore.id) return explore.name;
 		const tool = navigation.find((t) => t.id === currentToolId);
 		return tool?.name ?? 'Tool';
