@@ -5,6 +5,12 @@ import UnoCSS from 'unocss/vite';
 export default defineConfig({
 	plugins: [sveltekit(), UnoCSS()],
 
+	build: {
+		// Monaco editor core is ~1-2.5 MB per chunk even with ESM tree-shaking (JSON-only).
+		// It's lazily loaded on /explore only, so this is acceptable.
+		chunkSizeWarningLimit: 2700
+	},
+
 	test: {
 		expect: { requireAssertions: true },
 

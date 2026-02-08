@@ -1,23 +1,31 @@
 <script lang="ts" module>
 	// Monaco singleton - loaded once and shared across all editor instances
-	let monacoPromise: Promise<typeof import('monaco-editor')> | null = null;
+	type Monaco = typeof import('monaco-editor');
+	let monacoPromise: Promise<Monaco> | null = null;
 
-	async function getMonaco() {
+	async function getMonaco(): Promise<Monaco> {
 		if (monacoPromise) return monacoPromise;
 
 		monacoPromise = (async () => {
-			// Configure Monaco environment before importing
+			// Import only the JSON worker (skip TS/CSS/HTML workers entirely)
+			const [editorWorker, jsonWorker] = await Promise.all([
+				import('monaco-editor/esm/vs/editor/editor.worker?worker'),
+				import('monaco-editor/esm/vs/language/json/json.worker?worker')
+			]);
+
 			window.MonacoEnvironment = {
-				getWorker() {
-					// Minimal no-op worker - Monaco works fine without it for JSON
-					const blob = new Blob(['self.onmessage = function() {};'], {
-						type: 'application/javascript'
-					});
-					return new Worker(URL.createObjectURL(blob));
+				getWorker(_, label) {
+					if (label === 'json') return new jsonWorker.default();
+					return new editorWorker.default();
 				}
 			};
 
-			const monaco = await import('monaco-editor');
+			// Core editor API only — no bundled languages/workers
+			// @ts-ignore — ESM subpath works at runtime; no .d.ts published
+			const monaco = await import('monaco-editor/esm/vs/editor/editor.api');
+			// JSON language support (validation, completions, formatting)
+			// @ts-ignore — ESM subpath works at runtime; no .d.ts published
+			await import('monaco-editor/esm/vs/language/json/monaco.contribution');
 
 			// Define dark theme matching our design system
 			monaco.editor.defineTheme('wwiser-dark', {
