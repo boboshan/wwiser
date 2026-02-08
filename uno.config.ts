@@ -10,6 +10,7 @@ export default defineConfig({
 		}),
 		presetWebFonts({
 			provider: 'google',
+			inlineImports: true,
 			fonts: {
 				sans: {
 					name: 'Open Sans',

@@ -382,7 +382,9 @@
 						}}
 						class={[
 							'px-4 h-8 rounded-md text-sm font-medium transition-all',
-							mode === 'call' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+							mode === 'call'
+								? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
+								: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 						]}
 					>
 						Call
@@ -401,7 +403,9 @@
 						}}
 						class={[
 							'px-4 h-8 rounded-md text-sm font-medium transition-all',
-							mode === 'subscribe' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+							mode === 'subscribe'
+								? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
+								: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 						]}
 					>
 						Subscribe
@@ -507,6 +511,7 @@
 								{sub.uri}
 								<button
 									onclick={() => unsubscribe(sub.uri)}
+									aria-label="Unsubscribe"
 									class="transition-colors hover:text-red-500"
 								>
 									<Square size={12} />
@@ -551,6 +556,7 @@
 									{/if}
 									<button
 										onclick={() => copyToClipboard(JSON.stringify(log.data, null, 2))}
+										aria-label="Copy to clipboard"
 										class="text-surface-400 opacity-0 transition-opacity hover:text-surface-600 group-hover:opacity-100 dark:hover:text-surface-300"
 									>
 										<Copy size={12} />

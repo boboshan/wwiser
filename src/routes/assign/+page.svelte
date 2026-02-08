@@ -895,6 +895,9 @@
 													<!-- Skip toggle button -->
 													<button
 														onclick={() => toggleSkip(p.childId)}
+														aria-label={p.isSkipped
+															? 'Include this assignment'
+															: 'Skip this assignment'}
 														class={[
 															'p-1 rounded transition-colors shrink-0 group/skip',
 															p.isSkipped

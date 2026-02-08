@@ -62,7 +62,7 @@ export const navigation: NavItem[] = [
 		description: 'Batch rename objects from a clipboard list',
 		icon: 'edit',
 		href: '/rename'
-	},
+	}
 	// {
 	// 	id: 'source-rename',
 	// 	name: 'Source Rename',

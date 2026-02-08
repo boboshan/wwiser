@@ -101,7 +101,7 @@
 		</a>
 		<!-- Mobile close button -->
 		<button
-			class="bg-hover text-muted p-2 rounded-lg transition-colors hover:text-surface-900 dark:hover:text-surface-100 lg:hidden"
+			class="text-muted p-2 rounded-lg bg-hover transition-colors hover:text-surface-900 lg:hidden dark:hover:text-surface-100"
 			onclick={closeSidebar}
 			aria-label="Close menu"
 		>
@@ -122,7 +122,7 @@
 					'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline mb-4',
 					currentTool === explore.id
 						? 'bg-wwise/10 text-wwise'
-					: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
+						: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
 				]}
 			>
 				<div
@@ -154,7 +154,7 @@
 						'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline',
 						currentTool === tool.id
 							? 'bg-wwise/10 text-wwise'
-						: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
 					]}
 				>
 					<div
@@ -184,7 +184,7 @@
 			<div>
 				<button
 					{...menuApi.getTriggerProps()}
-					class="bg-hover text-sm text-muted px-2 py-1.5 rounded-lg flex gap-1.5 transition-colors items-center data-[state=open]:text-surface-900 dark:data-[state=open]:text-surface-100 hover:text-surface-900 dark:hover:text-surface-100 data-[state=open]:bg-surface-200 dark:data-[state=open]:bg-surface-800"
+					class="text-sm text-muted px-2 py-1.5 rounded-lg bg-hover flex gap-1.5 transition-colors items-center data-[state=open]:text-surface-900 hover:text-surface-900 data-[state=open]:bg-surface-200 dark:data-[state=open]:text-surface-100 dark:hover:text-surface-100 dark:data-[state=open]:bg-surface-800"
 				>
 					<Ellipsis class="h-4 w-4" />
 					<span>More</span>
@@ -202,7 +202,7 @@
 								{...menuApi.getItemProps({ value: 'about' })}
 								href="/about"
 								onclick={closeSidebar}
-								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 dark:data-[highlighted]:text-surface-100 hover:text-surface-900 dark:hover:text-surface-100 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
+								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 hover:text-surface-900 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:text-surface-100 dark:hover:text-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
 							>
 								<Info class="h-4 w-4" />
 								<span>About Wwiser</span>
@@ -216,7 +216,7 @@
 								href="https://boboshan.com"
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 dark:data-[highlighted]:text-surface-100 hover:text-surface-900 dark:hover:text-surface-100 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
+								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 hover:text-surface-900 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:text-surface-100 dark:hover:text-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
 							>
 								<Globe class="h-4 w-4" />
 								<span>boboshan.com</span>
@@ -226,7 +226,7 @@
 								href="https://roll.wwiser.net/"
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 dark:data-[highlighted]:text-surface-100 hover:text-surface-900 dark:hover:text-surface-100 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
+								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 hover:text-surface-900 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:text-surface-100 dark:hover:text-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
 							>
 								<Film class="h-4 w-4" />
 								<span>Roll - Video toolset</span>
@@ -242,7 +242,9 @@
 					onclick={() => setTheme('light')}
 					class={[
 						'p-1.5 rounded-md transition-all',
-						theme === 'light' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+						theme === 'light'
+							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 					]}
 					aria-label="Light theme"
 				>
@@ -252,7 +254,9 @@
 					onclick={() => setTheme('dark')}
 					class={[
 						'p-1.5 rounded-md transition-all',
-						theme === 'dark' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+						theme === 'dark'
+							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 					]}
 					aria-label="Dark theme"
 				>
@@ -262,7 +266,9 @@
 					onclick={() => setTheme('system')}
 					class={[
 						'p-1.5 rounded-md transition-all',
-						theme === 'system' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+						theme === 'system'
+							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 					]}
 					aria-label="System theme"
 				>

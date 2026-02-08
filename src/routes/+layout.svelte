@@ -87,7 +87,7 @@
 				<img src={logo} alt="Wwiser" class="h-7 w-7" />
 			</a>
 			<button
-				class="text-muted px-2 py-1 rounded-lg bg-hover flex gap-1 transition-colors items-center hover:text-surface-900 dark:hover:text-surface-100 -my-1"
+				class="text-muted px-2 py-1 rounded-lg bg-hover flex gap-1 transition-colors items-center hover:text-surface-900 -my-1 dark:hover:text-surface-100"
 				onclick={() => (sidebarOpen = true)}
 				aria-label="Open menu"
 			>

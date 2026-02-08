@@ -19,6 +19,7 @@
 <div class="relative">
 	<button
 		onclick={() => (showPanel = !showPanel)}
+		aria-label="Connection status"
 		class="p-2 rounded-lg flex cursor-pointer transition-all items-center justify-center lg:px-3 lg:border lg:gap-2 lg:h-9 {wwise.status ===
 		'connected'
 			? 'bg-hover lg:border-green-500/25 lg:bg-green-500/10 hover:lg:border-green-500/40 hover:lg:bg-green-500/15'
