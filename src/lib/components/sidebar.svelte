@@ -1,23 +1,19 @@
 <script lang="ts">
 	import {
 		Package,
-		FilePen,
 		X,
 		Sun,
 		Moon,
 		Monitor,
-		Volume2,
 		Terminal,
-		GitBranch,
 		Ellipsis,
 		Info,
 		Globe,
-		Film,
-		FileHeadphone
+		Film
 	} from 'lucide-svelte';
 	import logo from '$lib/assets/logo.svg';
 	import wwiserTitle from '$lib/assets/wwiser.svg';
-	import { type NavItem, siteConfig } from '$lib/config/site';
+	import { type NavItem, siteConfig, iconMap } from '$lib/config/site';
 	import * as menu from '@zag-js/menu';
 	import { portal, useMachine, normalizeProps } from '@zag-js/svelte';
 
@@ -41,15 +37,7 @@
 		onThemeChange
 	}: Props = $props();
 
-	// Map icon names to components
-	const iconMap: Record<string, typeof Package> = {
-		package: Package,
-		edit: FilePen,
-		volume: Volume2,
-		terminal: Terminal,
-		'git-branch': GitBranch,
-		'file-audio': FileHeadphone
-	};
+
 
 	// Menu machine for footer links
 	const menuService = useMachine(menu.machine, () => ({

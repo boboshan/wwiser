@@ -1,30 +1,9 @@
 <script lang="ts">
-	import { siteConfig, navigation, explore } from '$lib/config/site';
-	import {
-		Package,
-		GitBranch,
-		Volume2,
-		PenLine,
-		Terminal,
-		ArrowRight,
-		Settings,
-		FileHeadphone,
-		Zap,
-		Github
-	} from 'lucide-svelte';
+	import { siteConfig, navigation, explore, iconMap } from '$lib/config/site';
+	import { ArrowRight, Terminal, Zap, Github } from 'lucide-svelte';
 	import logo from '$lib/assets/logo.svg';
 	import wordmark from '$lib/assets/wwiser.svg';
 	import { wwise } from '$lib/wwise/connection.svelte';
-
-	const iconMap: Record<string, typeof Package> = {
-		package: Package,
-		'git-branch': GitBranch,
-		volume: Volume2,
-		edit: PenLine,
-		terminal: Terminal,
-		settings: Settings,
-		'file-audio': FileHeadphone
-	};
 
 	const tools = navigation;
 </script>

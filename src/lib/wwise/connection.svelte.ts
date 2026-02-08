@@ -267,6 +267,19 @@ class WwiseConnection {
 		});
 	}
 
+	async copyObject(
+		objectId: string,
+		newParent: string,
+		onNameConflict: ConflictResolution = 'rename'
+	): Promise<WwiseObject | null> {
+		const result = await this.call<WwiseObject>('ak.wwise.core.object.copy', {
+			object: objectId,
+			parent: newParent,
+			onNameConflict
+		});
+		return result ?? null;
+	}
+
 	async getObject(
 		objectId: string,
 		returns: string[] = ['id', 'name', 'type', 'path', 'parent']

@@ -3,6 +3,19 @@
  * Centralized config for site metadata, navigation, and SEO defaults
  */
 
+import {
+	Package,
+	FilePen,
+	Volume2,
+	Terminal,
+	GitBranch,
+	ListChecks,
+	FileHeadphone,
+	Settings,
+	CopyPlus
+} from 'lucide-svelte';
+import type { ComponentType } from 'svelte';
+
 export const siteConfig = {
 	name: 'Wwiser',
 	tagline: 'Modern Wwise utilities',
@@ -26,13 +39,28 @@ export const siteConfig = {
 	}
 } as const;
 
+export type NavIcon = 'package' | 'volume' | 'edit' | 'terminal' | 'settings' | 'git-branch' | 'file-audio' | 'list-checks' | 'copy-plus';
+
 export interface NavItem {
 	id: string;
 	name: string;
 	description: string;
-	icon: 'package' | 'volume' | 'edit' | 'terminal' | 'settings' | 'git-branch' | 'file-audio';
+	icon: NavIcon;
 	href: string;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const iconMap: Record<NavIcon, ComponentType<any>> = {
+	package: Package,
+	edit: FilePen,
+	volume: Volume2,
+	terminal: Terminal,
+	settings: Settings,
+	'git-branch': GitBranch,
+	'list-checks': ListChecks,
+	'file-audio': FileHeadphone,
+	'copy-plus': CopyPlus
+};
 
 export const navigation: NavItem[] = [
 	{
@@ -50,6 +78,13 @@ export const navigation: NavItem[] = [
 		href: '/assign'
 	},
 	{
+		id: 'fill',
+		name: 'Fill',
+		description: 'Fill blank switches with selected children',
+		icon: 'list-checks',
+		href: '/fill'
+	},
+	{
 		id: 'volume',
 		name: 'Volume',
 		description: 'Calculate effective volume across hierarchy and buses',
@@ -62,6 +97,13 @@ export const navigation: NavItem[] = [
 		description: 'Batch rename objects from a clipboard list',
 		icon: 'edit',
 		href: '/rename'
+	},
+	{
+		id: 'copy',
+		name: 'Copy',
+		description: 'Copy selected objects into target containers',
+		icon: 'copy-plus',
+		href: '/copy'
 	}
 	// {
 	// 	id: 'source-rename',
@@ -109,6 +151,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		description:
 			'Automatically assign children of switch containers to their corresponding switches based on naming patterns. Configure switch groups and preview assignments before applying.'
 	},
+	fill: {
+		title: 'Fill Blank Switches',
+		description:
+			'Fill unassigned switches in switch containers by assigning selected children to every blank switch at once.'
+	},
 	volume: {
 		title: 'Effective Volume Calculator',
 		description:
@@ -123,6 +170,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Source Rename',
 		description:
 			'Rename source audio files of selected Wwise objects. Batch rename the original WAV files referenced by Sound objects.'
+	},
+	copy: {
+		title: 'Copy Objects',
+		description:
+			'Copy selected Wwise objects into one or more target containers. Select sources, select targets, preview and execute.'
 	}
 };
 
