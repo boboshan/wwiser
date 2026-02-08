@@ -26,6 +26,14 @@ export interface WwiseObject {
 	parent?: WwiseObject;
 }
 
+export interface AudioSourceInfo {
+	id: string;
+	name: string;
+	type: string;
+	path: string;
+	originalFilePath: string;
+}
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -392,6 +400,80 @@ class WwiseConnection {
 			stateOrSwitch: switchOrStateId,
 			child: childId
 		});
+	}
+
+	// -------------------------------------------------------------------------
+	// Audio Source Operations
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Get audio source file info for objects (Sound, MusicTrack, etc.)
+	 * Returns the original file path of the audio source
+	 */
+	async getAudioSourceOriginalFilePath(objectId: string): Promise<string | null> {
+		const result = await this.call<{ return: Array<{ 'sound:originalWavFilePath': string }> }>(
+			'ak.wwise.core.object.get',
+			{ from: { id: [objectId] } },
+			{ return: ['sound:originalWavFilePath'] }
+		);
+		return result?.return?.[0]?.['sound:originalWavFilePath'] ?? null;
+	}
+
+	/**
+	 * Get audio sources for selected objects
+	 * Returns objects that have audio sources (Sound objects or objects containing them)
+	 */
+	async getAudioSources(objectIds: string[]): Promise<AudioSourceInfo[]> {
+		const result = await this.call<{
+			return: Array<{
+				id: string;
+				name: string;
+				type: string;
+				path: string;
+				'sound:originalWavFilePath': string;
+			}>;
+		}>(
+			'ak.wwise.core.object.get',
+			{ from: { id: objectIds } },
+			{ return: ['id', 'name', 'type', 'path', 'sound:originalWavFilePath'] }
+		);
+		return (result?.return ?? [])
+			.filter((obj) => obj['sound:originalWavFilePath'])
+			.map((obj) => ({
+				id: obj.id,
+				name: obj.name,
+				type: obj.type,
+				path: obj.path,
+				originalFilePath: obj['sound:originalWavFilePath']
+			}));
+	}
+
+	/**
+	 * Rename an AudioSource object
+	 * The AudioSource name in Wwise reflects the source file name (without path/extension)
+	 */
+	async setAudioSourceOriginalFilePath(objectId: string, newFilePath: string): Promise<void> {
+		// Extract just the filename without extension for the AudioSource name
+		const separator = newFilePath.includes('\\') ? '\\' : '/';
+		const parts = newFilePath.split(separator);
+		const fileName = parts[parts.length - 1];
+		const nameWithoutExt = fileName.replace(/\.[^.]+$/, '');
+
+		await this.call('ak.wwise.core.object.setName', {
+			object: objectId,
+			value: nameWithoutExt
+		});
+	}
+
+	/**
+	 * Execute a command on selected objects (for file operations)
+	 */
+	async executeCommand(command: string, objects?: string[]): Promise<void> {
+		const args: Record<string, unknown> = { command };
+		if (objects) {
+			args.objects = objects;
+		}
+		await this.call('ak.wwise.ui.commands.execute', args);
 	}
 
 	// -------------------------------------------------------------------------

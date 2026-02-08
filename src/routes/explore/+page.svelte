@@ -382,7 +382,7 @@
 						}}
 						class={[
 							'px-4 h-8 rounded-md text-sm font-medium transition-all',
-							mode === 'call' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
+							mode === 'call' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 						]}
 					>
 						Call
@@ -401,7 +401,7 @@
 						}}
 						class={[
 							'px-4 h-8 rounded-md text-sm font-medium transition-all',
-							mode === 'subscribe' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
+							mode === 'subscribe' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 						]}
 					>
 						Subscribe
@@ -525,7 +525,7 @@
 					</span>
 					<button
 						onclick={clearLogs}
-						class="text-xs text-muted flex gap-1 transition-colors items-center hover:text-base"
+						class="text-xs text-muted flex gap-1 transition-colors items-center hover:text-surface-900 dark:hover:text-surface-100"
 					>
 						<Trash2 size={12} />
 						Clear

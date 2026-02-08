@@ -30,7 +30,7 @@ export interface NavItem {
 	id: string;
 	name: string;
 	description: string;
-	icon: 'package' | 'volume' | 'edit' | 'terminal' | 'settings' | 'git-branch';
+	icon: 'package' | 'volume' | 'edit' | 'terminal' | 'settings' | 'git-branch' | 'file-audio';
 	href: string;
 }
 
@@ -38,37 +38,44 @@ export const navigation: NavItem[] = [
 	{
 		id: 'wrap',
 		name: 'Wrap',
-		description: 'Create parent containers',
+		description: 'Wrap objects in containers with auto-grouping',
 		icon: 'package',
 		href: '/wrap'
 	},
 	{
 		id: 'assign',
 		name: 'Assign',
-		description: 'Assign switch children',
+		description: 'Match children to switches by naming rules',
 		icon: 'git-branch',
 		href: '/assign'
 	},
 	{
 		id: 'volume',
 		name: 'Volume',
-		description: 'Calculate cumulative volume',
+		description: 'Calculate effective volume across hierarchy and buses',
 		icon: 'volume',
 		href: '/volume'
 	},
 	{
 		id: 'rename',
 		name: 'Rename',
-		description: 'Batch rename from clipboard',
+		description: 'Batch rename objects from a clipboard list',
 		icon: 'edit',
 		href: '/rename'
-	}
+	},
+	// {
+	// 	id: 'source-rename',
+	// 	name: 'Source Rename',
+	// 	description: 'Rename source audio files referenced by sounds',
+	// 	icon: 'file-audio',
+	// 	href: '/source-rename'
+	// }
 ];
 
 export const explore: NavItem = {
 	id: 'explore',
 	name: 'WAAPI Explorer',
-	description: 'Learn and test WAAPI',
+	description: 'Call functions, subscribe to topics, and inspect results live',
 	icon: 'terminal',
 	href: '/explore'
 };
@@ -77,6 +84,11 @@ export const explore: NavItem = {
  * SEO metadata for each page
  */
 export const pageSeo: Record<string, { title: string; description: string }> = {
+	home: {
+		title: 'Wwiser - Modern Wwise utilities',
+		description:
+			'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.'
+	},
 	about: {
 		title: 'About',
 		description:
@@ -106,6 +118,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Batch Rename',
 		description:
 			'Batch rename multiple Wwise objects with powerful pattern matching. Use regex, find/replace, and preview changes before applying.'
+	},
+	'source-rename': {
+		title: 'Source Rename',
+		description:
+			'Rename source audio files of selected Wwise objects. Batch rename the original WAV files referenced by Sound objects.'
 	}
 };
 

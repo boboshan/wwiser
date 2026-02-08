@@ -100,6 +100,18 @@
 			if (this.type === 'Bus' || this.type === 'AuxBus') return 'blue';
 			return 'purple';
 		}
+
+		// Get the slider state for a given volume property
+		getSlider(property: VolumeProperty): SliderState | undefined {
+			switch (property) {
+				case 'Volume':
+					return this.category === 'bus' ? this.voiceVolumeState : this.volumeState;
+				case 'BusVolume':
+					return this.busVolumeState;
+				case 'OutputBusVolume':
+					return this.outputBusVolumeState;
+			}
+		}
 	}
 </script>
 
@@ -114,7 +126,6 @@
 	// Types
 	interface VolumeInfo {
 		object: WwiseObject;
-		effectiveVolume: number;
 		contributions: VolumeContribution[];
 	}
 
@@ -165,13 +176,19 @@
 			await setObjectProperty(contrib.id, property, newValue);
 			await wwise.endUndoGroup(`Adjust ${property} on ${contrib.name}`);
 
-			// Update stored value and get delta
-			const delta = contrib.setValue(property, newValue);
+			// Confirm the committed slider value
+			contrib.getSlider(property)?.confirm();
 
-			// Update effective volume for affected items
+			// Sync other contribution instances sharing the same Wwise object
 			for (const item of volumeData) {
-				if (item.contributions.some((c) => c.id === contrib.id)) {
-					item.effectiveVolume += delta;
+				for (const c of item.contributions) {
+					if (c !== contrib && c.id === contrib.id) {
+						const slider = c.getSlider(property);
+						if (slider) {
+							slider.value = newValue;
+							slider.confirm();
+						}
+					}
 				}
 			}
 
@@ -179,6 +196,8 @@
 			objectCache.delete(contrib.id);
 		} catch (e) {
 			await wwise.cancelUndoGroup();
+			// Revert slider to its last confirmed value
+			contrib.getSlider(property)?.revert();
 			statusMessage = e instanceof Error ? e.message : 'Failed to update volume';
 			statusType = 'error';
 		} finally {
@@ -266,13 +285,9 @@
 		let effectiveOutputBus: { id: string; name: string } | null = null;
 		let foundOutputBusOverride = false;
 
-		// First, get self to check its output bus
+		// First, get self to check its output bus override
 		const selfObj = await getCachedObjectDetails(objectId);
-		// Check if self has override OR has a non-default bus (indicates override even if flag is wrong)
-		const selfHasOverride =
-			selfObj?.overrideOutput ||
-			(selfObj?.outputBus?.name && selfObj.outputBus.name !== 'Master Audio Bus');
-		if (selfHasOverride && selfObj?.outputBus?.id) {
+		if (selfObj?.overrideOutput && selfObj.outputBus?.id) {
 			effectiveOutputBus = selfObj.outputBus;
 			foundOutputBusOverride = true;
 		}
@@ -285,18 +300,12 @@
 			if (!parent) break;
 			if (parent.type === 'Project' || parent.type === 'WorkUnit') break;
 
-			// Check if this ancestor overrides output bus (and we haven't found one yet)
-			// Consider it an override if: overrideOutput flag is true OR outputBus is not Master Audio Bus
-			const parentHasOverride =
-				parent.overrideOutput ||
-				(parent.outputBus?.name && parent.outputBus.name !== 'Master Audio Bus');
-
-			if (!foundOutputBusOverride && parentHasOverride && parent.outputBus?.id) {
+			// Check if this ancestor explicitly overrides output bus (and we haven't found one yet)
+			if (!foundOutputBusOverride && parent.overrideOutput && parent.outputBus?.id) {
 				effectiveOutputBus = parent.outputBus;
 				foundOutputBusOverride = true;
 			}
 
-			// Each ancestor contributes its Volume and OutputBusVolume (if it has override)
 			contributions.push(
 				new VolumeContribution({
 					id: parent.id,
@@ -304,9 +313,9 @@
 					type: parent.type,
 					category: 'ancestor',
 					volume: parent.volume,
-					outputBusVolume: parentHasOverride ? parent.outputBusVolume : undefined,
+					outputBusVolume: parent.overrideOutput ? parent.outputBusVolume : undefined,
 					outputBusName:
-						parentHasOverride && parent.outputBus ? `→ ${parent.outputBus.name}` : undefined
+						parent.overrideOutput && parent.outputBus ? `→ ${parent.outputBus.name}` : undefined
 				})
 			);
 
@@ -325,7 +334,8 @@
 	async function getBusChainContributions(busId: string): Promise<VolumeContribution[]> {
 		const contributions: VolumeContribution[] = [];
 		let currentBusId: string | undefined = busId;
-		const visited = new SvelteSet<string>();
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to async function, not reactive state
+		const visited = new Set<string>();
 
 		while (currentBusId && !visited.has(currentBusId)) {
 			visited.add(currentBusId);
@@ -424,11 +434,6 @@
 						contributions.push(...busContribs);
 					} else {
 						// For non-bus objects: add self, then hierarchy, then bus chain
-						const selfHasOverride =
-							selfData.overrideOutput ||
-							(selfData.outputBus?.name && selfData.outputBus.name !== 'Master Audio Bus');
-
-						// Add self contribution
 						contributions.push(
 							new VolumeContribution({
 								id: selfData.id,
@@ -436,9 +441,11 @@
 								type: selfData.type,
 								category: 'self',
 								volume: selfData.volume,
-								outputBusVolume: selfHasOverride ? selfData.outputBusVolume : undefined,
+								outputBusVolume: selfData.overrideOutput ? selfData.outputBusVolume : undefined,
 								outputBusName:
-									selfHasOverride && selfData.outputBus ? `→ ${selfData.outputBus.name}` : undefined
+									selfData.overrideOutput && selfData.outputBus
+										? `→ ${selfData.outputBus.name}`
+										: undefined
 							})
 						);
 
@@ -455,12 +462,8 @@
 					}
 				}
 
-				// Calculate effective volume using class getter
-				const effectiveVolume = contributions.reduce((sum, c) => sum + c.total, 0);
-
 				results.push({
 					object: obj,
-					effectiveVolume,
 					contributions
 				});
 			}
@@ -572,8 +575,8 @@
 								</div>
 								<div class="text-right min-w-20">
 									<div class="text-[10px] text-muted uppercase">Effective</div>
-									<div class="font-mono font-semibold {getVolumeColor(item.effectiveVolume)}">
-										{formatVolume(item.effectiveVolume)}
+									<div class="font-mono font-semibold {getVolumeColor(hierarchySum + busSum)}">
+										{formatVolume(hierarchySum + busSum)}
 									</div>
 								</div>
 							</div>

@@ -29,6 +29,7 @@
 	// Get current tool from URL
 	const currentToolId = $derived.by(() => {
 		const path = page.url.pathname;
+		if (path === '/') return 'home';
 		if (path === '/about' || path.startsWith('/about/')) return 'about';
 		if (path.startsWith(explore.href)) return explore.id;
 		const tool = navigation.find((t) => path.startsWith(t.href));
@@ -36,6 +37,7 @@
 	});
 
 	const currentToolName = $derived.by(() => {
+		if (currentToolId === 'home') return 'Home';
 		if (currentToolId === 'about') return 'About';
 		if (currentToolId === explore.id) return explore.name;
 		const tool = navigation.find((t) => t.id === currentToolId);
@@ -85,7 +87,7 @@
 				<img src={logo} alt="Wwiser" class="h-7 w-7" />
 			</a>
 			<button
-				class="text-muted px-2 py-1 rounded-lg bg-hover flex gap-1 transition-colors items-center hover:text-base -my-1"
+				class="text-muted px-2 py-1 rounded-lg bg-hover flex gap-1 transition-colors items-center hover:text-surface-900 dark:hover:text-surface-100 -my-1"
 				onclick={() => (sidebarOpen = true)}
 				aria-label="Open menu"
 			>

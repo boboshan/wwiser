@@ -23,9 +23,40 @@
 		title.includes(siteConfig.name) ? title : `${title} | ${siteConfig.name}`
 	);
 	const ogUrl = $derived(canonical || siteConfig.url);
+
+	// JSON-LD structured data for Google
+	const jsonLd = {
+		'@context': 'https://schema.org',
+		'@graph': [
+			{
+				'@type': 'WebSite',
+				'@id': `${siteConfig.url}/#website`,
+				url: siteConfig.url,
+				name: siteConfig.name,
+				description: siteConfig.description,
+				publisher: {
+					'@id': `${siteConfig.url}/#organization`
+				}
+			},
+			{
+				'@type': 'Organization',
+				'@id': `${siteConfig.url}/#organization`,
+				name: siteConfig.name,
+				url: siteConfig.url,
+				logo: {
+					'@type': 'ImageObject',
+					url: `${siteConfig.url}/icon-512.png`
+				}
+			}
+		]
+	};
 </script>
 
 <svelte:head>
+	<!-- JSON-LD Structured Data -->
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- static JSON-LD, no user input -->
+	{@html `<${'script'} type="application/ld+json">${JSON.stringify(jsonLd)}</${'script'}>`}
+
 	<!-- Primary Meta Tags -->
 	<title>{fullTitle}</title>
 	<meta name="title" content={fullTitle} />

@@ -9,10 +9,11 @@
 		Volume2,
 		Terminal,
 		GitBranch,
-		MoreHorizontal,
+		Ellipsis,
 		Info,
 		Globe,
-		Film
+		Film,
+		FileHeadphone
 	} from 'lucide-svelte';
 	import logo from '$lib/assets/logo.svg';
 	import wwiserTitle from '$lib/assets/wwiser.svg';
@@ -46,13 +47,14 @@
 		edit: FilePen,
 		volume: Volume2,
 		terminal: Terminal,
-		'git-branch': GitBranch
+		'git-branch': GitBranch,
+		'file-audio': FileHeadphone
 	};
 
 	// Menu machine for footer links
 	const menuService = useMachine(menu.machine, () => ({
 		id: 'footer-menu',
-		positioning: { placement: 'top-start' as 'top-start' }
+		positioning: { placement: 'top-start' as const }
 	}));
 	const menuApi = $derived(menu.connect(menuService, normalizeProps));
 
@@ -99,7 +101,7 @@
 		</a>
 		<!-- Mobile close button -->
 		<button
-			class="hover-bg text-muted p-2 rounded-lg transition-colors hover:text-base lg:hidden"
+			class="bg-hover text-muted p-2 rounded-lg transition-colors hover:text-surface-900 dark:hover:text-surface-100 lg:hidden"
 			onclick={closeSidebar}
 			aria-label="Close menu"
 		>
@@ -117,10 +119,10 @@
 				href={explore.href}
 				onclick={closeSidebar}
 				class={[
-					'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline mb-4',
+					'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline mb-4',
 					currentTool === explore.id
 						? 'bg-wwise/10 text-wwise'
-						: 'text-muted hover:text-base hover-bg'
+					: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
 				]}
 			>
 				<div
@@ -128,7 +130,7 @@
 						'rounded-md p-2 transition-colors',
 						currentTool === explore.id
 							? 'bg-wwise/15 text-wwise'
-							: 'bg-surface-200 dark:bg-surface-800 text-surface-500'
+							: 'bg-surface-200 dark:bg-surface-800 text-surface-500 group-hover:bg-surface-300 dark:group-hover:bg-surface-700 group-hover:text-surface-700 dark:group-hover:text-surface-300'
 					]}
 				>
 					<Icon class="h-4 w-4" />
@@ -149,10 +151,10 @@
 					href={tool.href}
 					onclick={closeSidebar}
 					class={[
-						'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline',
+						'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline',
 						currentTool === tool.id
 							? 'bg-wwise/10 text-wwise'
-							: 'text-muted hover:text-base hover-bg'
+						: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
 					]}
 				>
 					<div
@@ -160,7 +162,7 @@
 							'rounded-md p-2 transition-colors',
 							currentTool === tool.id
 								? 'bg-wwise/15 text-wwise'
-								: 'bg-surface-200 dark:bg-surface-800 text-surface-500'
+								: 'bg-surface-200 dark:bg-surface-800 text-surface-500 group-hover:bg-surface-300 dark:group-hover:bg-surface-700 group-hover:text-surface-700 dark:group-hover:text-surface-300'
 						]}
 					>
 						<Icon class="h-4 w-4" />
@@ -182,9 +184,9 @@
 			<div>
 				<button
 					{...menuApi.getTriggerProps()}
-					class="px-2 py-1.5 rounded-lg text-sm text-muted flex items-center gap-1.5 transition-colors hover:text-base hover-bg data-[state=open]:text-base data-[state=open]:bg-surface-200 dark:data-[state=open]:bg-surface-800"
+					class="bg-hover text-sm text-muted px-2 py-1.5 rounded-lg flex gap-1.5 transition-colors items-center data-[state=open]:text-surface-900 dark:data-[state=open]:text-surface-100 hover:text-surface-900 dark:hover:text-surface-100 data-[state=open]:bg-surface-200 dark:data-[state=open]:bg-surface-800"
 				>
-					<MoreHorizontal class="h-4 w-4" />
+					<Ellipsis class="h-4 w-4" />
 					<span>More</span>
 				</button>
 
@@ -193,14 +195,14 @@
 					{#if menuApi.open}
 						<div
 							{...menuApi.getContentProps()}
-							class="bg-base border border-base rounded-lg shadow-lg py-1 min-w-48 z-50"
+							class="py-1 border border-base rounded-lg bg-base min-w-48 shadow-lg z-50"
 						>
 							<!-- About -->
 							<a
 								{...menuApi.getItemProps({ value: 'about' })}
 								href="/about"
 								onclick={closeSidebar}
-								class="flex items-center gap-3 px-3 py-2 text-sm text-muted no-underline transition-colors hover:text-base hover:bg-surface-100 dark:hover:bg-surface-800 data-[highlighted]:bg-surface-100 dark:data-[highlighted]:bg-surface-800 data-[highlighted]:text-base"
+								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 dark:data-[highlighted]:text-surface-100 hover:text-surface-900 dark:hover:text-surface-100 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
 							>
 								<Info class="h-4 w-4" />
 								<span>About Wwiser</span>
@@ -214,7 +216,7 @@
 								href="https://boboshan.com"
 								target="_blank"
 								rel="noopener noreferrer"
-								class="flex items-center gap-3 px-3 py-2 text-sm text-muted no-underline transition-colors hover:text-base hover:bg-surface-100 dark:hover:bg-surface-800 data-[highlighted]:bg-surface-100 dark:data-[highlighted]:bg-surface-800 data-[highlighted]:text-base"
+								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 dark:data-[highlighted]:text-surface-100 hover:text-surface-900 dark:hover:text-surface-100 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
 							>
 								<Globe class="h-4 w-4" />
 								<span>boboshan.com</span>
@@ -224,7 +226,7 @@
 								href="https://roll.wwiser.net/"
 								target="_blank"
 								rel="noopener noreferrer"
-								class="flex items-center gap-3 px-3 py-2 text-sm text-muted no-underline transition-colors hover:text-base hover:bg-surface-100 dark:hover:bg-surface-800 data-[highlighted]:bg-surface-100 dark:data-[highlighted]:bg-surface-800 data-[highlighted]:text-base"
+								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 dark:data-[highlighted]:text-surface-100 hover:text-surface-900 dark:hover:text-surface-100 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
 							>
 								<Film class="h-4 w-4" />
 								<span>Roll - Video toolset</span>
@@ -240,7 +242,7 @@
 					onclick={() => setTheme('light')}
 					class={[
 						'p-1.5 rounded-md transition-all',
-						theme === 'light' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
+						theme === 'light' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 					]}
 					aria-label="Light theme"
 				>
@@ -250,7 +252,7 @@
 					onclick={() => setTheme('dark')}
 					class={[
 						'p-1.5 rounded-md transition-all',
-						theme === 'dark' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
+						theme === 'dark' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 					]}
 					aria-label="Dark theme"
 				>
@@ -260,7 +262,7 @@
 					onclick={() => setTheme('system')}
 					class={[
 						'p-1.5 rounded-md transition-all',
-						theme === 'system' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
+						theme === 'system' ? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm' : 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
 					]}
 					aria-label="System theme"
 				>

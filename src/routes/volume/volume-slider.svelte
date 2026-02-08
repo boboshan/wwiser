@@ -1,30 +1,30 @@
 <script lang="ts" module>
 	export class SliderState {
 		value = $state(0);
-		#lastCommitted: number | null = null;
+		#confirmedValue: number;
 
 		constructor(initial: number) {
 			this.value = initial;
+			this.#confirmedValue = initial;
 		}
 
-		sync(propValue: number) {
-			// Skip if we just committed this value
-			if (this.#lastCommitted !== null && Math.abs(propValue - this.#lastCommitted) < 0.01) {
-				return;
-			}
-			this.value = propValue;
-			this.#lastCommitted = null;
+		/** Mark the current value as confirmed (after successful WAAPI save) */
+		confirm() {
+			this.#confirmedValue = this.value;
+		}
+
+		/** Revert to the last confirmed value (after failed WAAPI save) */
+		revert() {
+			this.value = this.#confirmedValue;
 		}
 
 		commit(oncommit: (v: number) => void) {
-			this.#lastCommitted = this.value;
 			oncommit(this.value);
 		}
 
 		set(val: number, oncommit: (v: number) => void) {
 			val = Math.max(-96, Math.min(12, val));
 			this.value = val;
-			this.#lastCommitted = val;
 			oncommit(val);
 		}
 	}

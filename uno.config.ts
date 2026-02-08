@@ -73,7 +73,7 @@ export default defineConfig({
 		'btn-primary':
 			'bg-wwise hover:bg-wwise-400 active:bg-wwise-600 text-white font-semibold px-4 py-2.5 rounded-xl transition-all active:scale-98',
 		'btn-ghost':
-			'text-muted hover:text-base bg-hover px-4 py-2 rounded-xl transition-colors font-medium',
+			'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover px-4 py-2 rounded-xl transition-colors font-medium',
 		// Card
 		card: 'bg-base border border-base rounded-2xl shadow-sm',
 		'card-elevated': 'bg-elevated border border-base rounded-2xl'
