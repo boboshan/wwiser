@@ -13,11 +13,12 @@
 		readonly outputBusName?: string;
 		category: 'self' | 'ancestor' | 'bus';
 
-		// Slider states (each manages its own reactive value)
-		readonly volumeState: SliderState;
-		readonly voiceVolumeState?: SliderState;
-		readonly busVolumeState?: SliderState;
-		readonly outputBusVolumeState?: SliderState;
+		// Slider states (each manages its own reactive value).
+		// Not readonly: shared across contributions for the same Wwise object.
+		volumeState: SliderState;
+		voiceVolumeState?: SliderState;
+		busVolumeState?: SliderState;
+		outputBusVolumeState?: SliderState;
 
 		constructor(data: {
 			id: string;
@@ -303,14 +304,19 @@
 			if (!parent) break;
 			if (parent.type === 'Project' || parent.type === 'WorkUnit') break;
 
-				// Does this ancestor route to a specific output bus?
+			// Does this ancestor route to a specific output bus?
 			// Check both @OverrideOutput and non-Master @OutputBus (root-level
 			// containers may have @OverrideOutput=false even with an explicit bus).
 			const hasOutputBus =
 				parent.outputBus?.id != null &&
 				(parent.overrideOutput || parent.outputBus.name !== 'Master Audio Bus');
 
-			if (!foundOutputBusOverride && hasOutputBus) {
+			// Only treat this ancestor as the routing source if no closer node
+			// already overrides the output bus. Once a child (or nearer ancestor)
+			// overrides, this ancestor's OutputBusVolume does NOT affect the child.
+			const isRoutingAncestor = !foundOutputBusOverride && hasOutputBus;
+
+			if (isRoutingAncestor) {
 				effectiveOutputBus = parent.outputBus!;
 				foundOutputBusOverride = true;
 				routingSourceId = parent.id;
@@ -323,8 +329,8 @@
 					type: parent.type,
 					category: 'ancestor',
 					volume: parent.volume,
-					outputBusVolume: hasOutputBus ? parent.outputBusVolume : undefined,
-					outputBusName: hasOutputBus ? `→ ${parent.outputBus!.name}` : undefined
+					outputBusVolume: isRoutingAncestor ? parent.outputBusVolume : undefined,
+					outputBusName: isRoutingAncestor ? `→ ${parent.outputBus!.name}` : undefined
 				})
 			);
 
@@ -493,6 +499,57 @@
 				}
 			}
 
+			// Share SliderState instances across contributions that reference the
+			// same Wwise object. This ensures that when a slider is dragged on a
+			// shared node (e.g. a common ancestor), ALL selected objects' summary
+			// values update in real-time — not just the one whose contribution
+			// instance the graph node happens to render.
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to async function, not reactive state
+			const sliderRegistry = new Map<
+				string,
+				{
+					volume: SliderState;
+					voiceVolume?: SliderState;
+					busVolume?: SliderState;
+					outputBusVolume?: SliderState;
+				}
+			>();
+
+			for (const result of results) {
+				for (const contrib of result.contributions) {
+					const existing = sliderRegistry.get(contrib.id);
+					if (!existing) {
+						sliderRegistry.set(contrib.id, {
+							volume: contrib.volumeState,
+							voiceVolume: contrib.voiceVolumeState,
+							busVolume: contrib.busVolumeState,
+							outputBusVolume: contrib.outputBusVolumeState
+						});
+					} else {
+						// Replace with shared slider states so reactivity propagates
+						contrib.volumeState = existing.volume;
+
+						if (contrib.voiceVolumeState && existing.voiceVolume) {
+							contrib.voiceVolumeState = existing.voiceVolume;
+						} else if (contrib.voiceVolumeState) {
+							existing.voiceVolume = contrib.voiceVolumeState;
+						}
+
+						if (contrib.busVolumeState && existing.busVolume) {
+							contrib.busVolumeState = existing.busVolume;
+						} else if (contrib.busVolumeState) {
+							existing.busVolume = contrib.busVolumeState;
+						}
+
+						if (contrib.outputBusVolumeState && existing.outputBusVolume) {
+							contrib.outputBusVolumeState = existing.outputBusVolume;
+						} else if (contrib.outputBusVolumeState) {
+							existing.outputBusVolume = contrib.outputBusVolumeState;
+						}
+					}
+				}
+			}
+
 			volumeData = results;
 			const skippedText = skippedCount > 0 ? ` (${skippedCount} unsupported skipped)` : '';
 			statusMessage = `Calculated volume for ${results.length} object${results.length !== 1 ? 's' : ''}${skippedText}`;
@@ -504,7 +561,6 @@
 			isLoading = false;
 		}
 	}
-
 </script>
 
 <div class="flex flex-col gap-6">

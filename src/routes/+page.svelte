@@ -74,8 +74,7 @@
 						class="text-[13px] text-muted font-medium transition-colors group-hover:text-surface-900 dark:group-hover:text-surface-100"
 						>{feature.name}</span
 					>
-					<span
-						class="text-[11px] text-muted/60 transition-colors group-hover:text-muted"
+					<span class="text-[11px] text-muted/60 transition-colors group-hover:text-muted"
 						>{feature.description}</span
 					>
 				</a>

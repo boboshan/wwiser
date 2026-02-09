@@ -20,8 +20,10 @@
 					href={tool.href}
 					class="group p-3 border border-base rounded-lg bg-base no-underline transition-colors hover:border-surface-400 dark:hover:border-surface-500"
 				>
-					<div class="flex items-center gap-2">
-						<Icon class="h-3.5 w-3.5 shrink-0 text-muted group-hover:text-surface-900 dark:group-hover:text-surface-100 transition-colors" />
+					<div class="flex gap-2 items-center">
+						<Icon
+							class="text-muted shrink-0 h-3.5 w-3.5 transition-colors group-hover:text-surface-900 dark:group-hover:text-surface-100"
+						/>
 						<p class="text-sm text-base font-medium">{tool.name}</p>
 					</div>
 					<p class="text-xs text-muted mt-1">{tool.description}</p>
@@ -35,19 +37,23 @@
 		<h2 class="text-xs text-muted tracking-wider font-semibold uppercase">Works Anywhere</h2>
 		<div class="mt-4 gap-2 grid sm:grid-cols-3">
 			<div class="p-3 border border-base rounded-lg bg-base">
-				<Download class="h-3.5 w-3.5 text-muted mb-1.5" />
+				<Download class="text-muted mb-1.5 h-3.5 w-3.5" />
 				<p class="text-sm text-base font-medium">Installable</p>
 				<p class="text-xs text-muted mt-0.5">Install as a native app on any device via PWA</p>
 			</div>
 			<div class="p-3 border border-base rounded-lg bg-base">
-				<WifiOff class="h-3.5 w-3.5 text-muted mb-1.5" />
+				<WifiOff class="text-muted mb-1.5 h-3.5 w-3.5" />
 				<p class="text-sm text-base font-medium">Offline Ready</p>
-				<p class="text-xs text-muted mt-0.5">Full UI cached by service worker — works without internet</p>
+				<p class="text-xs text-muted mt-0.5">
+					Full UI cached by service worker — works without internet
+				</p>
 			</div>
 			<div class="p-3 border border-base rounded-lg bg-base">
-				<Zap class="h-3.5 w-3.5 text-muted mb-1.5" />
+				<Zap class="text-muted mb-1.5 h-3.5 w-3.5" />
 				<p class="text-sm text-base font-medium">Zero Backend</p>
-				<p class="text-xs text-muted mt-0.5">Runs entirely in the browser, talks directly to Wwise via WAAPI</p>
+				<p class="text-xs text-muted mt-0.5">
+					Runs entirely in the browser, talks directly to Wwise via WAAPI
+				</p>
 			</div>
 		</div>
 	</section>

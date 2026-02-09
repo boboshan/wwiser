@@ -361,7 +361,8 @@
 
 			<p class="text-xs text-muted mb-0 mt-4">
 				Add <code class="text-wwise px-1 py-0.5 rounded bg-wwise/10">https://wwiser.net</code> to
-				<strong>User Preferences → Allow browser connections from</strong>.
+				<strong>User Preferences → Allow browser connections from</strong>. Do not include
+				<code class="text-amber-500 px-1 py-0.5 rounded bg-amber-500/20">/</code> at the end.
 			</p>
 		</div>
 	{:else}

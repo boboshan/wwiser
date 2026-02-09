@@ -37,8 +37,6 @@
 		onThemeChange
 	}: Props = $props();
 
-
-
 	// Menu machine for footer links
 	const menuService = useMachine(menu.machine, () => ({
 		id: 'footer-menu',

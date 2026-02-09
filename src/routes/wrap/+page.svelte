@@ -45,7 +45,7 @@
 	const UNIVERSAL_CONTAINERS = new Set(['Folder', 'WorkUnit']);
 
 	// Naming rules
-	type NamingRule = 'omit_suffix' | 'prefix' | 'custom_regex';
+	type NamingRule = 'omit_suffix' | 'prefix' | 'same_name' | 'custom_regex';
 
 	const NAMING_RULES = [
 		{
@@ -54,6 +54,7 @@
 			description: 'Remove trailing _01, _A, etc.'
 		},
 		{ value: 'prefix', label: 'Use Prefix', description: 'Use text before first underscore' },
+		{ value: 'same_name', label: 'Same Name', description: 'Use the object name as-is' },
 		{ value: 'custom_regex', label: 'Custom Regex', description: 'Apply custom regex pattern' }
 	] as const;
 
@@ -107,6 +108,8 @@
 				const idx = objectName.indexOf('_');
 				return idx > 0 ? objectName.substring(0, idx) : objectName;
 			}
+			case 'same_name':
+				return objectName;
 			case 'custom_regex': {
 				try {
 					const re = new RegExp(regex);
@@ -325,27 +328,12 @@
 
 	<!-- Settings Card -->
 	<div class="p-5 border border-base rounded-xl bg-base space-y-5">
-		<!-- Container Type -->
-		<div class="space-y-2">
-			<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
-				Container Type
-			</span>
-			<div class="max-w-xs">
-				<Select
-					items={containerItems}
-					bind:value={containerType}
-					placeholder="Select container..."
-					id="container-type"
-				/>
-			</div>
-		</div>
-
 		<!-- Naming Rule -->
 		<fieldset class="space-y-3">
 			<legend class="text-[10px] text-muted tracking-wider font-medium uppercase"
 				>Naming Rule</legend
 			>
-			<div class="gap-2 grid sm:grid-cols-3">
+			<div class="gap-2 grid sm:grid-cols-4">
 				{#each NAMING_RULES as rule (rule.value)}
 					<label
 						class={[
@@ -398,6 +386,21 @@
 				</div>
 			</div>
 		{/if}
+
+		<!-- Container Type -->
+		<div class="space-y-2">
+			<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
+				Container Type
+			</span>
+			<div class="max-w-xs">
+				<Select
+					items={containerItems}
+					bind:value={containerType}
+					placeholder="Select container..."
+					id="container-type"
+				/>
+			</div>
+		</div>
 	</div>
 
 	<!-- Status -->

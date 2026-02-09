@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { VolumeContribution } from './+page.svelte';
 	import { getTypeDisplayName } from '$lib/components/badge.svelte';
 	import Badge from '$lib/components/badge.svelte';
@@ -41,8 +42,8 @@
 	let graph = $derived.by(() => {
 		if (volumeData.length === 0) return null;
 
-		const nodeMap = new Map<string, GraphNode>();
-		const edgeKeys = new Set<string>();
+		const nodeMap = new SvelteMap<string, GraphNode>();
+		const edgeKeys = new SvelteSet<string>();
 		const edges: GraphEdge[] = [];
 
 		// Build nodes + edges from contribution paths
@@ -53,10 +54,15 @@
 			);
 			const buses = item.contributions.filter((c) => c.category === 'bus');
 
-			// Register all nodes
+			// Register all nodes — when the same object appears in multiple paths,
+			// prefer the contribution that exposes more controls (e.g. a routing
+			// ancestor shows its OutputBusVolume slider only in non-overriding paths).
 			for (const c of item.contributions) {
-				if (!nodeMap.has(c.id)) {
+				const existing = nodeMap.get(c.id);
+				if (!existing) {
 					nodeMap.set(c.id, { id: c.id, contribution: c, column: 0, row: 0 });
+				} else if (!existing.contribution.outputBusVolumeState && c.outputBusVolumeState) {
+					existing.contribution = c;
 				}
 			}
 
@@ -81,9 +87,7 @@
 			// Routing edge: from the routing source to the first bus
 			if (buses.length > 0) {
 				const routingSrc =
-					item.routingSourceId ??
-					hierarchy[hierarchy.length - 1]?.id ??
-					item.contributions[0]?.id;
+					item.routingSourceId ?? hierarchy[hierarchy.length - 1]?.id ?? item.contributions[0]?.id;
 				if (routingSrc) {
 					addEdge(routingSrc, buses[0].id, true);
 				}
@@ -91,11 +95,11 @@
 		}
 
 		// Build adjacency lists
-		const successors = new Map<string, Set<string>>();
-		const predecessors = new Map<string, Set<string>>();
+		const successors = new SvelteMap<string, SvelteSet<string>>();
+		const predecessors = new SvelteMap<string, SvelteSet<string>>();
 		for (const id of nodeMap.keys()) {
-			successors.set(id, new Set());
-			predecessors.set(id, new Set());
+			successors.set(id, new SvelteSet());
+			predecessors.set(id, new SvelteSet());
 		}
 		for (const edge of edges) {
 			successors.get(edge.fromId)!.add(edge.toId);
@@ -103,7 +107,7 @@
 		}
 
 		// Topological sort (Kahn's algorithm)
-		const inDegree = new Map<string, number>();
+		const inDegree = new SvelteMap<string, number>();
 		for (const [id, preds] of predecessors) inDegree.set(id, preds.size);
 		const queue: string[] = [];
 		for (const [id, deg] of inDegree) if (deg === 0) queue.push(id);
@@ -119,7 +123,7 @@
 		}
 
 		// Forward pass: longest path from any source (ensures edges go left→right)
-		const col = new Map<string, number>();
+		const col = new SvelteMap<string, number>();
 		for (const id of topoOrder) {
 			let maxPred = -1;
 			for (const pred of predecessors.get(id)!) {
@@ -150,7 +154,7 @@
 		for (const node of nodeMap.values()) columns[node.column].push(node);
 
 		// Row ordering: selection order for sources, barycenter heuristic for the rest
-		const selfOrder = new Map<string, number>();
+		const selfOrder = new SvelteMap<string, number>();
 		volumeData.forEach((item, idx) => {
 			if (item.contributions[0]) selfOrder.set(item.contributions[0].id, idx);
 		});
@@ -222,7 +226,7 @@
 	}
 
 	$effect(() => {
-		graph; // track graph changes
+		void graph; // track graph changes
 		if (!containerEl) return;
 
 		tick().then(() => requestAnimationFrame(computeEdges));
@@ -254,7 +258,7 @@
 
 {#if graph}
 	<!-- Summary bar: effective volumes per selected object -->
-	<div class="flex flex-wrap gap-x-6 gap-y-2 mb-3">
+	<div class="mb-3 flex flex-wrap gap-x-6 gap-y-2">
 		{#each volumeData as item (item.object.id)}
 			{@const hContribs = item.contributions.filter(
 				(c) => c.category === 'self' || c.category === 'ancestor'
@@ -272,32 +276,28 @@
 				<span class="text-muted">Bus</span>
 				<span class="font-mono {volColor(bSum)}">{formatVol(bSum)}</span>
 				<span class="text-muted/40">=</span>
-				<span class="font-mono font-semibold {volColor(hSum + bSum)}"
-					>{formatVol(hSum + bSum)}</span
+				<span class="font-mono font-semibold {volColor(hSum + bSum)}">{formatVol(hSum + bSum)}</span
 				>
 			</div>
 		{/each}
 	</div>
 
 	<!-- Signal-flow graph -->
-	<div class="overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-lg border border-base">
-		<div
-			bind:this={containerEl}
-			class="relative inline-flex gap-12 items-start p-5 min-w-full"
-		>
+	<div class="overscroll-x-contain border border-base rounded-lg overflow-x-auto overflow-y-hidden">
+		<div bind:this={containerEl} class="p-5 inline-flex gap-12 min-w-full items-start relative">
 			{#each graph.columns as column, colIdx (colIdx)}
 				{#if column.length > 0}
 					<div class="flex flex-col gap-3" style="min-width: 220px">
 						{#each column as node (node.id)}
 							<div
 								data-node-id={node.id}
-								class="p-3 rounded-lg border border-base bg-base {borderCls(
+								class="p-3 border border-base rounded-lg bg-base {borderCls(
 									node.contribution.category
 								)} border-l-3 space-y-2"
 							>
 								<!-- Header: badge + name + total -->
-								<div class="flex items-center justify-between gap-2">
-									<div class="flex items-center gap-1.5 min-w-0">
+								<div class="flex gap-2 items-center justify-between">
+									<div class="flex gap-1.5 min-w-0 items-center">
 										<Badge variant={node.contribution.badgeVariant}>
 											{node.contribution.typeName}
 										</Badge>
@@ -340,8 +340,7 @@
 											label="OutBus"
 											slider={node.contribution.outputBusVolumeState}
 											disabled={isSaving}
-											oncommit={(v) =>
-												onVolumeChange(node.contribution, 'OutputBusVolume', v)}
+											oncommit={(v) => onVolumeChange(node.contribution, 'OutputBusVolume', v)}
 										/>
 									{/if}
 								{:else}
@@ -356,8 +355,7 @@
 											label="OutBus"
 											slider={node.contribution.outputBusVolumeState}
 											disabled={isSaving}
-											oncommit={(v) =>
-												onVolumeChange(node.contribution, 'OutputBusVolume', v)}
+											oncommit={(v) => onVolumeChange(node.contribution, 'OutputBusVolume', v)}
 										/>
 									{/if}
 								{/if}
@@ -369,7 +367,7 @@
 
 			<!-- SVG edges overlay -->
 			<svg
-				class="absolute top-0 left-0 pointer-events-none"
+				class="pointer-events-none left-0 top-0 absolute"
 				width={svgW}
 				height={svgH}
 				style="overflow: visible"
@@ -378,14 +376,7 @@
 					<marker id="arrow" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
 						<polygon points="0 0, 6 2, 0 4" class="fill-current" opacity="0.15" />
 					</marker>
-					<marker
-						id="arrow-route"
-						markerWidth="6"
-						markerHeight="4"
-						refX="5"
-						refY="2"
-						orient="auto"
-					>
+					<marker id="arrow-route" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
 						<polygon points="0 0, 6 2, 0 4" fill="#3069ff" opacity="0.4" />
 					</marker>
 				</defs>

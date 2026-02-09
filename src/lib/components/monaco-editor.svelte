@@ -21,10 +21,10 @@
 			};
 
 			// Core editor API only — no bundled languages/workers
-			// @ts-ignore — ESM subpath works at runtime; no .d.ts published
+			// @ts-expect-error — ESM subpath works at runtime; no .d.ts published
 			const monaco = await import('monaco-editor/esm/vs/editor/editor.api');
 			// JSON language support (validation, completions, formatting)
-			// @ts-ignore — ESM subpath works at runtime; no .d.ts published
+			// @ts-expect-error — ESM subpath works at runtime; no .d.ts published
 			await import('monaco-editor/esm/vs/language/json/monaco.contribution');
 
 			// Define dark theme matching our design system

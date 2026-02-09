@@ -58,7 +58,7 @@ self.addEventListener('install', (event) => {
 					if (existing) return;
 
 					try {
-					const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+						const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
 						if (response.ok) {
 							await cdnCache.put(url, response);
 						}

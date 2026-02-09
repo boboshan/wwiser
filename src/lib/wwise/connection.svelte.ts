@@ -4,6 +4,7 @@
  */
 
 import { browser } from '$app/environment';
+import { historyStore } from '$lib/state/history.svelte';
 
 // ============================================================================
 // Types
@@ -114,6 +115,7 @@ class WwiseConnection {
 	#session: AutobahnSession | null = null;
 	#host = '127.0.0.1';
 	#port = 8080;
+	#changeSubscriptions: { unsubscribe: () => Promise<void> }[] = [];
 
 	get url() {
 		return `ws://${this.#host}:${this.#port}/waapi`;
@@ -155,6 +157,11 @@ class WwiseConnection {
 					} catch {
 						// Project fetch failed, connection still valid
 					}
+					try {
+						await this.#subscribeToChanges();
+					} catch {
+						// Change subscription failed, undo labels will be best-effort
+					}
 					resolve(true);
 				};
 
@@ -189,11 +196,13 @@ class WwiseConnection {
 
 	disconnect() {
 		if (this.#connection) {
+			this.#unsubscribeFromChanges();
 			this.#connection.close();
 			this.#connection = null;
 			this.#session = null;
 			this.status = 'disconnected';
 			this.project = null;
+			historyStore.clear();
 		}
 	}
 
@@ -494,15 +503,43 @@ class WwiseConnection {
 	// -------------------------------------------------------------------------
 
 	async beginUndoGroup(): Promise<void> {
+		historyStore.beginInternalOp();
 		await this.call('ak.wwise.core.undo.beginGroup', {});
 	}
 
 	async endUndoGroup(displayName = 'Wwiser Operation'): Promise<void> {
 		await this.call('ak.wwise.core.undo.endGroup', { displayName });
+		historyStore.push(displayName);
+		historyStore.endInternalOp();
 	}
 
 	async cancelUndoGroup(): Promise<void> {
 		await this.call('ak.wwise.core.undo.cancelGroup', {});
+		historyStore.endInternalOp();
+	}
+
+	async undo(): Promise<void> {
+		historyStore.beginInternalOp();
+		historyStore.setUndoing(true);
+		try {
+			await this.call('ak.wwise.core.undo.undo', {});
+			historyStore.didUndo();
+		} finally {
+			historyStore.setUndoing(false);
+			historyStore.endInternalOp();
+		}
+	}
+
+	async redo(): Promise<void> {
+		historyStore.beginInternalOp();
+		historyStore.setRedoing(true);
+		try {
+			await this.call('ak.wwise.core.undo.redo', {});
+			historyStore.didRedo();
+		} finally {
+			historyStore.setRedoing(false);
+			historyStore.endInternalOp();
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -565,6 +602,39 @@ class WwiseConnection {
 	// -------------------------------------------------------------------------
 	// Private
 	// -------------------------------------------------------------------------
+
+	async #subscribeToChanges(): Promise<void> {
+		// Subscribe to WAAPI notifications that indicate something changed in the project.
+		// When these fire outside of a Wwiser-initiated operation, we know an external
+		// change happened (e.g. user edited directly in Wwise Authoring) and our
+		// undo/redo labels are stale.
+		const topics = [
+			'ak.wwise.core.object.nameChanged',
+			'ak.wwise.core.object.created',
+			'ak.wwise.core.object.postDeleted',
+			'ak.wwise.core.object.propertyChanged',
+			'ak.wwise.core.object.childAdded',
+			'ak.wwise.core.object.childRemoved'
+		];
+
+		const handler = () => historyStore.onExternalChange();
+
+		for (const topic of topics) {
+			try {
+				const sub = await this.subscribe(topic, handler);
+				this.#changeSubscriptions.push(sub);
+			} catch {
+				// Some topics may not be available in all Wwise versions
+			}
+		}
+	}
+
+	#unsubscribeFromChanges(): void {
+		for (const sub of this.#changeSubscriptions) {
+			sub.unsubscribe().catch(() => {});
+		}
+		this.#changeSubscriptions = [];
+	}
 
 	async #fetchProject(): Promise<void> {
 		const info = await this.call<{ projectPath?: string }>('ak.wwise.core.getInfo', {});

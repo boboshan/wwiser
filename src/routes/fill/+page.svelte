@@ -135,9 +135,7 @@
 				wwise.getAllStateGroups()
 			]);
 
-			switchContainers = await Promise.all(
-				[...containerMap.values()].map(loadContainerInfo)
-			);
+			switchContainers = await Promise.all([...containerMap.values()].map(loadContainerInfo));
 
 			// Pre-select children from Wwise selection
 			selectedChildren.clear();
@@ -283,9 +281,7 @@
 			const defaultId = pendingDefaults.get(containerId);
 			if (defaultId) await wwise.setDefaultSwitchOrState(containerId, defaultId);
 
-			const container = switchContainers.find(
-				(sc) => sc.container.id === containerId
-			)?.container;
+			const container = switchContainers.find((sc) => sc.container.id === containerId)?.container;
 			if (container) {
 				const newInfo = await loadContainerInfo(container);
 				switchContainers = switchContainers.map((sc) =>
@@ -497,13 +493,9 @@
 								/>{:else}<ChevronRight size={14} class="text-muted shrink-0" />{/if}
 							<div class="flex flex-1 gap-2 min-w-0 items-center">
 								<Badge variant="wwise">Switch Container</Badge>
-								<span class="text-sm text-base font-medium truncate"
-									>{sc.container.name}</span
-								>
+								<span class="text-sm text-base font-medium truncate">{sc.container.name}</span>
 							</div>
-							<span class="text-xs text-muted shrink-0"
-								>{sc.switchGroup?.name ?? '—'}</span
-							>
+							<span class="text-xs text-muted shrink-0">{sc.switchGroup?.name ?? '—'}</span>
 							<span
 								class={[
 									'text-xs px-2 py-0.5 rounded-full shrink-0',
@@ -512,9 +504,7 @@
 										: 'bg-green-500/10 text-green-600 dark:text-green-400'
 								]}
 							>
-								{sc.blankSwitches.length > 0
-									? `${sc.blankSwitches.length} blank`
-									: 'All filled'}
+								{sc.blankSwitches.length > 0 ? `${sc.blankSwitches.length} blank` : 'All filled'}
 							</span>
 						</button>
 
@@ -522,24 +512,19 @@
 						{#if expanded}
 							<div class="mt-3 pt-3 border-t border-base space-y-4">
 								{#if sc.blankSwitches.length === 0}
-									<p
-										class="text-sm text-green-600 m-0 py-2 text-center dark:text-green-400"
-									>
+									<p class="text-sm text-green-600 m-0 py-2 text-center dark:text-green-400">
 										All switches have children assigned
 									</p>
 								{:else}
 									<!-- Children selector -->
 									<div class="space-y-2">
 										<div class="flex items-center justify-between">
-											<span
-												class="text-[10px] text-muted tracking-wider font-medium uppercase"
-											>
+											<span class="text-[10px] text-muted tracking-wider font-medium uppercase">
 												Children to Assign ({selectedCount}/{sc.children.length})
 											</span>
 											<div class="flex gap-1.5">
 												<button
-													onclick={() =>
-														selectAllChildren(sc.container.id, sc.children)}
+													onclick={() => selectAllChildren(sc.container.id, sc.children)}
 													class="text-xs text-muted font-medium px-2 py-0.5 rounded transition-colors hover:text-surface-900 hover:bg-surface-100 dark:hover:text-surface-100 dark:hover:bg-surface-800"
 												>
 													All
@@ -554,7 +539,7 @@
 										</div>
 										{#if sc.children.length > 0}
 											<div
-												class="border border-base rounded-lg divide-y divide-surface-200 dark:divide-surface-800 max-h-48 overflow-y-auto"
+												class="border border-base rounded-lg max-h-48 overflow-y-auto divide-surface-200 divide-y dark:divide-surface-800"
 											>
 												{#each sc.children as child (child.id)}
 													{@const isSelected = selected?.has(child.id) ?? false}
@@ -569,8 +554,7 @@
 														<input
 															type="checkbox"
 															checked={isSelected}
-															onchange={() =>
-																toggleChild(sc.container.id, child.id)}
+															onchange={() => toggleChild(sc.container.id, child.id)}
 															class="accent-wwise"
 														/>
 														<span class="truncate">{child.name}</span>
@@ -578,17 +562,13 @@
 												{/each}
 											</div>
 										{:else}
-											<p class="text-xs text-muted m-0">
-												No children in this container
-											</p>
+											<p class="text-xs text-muted m-0">No children in this container</p>
 										{/if}
 									</div>
 
 									<!-- Blank switches -->
 									<div class="space-y-2">
-										<span
-											class="text-[10px] text-muted tracking-wider font-medium block uppercase"
-										>
+										<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
 											Blank Switches ({sc.blankSwitches.length})
 										</span>
 										<div
@@ -604,44 +584,28 @@
 												>
 													<button
 														onclick={() => toggleSkipSwitch(sw.id)}
-														aria-label={isSkipped
-															? 'Include this switch'
-															: 'Skip this switch'}
+														aria-label={isSkipped ? 'Include this switch' : 'Skip this switch'}
 														class={[
 															'p-1 rounded transition-colors shrink-0 group/skip',
 															isSkipped
 																? 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300'
 																: 'text-green-500 hover:text-green-600 dark:hover:text-green-400'
 														]}
-														title={isSkipped
-															? 'Click to include'
-															: 'Click to skip'}
+														title={isSkipped ? 'Click to include' : 'Click to skip'}
 													>
 														{#if isSkipped}
 															<SkipForward size={16} />
 														{:else}
-															<Check
-																size={16}
-																class="group-hover/skip:hidden"
-															/>
-															<SkipForward
-																size={16}
-																class="hidden group-hover/skip:block"
-															/>
+															<Check size={16} class="group-hover/skip:hidden" />
+															<SkipForward size={16} class="hidden group-hover/skip:block" />
 														{/if}
 													</button>
-													<span
-														class={isSkipped
-															? 'text-surface-400 line-through'
-															: 'text-base'}
-													>
+													<span class={isSkipped ? 'text-surface-400 line-through' : 'text-base'}>
 														{sw.name}
 													</span>
 													{#if selectedCount > 0 && !isSkipped}
 														<span class="text-xs text-wwise ml-auto">
-															&larr; {selectedCount} child{selectedCount !== 1
-																? 'ren'
-																: ''}
+															&larr; {selectedCount} child{selectedCount !== 1 ? 'ren' : ''}
 														</span>
 													{/if}
 												</div>
@@ -656,28 +620,19 @@
 										<summary
 											class="text-xs text-green-600 cursor-pointer transition-colors dark:text-green-400 hover:text-green-500"
 										>
-											{sc.assignedSwitches.length} switch{sc.assignedSwitches
-												.length !== 1
+											{sc.assignedSwitches.length} switch{sc.assignedSwitches.length !== 1
 												? 'es'
 												: ''} already assigned
 										</summary>
-										<div
-											class="mt-2 pl-3 border-l-2 border-green-500/20 space-y-1"
-										>
+										<div class="mt-2 pl-3 border-l-2 border-green-500/20 space-y-1">
 											{#each sc.assignedSwitches as a (a.sw.id)}
 												<div class="text-xs flex gap-2 items-center">
-													<span class="text-muted truncate"
-														>{a.sw.name}</span
-													>
+													<span class="text-muted truncate">{a.sw.name}</span>
 													<span class="text-green-500">&rarr;</span>
-													<span
-														class="text-green-600 font-medium dark:text-green-400"
+													<span class="text-green-600 font-medium dark:text-green-400"
 														>{a.childNames.join(', ')}</span
 													>
-													<Check
-														size={12}
-														class="text-green-500 shrink-0"
-													/>
+													<Check size={12} class="text-green-500 shrink-0" />
 												</div>
 											{/each}
 										</div>

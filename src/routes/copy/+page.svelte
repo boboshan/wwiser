@@ -240,11 +240,7 @@
 				Name Conflict
 			</span>
 			<div class="max-w-xs">
-				<Select
-					id="conflict-select"
-					items={conflictItems}
-					bind:value={onNameConflict}
-				/>
+				<Select id="conflict-select" items={conflictItems} bind:value={onNameConflict} />
 			</div>
 		</div>
 	</div>
@@ -278,7 +274,7 @@
 				<div class="max-h-96 overflow-y-auto">
 					{#each targetObjects as target (target.id)}
 						<div class="px-4 py-3 border-b border-base last:border-b-0">
-							<div class="flex gap-2 items-center mb-2">
+							<div class="mb-2 flex gap-2 items-center">
 								<Badge variant="wwise">{getTypeDisplayName(target.type)}</Badge>
 								<span class="text-sm text-base font-medium font-mono">{target.name}</span>
 								<span class="text-xs text-muted ml-auto">
@@ -288,7 +284,7 @@
 							<div class="ml-6 space-y-1">
 								{#each sourceObjects as source (source.id)}
 									<div class="flex gap-2 items-center">
-										<span class="text-wwise text-xs">+</span>
+										<span class="text-xs text-wwise">+</span>
 										<Badge variant="wwise">{getTypeDisplayName(source.type)}</Badge>
 										<span class="text-sm text-wwise font-mono truncate">{source.name}</span>
 									</div>

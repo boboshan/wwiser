@@ -24,7 +24,7 @@ export const siteConfig = {
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
 	url: 'https://wwiser.net',
 	author: 'bbs',
-	version: '0.0.2',
+	version: '0.0.3',
 	keywords: [
 		'wwise',
 		'waapi',
@@ -39,7 +39,16 @@ export const siteConfig = {
 	}
 } as const;
 
-export type NavIcon = 'package' | 'volume' | 'edit' | 'terminal' | 'settings' | 'git-branch' | 'file-audio' | 'list-checks' | 'copy-plus';
+export type NavIcon =
+	| 'package'
+	| 'volume'
+	| 'edit'
+	| 'terminal'
+	| 'settings'
+	| 'git-branch'
+	| 'file-audio'
+	| 'list-checks'
+	| 'copy-plus';
 
 export interface NavItem {
 	id: string;
