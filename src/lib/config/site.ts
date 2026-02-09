@@ -45,8 +45,10 @@ export interface NavItem {
 	id: string;
 	name: string;
 	description: string;
+	shortDescription: string;
 	icon: NavIcon;
 	href: string;
+	featured?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,20 +69,25 @@ export const navigation: NavItem[] = [
 		id: 'wrap',
 		name: 'Wrap',
 		description: 'Wrap objects in containers with auto-grouping',
+		shortDescription: 'Wrap in containers',
 		icon: 'package',
-		href: '/wrap'
+		href: '/wrap',
+		featured: true
 	},
 	{
 		id: 'assign',
 		name: 'Assign',
 		description: 'Match children to switches by naming rules',
+		shortDescription: 'Match to switches',
 		icon: 'git-branch',
-		href: '/assign'
+		href: '/assign',
+		featured: true
 	},
 	{
 		id: 'fill',
 		name: 'Fill',
 		description: 'Fill blank switches with selected children',
+		shortDescription: 'Fill blank switches',
 		icon: 'list-checks',
 		href: '/fill'
 	},
@@ -88,20 +95,25 @@ export const navigation: NavItem[] = [
 		id: 'volume',
 		name: 'Volume',
 		description: 'Calculate effective volume across hierarchy and buses',
+		shortDescription: 'Effective volume calc',
 		icon: 'volume',
-		href: '/volume'
+		href: '/volume',
+		featured: true
 	},
 	{
 		id: 'rename',
 		name: 'Rename',
 		description: 'Batch rename objects from a clipboard list',
+		shortDescription: 'Batch rename objects',
 		icon: 'edit',
-		href: '/rename'
+		href: '/rename',
+		featured: true
 	},
 	{
 		id: 'copy',
 		name: 'Copy',
 		description: 'Copy selected objects into target containers',
+		shortDescription: 'Copy into targets',
 		icon: 'copy-plus',
 		href: '/copy'
 	}
@@ -109,6 +121,7 @@ export const navigation: NavItem[] = [
 	// 	id: 'source-rename',
 	// 	name: 'Source Rename',
 	// 	description: 'Rename source audio files referenced by sounds',
+	// 	shortDescription: 'Rename source files',
 	// 	icon: 'file-audio',
 	// 	href: '/source-rename'
 	// }
@@ -118,6 +131,7 @@ export const explore: NavItem = {
 	id: 'explore',
 	name: 'WAAPI Explorer',
 	description: 'Call functions, subscribe to topics, and inspect results live',
+	shortDescription: 'Live WAAPI console',
 	icon: 'terminal',
 	href: '/explore'
 };

@@ -125,7 +125,7 @@
 				</div>
 				<div class="flex-1 min-w-0">
 					<span class="block truncate">{explore.name}</span>
-					<span class="text-xs text-muted block truncate">{explore.description}</span>
+					<span class="text-xs text-muted/60 block truncate">{explore.shortDescription}</span>
 				</div>
 			</a>
 		{/if}
@@ -157,7 +157,7 @@
 					</div>
 					<div class="flex-1 min-w-0">
 						<span class="block truncate">{tool.name}</span>
-						<span class="text-xs text-muted block truncate">{tool.description}</span>
+						<span class="text-xs text-muted/60 block truncate">{tool.shortDescription}</span>
 					</div>
 				</a>
 			{/each}

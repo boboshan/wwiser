@@ -5,7 +5,7 @@
 	import wordmark from '$lib/assets/wwiser.svg';
 	import { wwise } from '$lib/wwise/connection.svelte';
 
-	const tools = navigation;
+	const tools = navigation.filter((t) => t.featured);
 </script>
 
 <div class="flex flex-col h-full items-center justify-center relative">
@@ -24,14 +24,10 @@
 					<img src={logo} alt="" class="h-16 w-16 relative drop-shadow-2xl" />
 				</div>
 			</div>
-			<div class="space-y-4">
-				<!-- Wordmark SVG -->
-				<div class="flex justify-center">
-					<img src={wordmark} alt={siteConfig.name} class="opacity-90 h-8 w-auto dark:invert" />
-				</div>
 
-				<!-- Tagline -->
-				<p class="text-sm text-muted m-0">
+			<div class="inline-flex flex-col">
+				<img src={wordmark} alt={siteConfig.name} class="opacity-90 dark:invert" />
+				<p class="text text-muted mt-3">
 					{siteConfig.tagline}
 				</p>
 			</div>
@@ -79,7 +75,7 @@
 						>{feature.name}</span
 					>
 					<span
-						class="text-[11px] text-muted/60 hidden transition-colors group-hover:text-muted sm:block"
+						class="text-[11px] text-muted/60 transition-colors group-hover:text-muted"
 						>{feature.description}</span
 					>
 				</a>
