@@ -116,17 +116,18 @@
 </script>
 
 <script lang="ts">
-	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+	import { SvelteMap } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
-	import { Volume2, ChevronRight } from 'lucide-svelte';
+	import { Volume2 } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
-	import Badge from '$lib/components/badge.svelte';
-	import VolumeSlider from './volume-slider.svelte';
+	import VolumeGraph from './volume-graph.svelte';
 
 	// Types
 	interface VolumeInfo {
 		object: WwiseObject;
 		contributions: VolumeContribution[];
+		/** ID of the contribution node that routes into the bus chain */
+		routingSourceId?: string;
 	}
 
 	// Supported object types for volume calculation
@@ -145,7 +146,6 @@
 	let isLoading = $state(false);
 	let statusMessage = $state('');
 	let statusType = $state<'info' | 'success' | 'error'>('info');
-	let expandedRows = new SvelteSet<string>();
 	let isSaving = $state(false);
 
 	// Cache for object details to reduce API calls
@@ -279,17 +279,20 @@
 	async function getHierarchyContributions(objectId: string): Promise<{
 		contributions: VolumeContribution[];
 		effectiveOutputBus: { id: string; name: string } | null;
+		routingSourceId: string;
 	}> {
 		const contributions: VolumeContribution[] = [];
 		let currentId = objectId;
 		let effectiveOutputBus: { id: string; name: string } | null = null;
 		let foundOutputBusOverride = false;
+		let routingSourceId = objectId; // default: self routes to bus
 
 		// First, get self to check its output bus override
 		const selfObj = await getCachedObjectDetails(objectId);
 		if (selfObj?.overrideOutput && selfObj.outputBus?.id) {
 			effectiveOutputBus = selfObj.outputBus;
 			foundOutputBusOverride = true;
+			routingSourceId = objectId;
 		}
 
 		while (true) {
@@ -300,10 +303,17 @@
 			if (!parent) break;
 			if (parent.type === 'Project' || parent.type === 'WorkUnit') break;
 
-			// Check if this ancestor explicitly overrides output bus (and we haven't found one yet)
-			if (!foundOutputBusOverride && parent.overrideOutput && parent.outputBus?.id) {
-				effectiveOutputBus = parent.outputBus;
+				// Does this ancestor route to a specific output bus?
+			// Check both @OverrideOutput and non-Master @OutputBus (root-level
+			// containers may have @OverrideOutput=false even with an explicit bus).
+			const hasOutputBus =
+				parent.outputBus?.id != null &&
+				(parent.overrideOutput || parent.outputBus.name !== 'Master Audio Bus');
+
+			if (!foundOutputBusOverride && hasOutputBus) {
+				effectiveOutputBus = parent.outputBus!;
 				foundOutputBusOverride = true;
+				routingSourceId = parent.id;
 			}
 
 			contributions.push(
@@ -313,9 +323,8 @@
 					type: parent.type,
 					category: 'ancestor',
 					volume: parent.volume,
-					outputBusVolume: parent.overrideOutput ? parent.outputBusVolume : undefined,
-					outputBusName:
-						parent.overrideOutput && parent.outputBus ? `→ ${parent.outputBus.name}` : undefined
+					outputBusVolume: hasOutputBus ? parent.outputBusVolume : undefined,
+					outputBusName: hasOutputBus ? `→ ${parent.outputBus!.name}` : undefined
 				})
 			);
 
@@ -327,7 +336,12 @@
 			effectiveOutputBus = selfObj.outputBus;
 		}
 
-		return { contributions, effectiveOutputBus };
+		// If no override found, routing comes from the last ancestor (or self if none)
+		if (!foundOutputBusOverride && contributions.length > 0) {
+			routingSourceId = contributions[contributions.length - 1].id;
+		}
+
+		return { contributions, effectiveOutputBus, routingSourceId };
 	}
 
 	// Get bus chain contributions starting from a bus (includes the bus and all its ancestors up to Master)
@@ -450,8 +464,11 @@
 						);
 
 						// Get ancestor contributions and find effective output bus
-						const { contributions: ancestorContribs, effectiveOutputBus } =
-							await getHierarchyContributions(obj.id);
+						const {
+							contributions: ancestorContribs,
+							effectiveOutputBus,
+							routingSourceId
+						} = await getHierarchyContributions(obj.id);
 						contributions.push(...ancestorContribs);
 
 						// Get output bus chain contributions using the effective output bus
@@ -459,13 +476,21 @@
 							const busContribs = await getBusChainContributions(effectiveOutputBus.id);
 							contributions.push(...busContribs);
 						}
+
+						results.push({
+							object: obj,
+							contributions,
+							routingSourceId
+						});
 					}
 				}
 
-				results.push({
-					object: obj,
-					contributions
-				});
+				if (!results.find((r) => r.object.id === obj.id)) {
+					results.push({
+						object: obj,
+						contributions
+					});
+				}
 			}
 
 			volumeData = results;
@@ -480,46 +505,25 @@
 		}
 	}
 
-	// Toggle row expansion
-	function toggleRow(id: string) {
-		if (expandedRows.has(id)) {
-			expandedRows.delete(id);
-		} else {
-			expandedRows.add(id);
-		}
-	}
-
-	// Format volume with sign
-	function formatVolume(vol: number): string {
-		if (vol === 0) return '0 dB';
-		return vol > 0 ? `+${vol.toFixed(1)} dB` : `${vol.toFixed(1)} dB`;
-	}
-
-	// Get volume color class
-	function getVolumeColor(vol: number): string {
-		if (vol > 0) return 'text-red-500';
-		if (vol < -12) return 'text-blue-500';
-		if (vol < 0) return 'text-green-500';
-		return 'text-muted';
-	}
 </script>
 
 <div class="flex flex-col gap-6">
-	<!-- Description -->
-	<p class="text-sm text-muted leading-relaxed m-0 max-w-lg">
-		Calculate the final output volume including hierarchy and bus chain contributions.
-	</p>
-
-	<!-- Controls -->
-	<div class="flex flex-wrap gap-3 items-center">
-		<button
-			class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex gap-2 h-10 transition-colors items-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
-			onclick={calculate}
-			disabled={!wwise.isConnected || isLoading}
-		>
-			<Volume2 size={16} class={isLoading ? 'animate-pulse' : ''} />
-			{isLoading ? 'Calculating...' : 'Calculate Selection'}
-		</button>
+	<!-- Header -->
+	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+		<p class="text-sm text-muted leading-relaxed m-0">
+			Calculate the effective output volume of selected objects, including hierarchy and bus chain
+			contributions.
+		</p>
+		<div class="flex shrink-0 gap-3 items-center">
+			<button
+				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed"
+				onclick={calculate}
+				disabled={!wwise.isConnected || isLoading}
+			>
+				<Volume2 size={16} class={isLoading ? 'animate-pulse' : ''} />
+				{isLoading ? 'Calculating...' : 'Calculate Selection'}
+			</button>
+		</div>
 	</div>
 
 	<!-- Connection Warning -->
@@ -536,159 +540,7 @@
 					>{volumeData.length} object{volumeData.length !== 1 ? 's' : ''}</span
 				>
 			</div>
-			<div class="space-y-2">
-				{#each volumeData as item (item.object.id)}
-					{@const hierarchyContribs = item.contributions.filter(
-						(c) => c.category === 'self' || c.category === 'ancestor'
-					)}
-					{@const busContribs = item.contributions.filter((c) => c.category === 'bus')}
-					{@const hierarchySum = hierarchyContribs.reduce((s, c) => s + c.total, 0)}
-					{@const busSum = busContribs.reduce((s, c) => s + c.total, 0)}
-					{@const isExpanded = expandedRows.has(item.object.id)}
-
-					<div class="p-4 border border-base rounded-lg bg-base">
-						<!-- Main row -->
-						<button
-							class="text-left flex gap-2 w-full items-center"
-							onclick={() => toggleRow(item.object.id)}
-						>
-							<ChevronRight
-								size={14}
-								class="text-muted shrink-0 transition-transform duration-150 {isExpanded
-									? 'rotate-90'
-									: ''}"
-							/>
-							<div class="flex flex-1 gap-2 min-w-0 items-center">
-								<Badge variant="wwise">{getTypeDisplayName(item.object.type)}</Badge>
-								<span class="text-sm text-base font-medium truncate">{item.object.name}</span>
-							</div>
-							<div class="text-xs flex shrink-0 gap-4 items-center">
-								<div class="text-right">
-									<div class="text-[10px] text-muted uppercase">Hierarchy</div>
-									<div class="font-mono {getVolumeColor(hierarchySum)}">
-										{formatVolume(hierarchySum)}
-									</div>
-								</div>
-								<div class="text-right">
-									<div class="text-[10px] text-muted uppercase">Bus</div>
-									<div class="font-mono {getVolumeColor(busSum)}">{formatVolume(busSum)}</div>
-								</div>
-								<div class="text-right min-w-20">
-									<div class="text-[10px] text-muted uppercase">Effective</div>
-									<div class="font-mono font-semibold {getVolumeColor(hierarchySum + busSum)}">
-										{formatVolume(hierarchySum + busSum)}
-									</div>
-								</div>
-							</div>
-						</button>
-
-						<!-- Expanded details -->
-						{#if isExpanded}
-							<div class="mt-3 pt-3 border-t border-base space-y-4">
-								<!-- Hierarchy contributions -->
-								{#if hierarchyContribs.length > 0}
-									<div>
-										<div
-											class="text-[10px] text-muted tracking-wider font-medium mb-2 ml-1 uppercase"
-										>
-											Actor-Mixer Hierarchy
-										</div>
-										<div class="pl-4 border-l-2 border-purple-500/30 space-y-3">
-											{#each hierarchyContribs as contrib (contrib.id)}
-												<div class="text-xs py-1.5 space-y-1.5">
-													<div class="flex items-center justify-between">
-														<div class="flex gap-2 items-center">
-															<Badge variant={contrib.badgeVariant}>
-																{contrib.typeName}
-															</Badge>
-															<span class="text-base">{contrib.name}</span>
-															{#if contrib.outputBusName}
-																<span class="text-[10px] text-blue-500"
-																	>{contrib.outputBusName}</span
-																>
-															{/if}
-														</div>
-														<span class="font-medium font-mono {getVolumeColor(contrib.total)}">
-															{formatVolume(contrib.total)}
-														</span>
-													</div>
-													<VolumeSlider
-														label="Voice"
-														slider={contrib.volumeState}
-														disabled={isSaving}
-														oncommit={(v) => handleVolumeChange(contrib, 'Volume', v)}
-													/>
-													{#if contrib.outputBusVolumeState}
-														<VolumeSlider
-															label="OutBus"
-															slider={contrib.outputBusVolumeState}
-															disabled={isSaving}
-															oncommit={(v) => handleVolumeChange(contrib, 'OutputBusVolume', v)}
-														/>
-													{/if}
-												</div>
-											{/each}
-										</div>
-									</div>
-								{/if}
-
-								<!-- Bus chain contributions -->
-								{#if busContribs.length > 0}
-									<div>
-										<div
-											class="text-[10px] text-muted tracking-wider font-medium mb-2 ml-1 uppercase"
-										>
-											Output Bus Chain
-										</div>
-										<div class="pl-4 border-l-2 border-blue-500/30 space-y-3">
-											{#each busContribs as contrib (contrib.id)}
-												<div class="text-xs py-1.5 space-y-1.5">
-													<div class="flex items-center justify-between">
-														<div class="flex gap-2 items-center">
-															<Badge variant={contrib.badgeVariant}>
-																{contrib.typeName}
-															</Badge>
-															<span class="text-base">{contrib.name}</span>
-															{#if contrib.outputBusName}
-																<span class="text-[10px] text-blue-500"
-																	>{contrib.outputBusName}</span
-																>
-															{/if}
-														</div>
-														<span class="font-medium font-mono {getVolumeColor(contrib.total)}">
-															{formatVolume(contrib.total)}
-														</span>
-													</div>
-													<VolumeSlider
-														label="Voice"
-														slider={contrib.voiceVolumeState!}
-														disabled={isSaving}
-														oncommit={(v) => handleVolumeChange(contrib, 'Volume', v)}
-													/>
-													<VolumeSlider
-														label="Bus"
-														slider={contrib.busVolumeState!}
-														disabled={isSaving}
-														oncommit={(v) => handleVolumeChange(contrib, 'BusVolume', v)}
-													/>
-													{#if contrib.outputBusVolumeState}
-														<VolumeSlider
-															label="OutBus"
-															slider={contrib.outputBusVolumeState}
-															disabled={isSaving}
-															oncommit={(v) => handleVolumeChange(contrib, 'OutputBusVolume', v)}
-														/>
-													{/if}
-												</div>
-											{/each}
-										</div>
-									</div>
-								{/if}
-							</div>
-						{/if}
-					</div>
-				{/each}
-			</div>
+			<VolumeGraph {volumeData} {isSaving} onVolumeChange={handleVolumeChange} />
 		</section>
 	{/if}
 

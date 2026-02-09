@@ -58,7 +58,7 @@ self.addEventListener('install', (event) => {
 					if (existing) return;
 
 					try {
-						const response = await fetch(url, { mode: 'cors' });
+					const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
 						if (response.ok) {
 							await cdnCache.put(url, response);
 						}
@@ -143,7 +143,7 @@ async function handleCdnRequest(request: Request): Promise<Response> {
 	const cached = await cache.match(request.url);
 
 	// Revalidate in background (don't await)
-	const revalidate = fetch(request, { mode: 'cors' })
+	const revalidate = fetch(request.url, { mode: 'cors', credentials: 'omit' })
 		.then((response) => {
 			if (response.ok) {
 				cache.put(request.url, response.clone());

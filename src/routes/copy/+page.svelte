@@ -3,6 +3,7 @@
 	import { RefreshCw, CopyPlus, Trash2 } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
+	import Select, { type SelectItem } from '$lib/components/select.svelte';
 
 	// State
 	let sourceObjects = $state<WwiseObject[]>([]);
@@ -13,6 +14,13 @@
 	let statusMessage = $state('');
 	let statusType = $state<'info' | 'success' | 'error'>('info');
 	let onNameConflict = $state<ConflictResolution>('rename');
+
+	const conflictItems: SelectItem[] = [
+		{ value: 'rename', label: 'Rename (auto-suffix)' },
+		{ value: 'replace', label: 'Replace existing' },
+		{ value: 'fail', label: 'Fail on conflict' },
+		{ value: 'merge', label: 'Merge' }
+	];
 
 	// Derived
 	const totalCopies = $derived(sourceObjects.length * targetObjects.length);
@@ -226,20 +234,18 @@
 	</div>
 
 	<!-- Settings -->
-	<div class="p-5 border border-base rounded-xl bg-base space-y-4">
-		<span class="text-[10px] text-muted tracking-wider font-medium uppercase">Settings</span>
-		<div class="flex gap-4 items-center">
-			<label class="text-sm text-base" for="conflict-select">Name Conflict</label>
-			<select
-				id="conflict-select"
-				bind:value={onNameConflict}
-				class="text-sm text-base font-mono px-3 py-1.5 border border-base rounded-lg bg-surface-50 transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
-			>
-				<option value="rename">Rename (auto-suffix)</option>
-				<option value="replace">Replace existing</option>
-				<option value="fail">Fail on conflict</option>
-				<option value="merge">Merge</option>
-			</select>
+	<div class="p-5 border border-base rounded-xl bg-base space-y-5">
+		<div class="space-y-2">
+			<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
+				Name Conflict
+			</span>
+			<div class="max-w-xs">
+				<Select
+					id="conflict-select"
+					items={conflictItems}
+					bind:value={onNameConflict}
+				/>
+			</div>
 		</div>
 	</div>
 
