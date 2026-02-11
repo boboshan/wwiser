@@ -22,7 +22,15 @@
 	const fullTitle = $derived(
 		title.includes(siteConfig.name) ? title : `${title} | ${siteConfig.name}`
 	);
-	const ogUrl = $derived(canonical || siteConfig.url);
+
+	// Normalize canonical URL: remove trailing slashes, fallback to site URL
+	const normalizedCanonical = $derived.by(() => {
+		const url = canonical || siteConfig.url;
+		// Remove trailing slash unless it's the root URL
+		return url.endsWith('/') && url !== siteConfig.url + '/' ? url.slice(0, -1) : url;
+	});
+
+	const ogUrl = $derived(normalizedCanonical);
 
 	// JSON-LD structured data for Google
 	const jsonLd = {
@@ -71,10 +79,8 @@
 		<meta name="robots" content="index, follow" />
 	{/if}
 
-	<!-- Canonical URL -->
-	{#if canonical}
-		<link rel="canonical" href={canonical} />
-	{/if}
+	<!-- Canonical URL (always present for SEO) -->
+	<link rel="canonical" href={normalizedCanonical} />
 
 	<!-- Open Graph / Facebook -->
 	<meta property="og:type" content={ogType} />
