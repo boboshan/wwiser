@@ -353,7 +353,7 @@
 
 		<!-- Custom Regex -->
 		{#if namingRule === 'custom_regex'}
-			<div class="p-4 border border-base rounded-lg bg-surface-50 space-y-4 dark:bg-surface-800">
+			<div class="gap-4 grid grid-cols-2">
 				<div class="space-y-1.5">
 					<label
 						for="{uid}-regex-pattern"

@@ -69,6 +69,7 @@
 	let customRegex = $state('(.+)');
 	let customListText = $state('');
 	let caseSensitive = $state(false);
+	let ignoreExisting = $state(false);
 	let expandedIds = new SvelteSet<string>();
 
 	// Per-item conflict resolution (child has existing assignments to non-matching switches)
@@ -131,9 +132,9 @@
 				const matches = findAllMatches(child.name, sc.switches);
 				if (matches.length > 0) {
 					const nid = normalizeId(child.id);
-					const existing = sc.existingAssignments.get(nid) ?? [];
+					const existing = ignoreExisting ? [] : (sc.existingAssignments.get(nid) ?? []);
 					const existingNormalized = new Set(existing.map(normalizeId));
-					// At least one match must be unassigned
+					// At least one match must be unassigned (when ignoreExisting, all are considered unassigned)
 					const firstNew = matches.find((m) => !existingNormalized.has(normalizeId(m.id)));
 					if (firstNew) {
 						// Default selection: first unassigned match (most specific)
@@ -142,10 +143,12 @@
 						// Build map of which children are already assigned to each matched switch
 						// eslint-disable-next-line svelte/prefer-svelte-reactivity -- rebuilt per derivation, not reactive state
 						const switchExistingChildren = new Map<string, string[]>();
-						for (const sw of matches) {
-							const existingChildren = sc.switchToChildren.get(normalizeId(sw.id)) ?? [];
-							if (existingChildren.length > 0) {
-								switchExistingChildren.set(sw.id, existingChildren);
+						if (!ignoreExisting) {
+							for (const sw of matches) {
+								const existingChildren = sc.switchToChildren.get(normalizeId(sw.id)) ?? [];
+								if (existingChildren.length > 0) {
+									switchExistingChildren.set(sw.id, existingChildren);
+								}
 							}
 						}
 						// Track which matched switches are already assigned to this child
@@ -184,6 +187,7 @@
 	// Children whose matches are ALL already assigned (not in preview, but not truly unmatched)
 	const fullyAssignedByContainer = $derived.by(() => {
 		const map = new SvelteMap<string, { child: WwiseObject; switchNames: string[] }[]>();
+		if (ignoreExisting) return map;
 		for (const sc of configured) {
 			const previewChildIds = new Set((previews.get(sc.container.id) ?? []).map((p) => p.childId));
 			const items: { child: WwiseObject; switchNames: string[] }[] = [];
@@ -344,6 +348,7 @@
 		}
 		try {
 			defaultSwitch = await wwise.getDefaultSwitchOrState(container.id);
+			if (defaultSwitch && isNullGuid(defaultSwitch.id)) defaultSwitch = null;
 		} catch {
 			// Container may not have a default switch configured
 		}
@@ -510,6 +515,24 @@
 			await wwise.beginUndoGroup();
 			let assigned = 0,
 				removed = 0;
+
+			// When ignoring existing, remove all current assignments first
+			if (ignoreExisting) {
+				for (const sc of switchContainers) {
+					for (const [childNid, switchIds] of sc.existingAssignments) {
+						const childObj = sc.children.find((c) => normalizeId(c.id) === childNid);
+						if (!childObj) continue;
+						for (const switchId of switchIds) {
+							try {
+								await wwise.removeSwitchContainerAssignment(sc.container.id, childObj.id, switchId);
+								removed++;
+							} catch {
+								// Failed to remove assignment, continue
+							}
+						}
+					}
+				}
+			}
 
 			for (const [containerId, items] of previews) {
 				for (const p of items) {
@@ -701,6 +724,14 @@
 					class="accent-wwise border-base rounded"
 				/>
 				<span class="text-muted">Case sensitive</span>
+			</label>
+			<label class="flex gap-2 cursor-pointer items-center">
+				<input
+					type="checkbox"
+					bind:checked={ignoreExisting}
+					class="accent-wwise border-base rounded"
+				/>
+				<span class="text-muted">Ignore existing</span>
 			</label>
 		</div>
 
