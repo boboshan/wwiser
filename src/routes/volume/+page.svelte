@@ -118,7 +118,7 @@
 
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { SvelteMap } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
 	import { historyStore } from '$lib/state/history.svelte';
 	import { Volume2 } from 'lucide-svelte';
@@ -159,7 +159,7 @@
 	async function refreshSliderValues() {
 		if (volumeData.length === 0 || !wwise.isConnected) return;
 		// Re-fetch every unique object and update its SliderState in-place
-		const seen = new Set<string>();
+		const seen = new SvelteSet<string>();
 		for (const item of volumeData) {
 			for (const contrib of item.contributions) {
 				if (seen.has(contrib.id)) continue;

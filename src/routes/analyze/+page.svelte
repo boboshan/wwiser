@@ -5,18 +5,17 @@
 	import { historyStore } from '$lib/state/history.svelte';
 	import {
 		RefreshCw,
-		Activity,
 		ChevronDown,
 		ChevronRight,
 		Plus,
 		X,
 		TriangleAlert,
-		CircleAlert,
 		CircleCheck,
 		Circle,
 		Layers,
 		GitFork,
-		Star
+		Star,
+		FilePen
 	} from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
@@ -85,11 +84,10 @@
 	// ── Undo/redo refresh ───────────────────────────────────────────────
 
 	async function reloadAllContainers() {
-		if (containers.length === 0 || !wwise.isConnected) return;
+		const current = untrack(() => containers);
+		if (current.length === 0 || !wwise.isConnected) return;
 		try {
-			containers = await Promise.all(
-				containers.map((c) => loadContainerAnalysis(c.container))
-			);
+			containers = await Promise.all(current.map((c) => loadContainerAnalysis(c.container)));
 		} catch {
 			// Reload failed — stale data is acceptable
 		}
@@ -197,7 +195,8 @@
 			const noDefault = !c.defaultSwitch;
 
 			const total = sRows.length + cRows.length + 1; // +1 for default switch check
-			const issues = emptySwitches + unassignedChildren + multiAssigned + sharedSwitches + (noDefault ? 1 : 0);
+			const issues =
+				emptySwitches + unassignedChildren + multiAssigned + sharedSwitches + (noDefault ? 1 : 0);
 			const healthPercent = total > 0 ? Math.round(((total - issues) / total) * 100) : 100;
 
 			map.set(c.container.id, {
@@ -243,12 +242,6 @@
 		return filters.healthy;
 	}
 
-	function childVisible(row: ChildRow): boolean {
-		if (row.status === 'unassigned') return filters.unassigned;
-		if (row.status === 'multi') return filters.multi;
-		return filters.healthy;
-	}
-
 	function toggleFilter(key: FilterKey) {
 		filters[key] = !filters[key];
 	}
@@ -269,13 +262,22 @@
 				containers = [];
 				return;
 			}
-			containers = await Promise.all(valid.map(loadContainerAnalysis));
+			const results = await Promise.allSettled(valid.map(loadContainerAnalysis));
+			containers = results
+				.filter((r): r is PromiseFulfilledResult<ContainerAnalysis> => r.status === 'fulfilled')
+				.map((r) => r.value);
+			const failed = results.filter((r) => r.status === 'rejected').length;
 			expandedIds.clear();
 			for (const c of containers) {
 				if (!isNullGuid(c.switchGroup?.id)) expandedIds.add(c.container.id);
 			}
-			statusMessage = `Loaded ${valid.length} switch container${valid.length !== 1 ? 's' : ''}`;
-			statusType = 'info';
+			if (failed > 0) {
+				statusMessage = `Loaded ${containers.length} container${containers.length !== 1 ? 's' : ''}, ${failed} failed`;
+				statusType = 'error';
+			} else {
+				statusMessage = `Loaded ${valid.length} switch container${valid.length !== 1 ? 's' : ''}`;
+				statusType = 'info';
+			}
 		} catch (e) {
 			statusMessage = e instanceof Error ? e.message : 'Failed to load';
 			statusType = 'error';
@@ -335,7 +337,15 @@
 			}
 		}
 
-		return { container, switchGroup, defaultSwitch, children, switches, childToSwitchIds, switchToChildIds };
+		return {
+			container,
+			switchGroup,
+			defaultSwitch,
+			children,
+			switches,
+			childToSwitchIds,
+			switchToChildIds
+		};
 	}
 
 	async function reloadContainer(containerId: string) {
@@ -416,13 +426,18 @@
 	}
 
 	function toggleExpand(id: string) {
-		if (expandedIds.has(id)) expandedIds.delete(id);
-		else expandedIds.add(id);
-	}
-
-	function getUnassignedChildren(containerId: string): WwiseObject[] {
-		const cRows = childRows.get(containerId) ?? [];
-		return cRows.filter((r) => r.status === 'unassigned').map((r) => r.child);
+		if (expandedIds.has(id)) {
+			expandedIds.delete(id);
+			// Clear inline editing state when collapsing
+			addingToSwitch = null;
+			addingChildValue = undefined;
+			if (editingDefault === id) {
+				editingDefault = null;
+				editingDefaultValue = undefined;
+			}
+		} else {
+			expandedIds.add(id);
+		}
 	}
 
 	function getAllChildren(containerId: string): WwiseObject[] {
@@ -479,7 +494,7 @@
 	{#if unconfigured.length > 0}
 		<Alert variant="warning">
 			{unconfigured.length} container{unconfigured.length !== 1 ? 's have' : ' has'} no switch group configured.
-			Use the <a href="/assign" class="underline font-medium">Assign</a> tool to configure them first.
+			Use the <a href="/assign" class="font-medium underline">Assign</a> tool to configure them first.
 		</Alert>
 	{/if}
 
@@ -564,14 +579,14 @@
 					class={[
 						'text-xs font-medium px-3 py-1.5 rounded-full border transition-all flex gap-1.5 items-center',
 						filters.noDefault
-							? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
+							? 'border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400'
 							: 'border-base bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
 					]}
 				>
 					<Star size={10} />
 					No Default
 					{#if globalStats.noDefault > 0}
-						<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-500/15">
+						<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/15">
 							{globalStats.noDefault}
 						</span>
 					{/if}
@@ -616,7 +631,7 @@
 					<!-- Container header -->
 					<button
 						onclick={() => toggleExpand(c.container.id)}
-						class="text-left p-4 flex gap-3 w-full items-center hover:bg-surface-50 transition-colors dark:hover:bg-surface-800/50"
+						class="p-4 text-left flex gap-3 w-full transition-colors items-center hover:bg-surface-50 dark:hover:bg-surface-800/50"
 					>
 						{#if expanded}
 							<ChevronDown size={14} class="text-muted shrink-0" />
@@ -637,7 +652,7 @@
 						{#if s}
 							<div class="flex shrink-0 gap-2 items-center">
 								<div
-									class="bg-surface-200 rounded-full h-1.5 w-16 overflow-hidden dark:bg-surface-700"
+									class="rounded-full bg-surface-200 h-1.5 w-16 overflow-hidden dark:bg-surface-700"
 								>
 									<div
 										class={[
@@ -655,9 +670,11 @@
 					</button>
 
 					{#if expanded && s}
+						{@const isEditingDefault = editingDefault === c.container.id}
+						{@const defaultItems = c.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
 						<div class="px-4 pb-4 border-t border-base">
 							<!-- Stats row -->
-							<div class="gap-3 grid grid-cols-2 mt-4 sm:grid-cols-4 lg:grid-cols-6">
+							<div class="mt-4 gap-3 grid grid-cols-2 lg:grid-cols-6 sm:grid-cols-4">
 								<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
 									<p class="text-lg text-base font-semibold m-0 tabular-nums">{s.totalSwitches}</p>
 									<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Switches</p>
@@ -667,7 +684,7 @@
 									<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Children</p>
 								</div>
 								{#if s.emptySwitches > 0}
-									<div class="p-3 rounded-lg bg-red-500/5 border border-red-500/10">
+									<div class="p-3 border border-red-500/10 rounded-lg bg-red-500/5">
 										<p
 											class="text-lg text-red-600 font-semibold m-0 tabular-nums dark:text-red-400"
 										>
@@ -681,7 +698,7 @@
 									</div>
 								{/if}
 								{#if s.unassignedChildren > 0}
-									<div class="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+									<div class="p-3 border border-amber-500/10 rounded-lg bg-amber-500/5">
 										<p
 											class="text-lg text-amber-600 font-semibold m-0 tabular-nums dark:text-amber-400"
 										>
@@ -695,7 +712,7 @@
 									</div>
 								{/if}
 								{#if s.multiAssigned > 0}
-									<div class="p-3 rounded-lg bg-purple-500/5 border border-purple-500/10">
+									<div class="p-3 border border-purple-500/10 rounded-lg bg-purple-500/5">
 										<p
 											class="text-lg text-purple-600 font-semibold m-0 tabular-nums dark:text-purple-400"
 										>
@@ -709,7 +726,7 @@
 									</div>
 								{/if}
 								{#if s.sharedSwitches > 0}
-									<div class="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+									<div class="p-3 border border-blue-500/10 rounded-lg bg-blue-500/5">
 										<p
 											class="text-lg text-blue-600 font-semibold m-0 tabular-nums dark:text-blue-400"
 										>
@@ -723,14 +740,10 @@
 									</div>
 								{/if}
 								{#if s.noDefault}
-									<div class="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+									<div class="p-3 border border-orange-500/10 rounded-lg bg-orange-500/5">
+										<p class="text-lg text-orange-600 font-semibold m-0 dark:text-orange-400">!</p>
 										<p
-											class="text-lg text-yellow-600 font-semibold m-0 dark:text-yellow-400"
-										>
-											!
-										</p>
-										<p
-											class="text-[10px] text-yellow-600/70 tracking-wider m-0 uppercase dark:text-yellow-400/70"
+											class="text-[10px] text-orange-600/70 tracking-wider m-0 uppercase dark:text-orange-400/70"
 										>
 											No Default
 										</p>
@@ -740,17 +753,19 @@
 
 							<!-- Default switch info -->
 							{#if s.noDefault && filters.noDefault}
-								{@const isEditingDefault = editingDefault === c.container.id}
-								{@const defaultItems = c.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
 								<div class="mt-5">
-									<div class="text-sm p-3 rounded-lg border border-yellow-500/15 bg-yellow-500/3">
+									<div class="text-sm p-3 border border-orange-500/15 rounded-lg bg-orange-500/3">
 										<div class="flex gap-2 items-center">
-											<Star size={12} class="text-yellow-500 shrink-0" />
-											<span class="text-yellow-700 flex-1 dark:text-yellow-300">No default switch/state assigned</span>
+											<Star size={12} class="text-orange-500 shrink-0" />
+											<span class="text-orange-700 flex-1 dark:text-orange-300"
+												>No default switch/state assigned</span
+											>
 											{#if !isEditingDefault}
 												<button
-													onclick={() => { editingDefault = c.container.id; }}
-													class="text-yellow-500 p-1 rounded-full transition-colors hover:text-yellow-700 hover:bg-yellow-500/10 dark:hover:text-yellow-300"
+													onclick={() => {
+														editingDefault = c.container.id;
+													}}
+													class="text-orange-500 p-1 rounded-full transition-colors hover:text-orange-700 hover:bg-orange-500/10 dark:hover:text-orange-300"
 													title="Set default"
 												>
 													<Plus size={14} />
@@ -758,7 +773,7 @@
 											{/if}
 										</div>
 										{#if isEditingDefault}
-											<div class="mt-2 pt-2 border-t border-yellow-500/20 flex gap-2 items-center">
+											<div class="mt-2 pt-2 border-t border-orange-500/20 flex gap-2 items-center">
 												<div class="flex-1">
 													<Combobox
 														items={defaultItems}
@@ -774,7 +789,10 @@
 													/>
 												</div>
 												<button
-													onclick={() => { editingDefault = null; editingDefaultValue = undefined; }}
+													onclick={() => {
+														editingDefault = null;
+														editingDefaultValue = undefined;
+													}}
 													class="text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700"
 													title="Cancel"
 												>
@@ -786,10 +804,53 @@
 								</div>
 							{:else if c.defaultSwitch}
 								<div class="mt-5">
-									<div class="text-sm p-3 rounded-lg border-base bg-surface-50 flex gap-2 items-center dark:bg-surface-800/30">
-										<Star size={12} class="text-green-500 shrink-0" />
-										<span class="text-muted">Default:</span>
-										<span class="text-base font-medium">{c.defaultSwitch.name}</span>
+									<div
+										class="text-sm p-3 border-base rounded-lg bg-surface-50 dark:bg-surface-800/30"
+									>
+										<div class="flex gap-2 items-center">
+											<Star size={12} class="text-green-500 shrink-0" />
+											<span class="text-muted">Default:</span>
+											<span class="text-base font-medium flex-1">{c.defaultSwitch.name}</span>
+											{#if !isEditingDefault}
+												<button
+													onclick={() => {
+														editingDefault = c.container.id;
+													}}
+													class="text-muted/50 p-1 rounded-full transition-colors hover:text-muted hover:bg-surface-200 dark:hover:bg-surface-600"
+													title="Change default"
+												>
+													<FilePen size={12} />
+												</button>
+											{/if}
+										</div>
+										{#if isEditingDefault}
+											<div class="mt-2 pt-2 border-t border-surface-700/30 flex gap-2 items-center">
+												<div class="flex-1">
+													<Combobox
+														items={defaultItems}
+														bind:value={editingDefaultValue}
+														placeholder="Search switches…"
+														id="{uid}-default-edit-{c.container.id}"
+														allowCustomValue={false}
+														disabled={inlineLoading === `default-${c.container.id}`}
+														inputClass="!border-surface-300 !h-8 dark:!border-surface-600"
+														onchange={(val) => {
+															if (val) setDefaultSwitch(c.container.id, val);
+														}}
+													/>
+												</div>
+												<button
+													onclick={() => {
+														editingDefault = null;
+														editingDefaultValue = undefined;
+													}}
+													class="text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700"
+													title="Cancel"
+												>
+													<X size={14} />
+												</button>
+											</div>
+										{/if}
 									</div>
 								</div>
 							{/if}
@@ -836,7 +897,7 @@
 													</span>
 
 													<!-- Assigned children tags -->
-													<div class="flex flex-1 flex-wrap gap-1.5 justify-end items-center">
+													<div class="flex flex-1 flex-wrap gap-1.5 items-center justify-end">
 														{#each row.assignedChildren as child (child.id)}
 															{@const childRow = cRows.find((cr) => cr.child.id === child.id)}
 															{@const isMulti = childRow?.status === 'multi'}
@@ -888,43 +949,43 @@
 													</div>
 												</div>
 
-<!-- Inline add combobox -->
-											{#if isAdding}
-												{@const available = getAllChildren(c.container.id).filter(
-													(child) => !row.assignedChildren.some((ac) => ac.id === child.id)
-												)}
-												{@const comboItems = available.map((child) => {
-													const cr = cRows.find((r) => r.child.id === child.id);
-													const suffix =
-														cr?.status === 'unassigned'
-															? ' (unassigned)'
-															: cr?.status === 'multi'
-																? ` (${cr.assignedSwitches.length} switches)`
-																: '';
-													return { label: child.name + suffix, value: child.id };
-												})}
-												<div
-													class="mt-2 pt-2 border-t border-surface-700/30 flex gap-2 items-center"
-												>
-													<div class="flex-1">
-														<Combobox
-															items={comboItems}
-															bind:value={addingChildValue}
-															placeholder="Search children…"
-															id="{uid}-add-{row.sw.id}"
-															allowCustomValue={false}
-															disabled={inlineLoading === row.sw.id}
-															inputClass="!border-surface-300 !h-8 dark:!border-surface-600"
-															onchange={(val) => {
-																if (val) addAssignment(c.container.id, val, row.sw.id);
+												<!-- Inline add combobox -->
+												{#if isAdding}
+													{@const available = getAllChildren(c.container.id).filter(
+														(child) => !row.assignedChildren.some((ac) => ac.id === child.id)
+													)}
+													{@const comboItems = available.map((child) => {
+														const cr = cRows.find((r) => r.child.id === child.id);
+														const suffix =
+															cr?.status === 'unassigned'
+																? ' (unassigned)'
+																: cr?.status === 'multi'
+																	? ` (${cr.assignedSwitches.length} switches)`
+																	: '';
+														return { label: child.name + suffix, value: child.id };
+													})}
+													<div
+														class="mt-2 pt-2 border-t border-surface-700/30 flex gap-2 items-center"
+													>
+														<div class="flex-1">
+															<Combobox
+																items={comboItems}
+																bind:value={addingChildValue}
+																placeholder="Search children…"
+																id="{uid}-add-{row.sw.id}"
+																allowCustomValue={false}
+																disabled={inlineLoading === row.sw.id}
+																inputClass="!border-surface-300 !h-8 dark:!border-surface-600"
+																onchange={(val) => {
+																	if (val) addAssignment(c.container.id, val, row.sw.id);
+																}}
+															/>
+														</div>
+														<button
+															onclick={() => {
+																addingToSwitch = null;
+																addingChildValue = undefined;
 															}}
-														/>
-													</div>
-													<button
-														onclick={() => {
-															addingToSwitch = null;
-															addingChildValue = undefined;
-														}}
 															class="text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700"
 															title="Cancel"
 														>
@@ -935,7 +996,7 @@
 
 												<!-- Empty hint -->
 												{#if row.status === 'empty' && !isAdding}
-													<p class="text-xs text-red-500/60 m-0 mt-1.5 ml-5">
+													<p class="text-xs text-red-500/60 m-0 ml-5 mt-1.5">
 														No children assigned
 													</p>
 												{/if}
@@ -955,7 +1016,7 @@
 									</h4>
 									<div class="pl-3 border-l-2 border-amber-500/20 space-y-1">
 										{#each visibleUnassigned as row (row.child.id)}
-											<div class="text-sm flex gap-2 py-1 items-center">
+											<div class="text-sm py-1 flex gap-2 items-center">
 												<TriangleAlert size={12} class="text-amber-500 shrink-0" />
 												<span class="text-amber-700 truncate dark:text-amber-300"
 													>{row.child.name}</span
@@ -984,10 +1045,10 @@
 														>{row.child.name}</span
 													>
 												</div>
-												<div class="text-xs text-purple-500/70 mt-1 ml-5 flex flex-wrap gap-1">
+												<div class="text-xs text-purple-500/70 ml-5 mt-1 flex flex-wrap gap-1">
 													Assigned to:
 													{#each row.assignedSwitches as sw, i (sw.id)}
-														<span class="font-medium text-purple-600 dark:text-purple-400"
+														<span class="text-purple-600 font-medium dark:text-purple-400"
 															>{sw.name}</span
 														>{#if i < row.assignedSwitches.length - 1}<span>,</span>{/if}
 													{/each}
@@ -999,7 +1060,7 @@
 							{/if}
 
 							<!-- No results after filtering -->
-							{#if visibleSwitches.length === 0 && visibleUnassigned.length === 0 && visibleMulti.length === 0}
+							{#if visibleSwitches.length === 0 && visibleUnassigned.length === 0 && visibleMulti.length === 0 && !(s.noDefault && filters.noDefault) && !c.defaultSwitch}
 								<p class="text-sm text-muted m-0 py-6 text-center">
 									Nothing to show with current filters
 								</p>
