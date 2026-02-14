@@ -13,7 +13,8 @@
 
 <script lang="ts">
 	import * as combobox from '@zag-js/combobox';
-	import { useMachine, normalizeProps } from '@zag-js/svelte';
+	import { portal, useMachine, normalizeProps } from '@zag-js/svelte';
+	import { ChevronDown, Check } from 'lucide-svelte';
 
 	interface Props {
 		groups: GroupedComboboxGroup[];
@@ -24,6 +25,7 @@
 		allowCustomValue?: boolean;
 		onchange?: (value: string) => void;
 		variant?: 'default' | 'accent';
+		compact?: boolean;
 		inputClass?: string;
 	}
 
@@ -36,6 +38,7 @@
 		allowCustomValue = false,
 		onchange,
 		variant = 'default',
+		compact = false,
 		inputClass = ''
 	}: Props = $props();
 
@@ -112,51 +115,59 @@
 </script>
 
 <div {...api.getRootProps()} class="relative">
-	<div {...api.getControlProps()}>
+	<div {...api.getControlProps()} class="flex items-center relative">
 		<input
 			{...api.getInputProps()}
 			{placeholder}
 			spellcheck="false"
 			autocomplete="off"
 			class={[
-				'text-sm px-3 border rounded-lg bg-surface-50 h-10 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-wwise/20',
+				'text-sm pl-3 pr-10 border rounded-lg w-full transition-all focus-visible:border-wwise focus-visible:outline-none focus-visible:ring-2 dark:focus-visible:ring-wwise/30 bg-surface-50 dark:bg-surface-900 disabled:opacity-50 disabled:cursor-not-allowed',
+				compact ? 'h-8' : 'h-10',
 				variant === 'accent' && api.value.length > 0
 					? 'text-wwise border-wwise/30'
-					: 'text-base border-base',
+					: 'text-base border-input',
 				inputClass
 			]}
 		/>
+		<button
+			{...api.getTriggerProps()}
+			tabindex={-1}
+			class="text-muted flex w-10 transition-colors items-center inset-y-0 right-0 justify-center absolute hover:text-base"
+		>
+			<ChevronDown
+				size={15}
+				class={`transition-transform duration-200 ${api.open ? 'rotate-180' : ''}`}
+			/>
+		</button>
 	</div>
 
-	<div {...api.getPositionerProps()}>
+	<div use:portal {...api.getPositionerProps()}>
 		{#if api.open}
 			{#if flatFiltered.length > 0}
-				<ul
-					{...api.getContentProps()}
-					class="mt-1 border border-base rounded-lg bg-base max-h-64 w-full shadow-lg z-50 overflow-x-hidden overflow-y-auto"
-				>
+				<ul {...api.getContentProps()} class="dropdown-content">
 					{#each filteredGroups as group (group.label)}
 						<li
-							class="text-[10px] text-muted tracking-wider font-medium px-3 py-1.5 border-b border-base bg-surface-50 uppercase top-0 sticky dark:bg-surface-800"
+							class="text-[10px] text-muted tracking-wider font-medium mt-1 px-2.5 py-1.5 uppercase first:mt-0"
 						>
 							{group.label}
 						</li>
 						{#each group.items as item (item.value)}
 							<li
 								{...api.getItemProps({ item })}
-								class="text-sm px-3 py-2 cursor-pointer transition-colors data-[highlighted]:text-wwise data-[state=checked]:text-wwise data-[highlighted]:bg-wwise/20 data-[state=checked]:bg-wwise/10 data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed"
+								class="dropdown-item flex items-center justify-between"
 							>
-								<span {...api.getItemTextProps({ item })}>{item.label}</span>
+								<span {...api.getItemTextProps({ item })} class="truncate">{item.label}</span>
+								<span {...api.getItemIndicatorProps({ item })} class="text-wwise ml-2 shrink-0">
+									<Check size={14} />
+								</span>
 							</li>
 						{/each}
 					{/each}
 				</ul>
 			{:else}
-				<div
-					{...api.getContentProps()}
-					class="mt-1 p-2 border border-base rounded-lg bg-base w-full shadow-lg z-50"
-				>
-					<div class="text-sm text-muted px-1 py-1">No matches found</div>
+				<div {...api.getContentProps()} class="dropdown-content py-8 text-center">
+					<div class="text-sm text-muted">No matches found</div>
 				</div>
 			{/if}
 		{/if}

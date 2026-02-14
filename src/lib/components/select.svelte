@@ -9,7 +9,7 @@
 
 <script lang="ts">
 	import * as select from '@zag-js/select';
-	import { useMachine, normalizeProps } from '@zag-js/svelte';
+	import { portal, useMachine, normalizeProps } from '@zag-js/svelte';
 	import { ChevronDown, Check } from 'lucide-svelte';
 
 	interface Props {
@@ -19,6 +19,8 @@
 		disabled?: boolean;
 		id: string;
 		onchange?: (value: string) => void;
+		compact?: boolean;
+		triggerClass?: string;
 	}
 
 	let {
@@ -27,7 +29,9 @@
 		placeholder = 'Select...',
 		disabled = false,
 		id,
-		onchange
+		onchange,
+		compact = false,
+		triggerClass = ''
 	}: Props = $props();
 
 	const collection = $derived(
@@ -62,28 +66,31 @@
 	<div {...api.getControlProps()}>
 		<button
 			{...api.getTriggerProps()}
-			class="text-sm text-base px-3 pr-8 border border-base rounded-lg bg-surface-50 flex h-10 w-full transition-colors items-center focus:outline-none focus:border-wwise dark:bg-surface-800 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-wwise/20"
+			class={[
+				'text-sm text-base pl-3 pr-9 border rounded-lg bg-surface-50 flex w-full transition-all items-center disabled:opacity-50 disabled:cursor-not-allowed dark:bg-surface-900 border-input ring-focus',
+				compact ? 'h-8' : 'h-10',
+				triggerClass
+			]}
 		>
-			<span {...api.getValueTextProps()} class="truncate">
+			<span {...api.getValueTextProps()} class={['truncate', !api.valueAsString && 'text-muted']}>
 				{api.valueAsString || placeholder}
 			</span>
 			<ChevronDown
-				size={14}
-				class="text-muted transition-transform right-3 absolute {api.open ? 'rotate-180' : ''}"
+				size={15}
+				class="text-muted transition-transform duration-200 right-3 absolute {api.open
+					? 'rotate-180'
+					: ''}"
 			/>
 		</button>
 	</div>
 
-	<div {...api.getPositionerProps()}>
+	<div use:portal {...api.getPositionerProps()}>
 		{#if api.open}
-			<ul
-				{...api.getContentProps()}
-				class="mt-1 border border-base rounded-lg bg-base max-h-64 w-full shadow-lg z-50 overflow-x-hidden overflow-y-auto"
-			>
+			<ul {...api.getContentProps()} class="dropdown-content">
 				{#each items as item (item.value)}
 					<li
 						{...api.getItemProps({ item })}
-						class="text-sm px-3 py-2 flex cursor-pointer transition-colors items-center justify-between data-[highlighted]:text-wwise data-[state=checked]:text-wwise data-[highlighted]:bg-wwise/20 data-[state=checked]:bg-wwise/10 data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed"
+						class="dropdown-item flex items-center justify-between"
 					>
 						<div class="flex flex-col min-w-0">
 							<span class="text-sm" {...api.getItemTextProps({ item })}>{item.label}</span>
@@ -91,7 +98,7 @@
 								<span class="text-[11px] text-muted font-mono truncate">{item.description}</span>
 							{/if}
 						</div>
-						<span {...api.getItemIndicatorProps({ item })} class="shrink-0">
+						<span {...api.getItemIndicatorProps({ item })} class="text-wwise ml-2 shrink-0">
 							<Check size={14} />
 						</span>
 					</li>

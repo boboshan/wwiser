@@ -325,7 +325,7 @@
 							bind:value={host}
 							placeholder="localhost"
 							spellcheck="false"
-							class="text-sm px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+							class="input-base px-3 py-2"
 						/>
 					</div>
 					<div>
@@ -335,7 +335,7 @@
 							type="number"
 							bind:value={port}
 							placeholder="8080"
-							class="text-sm px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+							class="input-base px-3 py-2"
 						/>
 					</div>
 				</div>

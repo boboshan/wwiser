@@ -754,7 +754,9 @@
 							<!-- Default switch info -->
 							{#if s.noDefault && filters.noDefault}
 								<div class="mt-5">
-									<div class="text-sm p-3 border border-orange-500/15 rounded-lg bg-orange-500/3">
+									<div
+										class="text-sm p-3 border border-orange-500/20 rounded-lg bg-orange-500/8 dark:bg-orange-500/10"
+									>
 										<div class="flex gap-2 items-center">
 											<Star size={12} class="text-orange-500 shrink-0" />
 											<span class="text-orange-700 flex-1 dark:text-orange-300"
@@ -782,7 +784,7 @@
 														id="{uid}-default-{c.container.id}"
 														allowCustomValue={false}
 														disabled={inlineLoading === `default-${c.container.id}`}
-														inputClass="!border-surface-300 !h-8 dark:!border-surface-600"
+														compact
 														onchange={(val) => {
 															if (val) setDefaultSwitch(c.container.id, val);
 														}}
@@ -833,7 +835,7 @@
 														id="{uid}-default-edit-{c.container.id}"
 														allowCustomValue={false}
 														disabled={inlineLoading === `default-${c.container.id}`}
-														inputClass="!border-surface-300 !h-8 dark:!border-surface-600"
+														compact
 														onchange={(val) => {
 															if (val) setDefaultSwitch(c.container.id, val);
 														}}
@@ -975,7 +977,7 @@
 																id="{uid}-add-{row.sw.id}"
 																allowCustomValue={false}
 																disabled={inlineLoading === row.sw.id}
-																inputClass="!border-surface-300 !h-8 dark:!border-surface-600"
+																compact
 																onchange={(val) => {
 																	if (val) addAssignment(c.container.id, val, row.sw.id);
 																}}

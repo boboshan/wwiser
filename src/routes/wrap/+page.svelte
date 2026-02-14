@@ -339,7 +339,7 @@
 						class={[
 							'p-3 border rounded-lg cursor-pointer transition-all',
 							namingRule === rule.value
-								? 'border-wwise bg-wwise/5 ring-1 ring-wwise/20'
+								? 'ring-accent-selected'
 								: 'border-base bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
 						]}
 					>
@@ -366,7 +366,7 @@
 						type="text"
 						bind:value={customRegex}
 						placeholder="(.+)_\d+$"
-						class="text-sm text-base font-mono px-3 py-2 border border-base rounded-lg bg-base w-full transition-colors focus:outline-none focus:border-wwise focus:ring-1 focus:ring-wwise/20"
+						class="input-base text-base font-mono px-3 py-2"
 					/>
 				</div>
 				<div class="space-y-1.5">
@@ -381,7 +381,7 @@
 						type="text"
 						bind:value={customReplacement}
 						placeholder="$1"
-						class="text-sm text-base font-mono px-3 py-2 border border-base rounded-lg bg-base w-full transition-colors focus:outline-none focus:border-wwise focus:ring-1 focus:ring-wwise/20"
+						class="input-base text-base font-mono px-3 py-2"
 					/>
 				</div>
 			</div>

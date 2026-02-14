@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { Plug, PlugZap, LoaderCircle, CircleAlert, ChevronDown, Circle } from 'lucide-svelte';
 	import { wwise } from '$lib/wwise/connection.svelte';
+	import { fade, scale } from 'svelte/transition';
+	import { cubicOut, cubicIn } from 'svelte/easing';
 
 	let host = $state('localhost');
 	let port = $state(8080);
@@ -61,9 +63,12 @@
 			role="button"
 			tabindex="-1"
 			aria-label="Close"
+			transition:fade={{ duration: 100 }}
 		></div>
 		<div
 			class="mt-2 border border-base rounded-xl bg-base w-72 shadow-xl right-0 top-full absolute z-50 overflow-hidden"
+			in:scale={{ duration: 150, start: 0.96, opacity: 0, easing: cubicOut }}
+			out:scale={{ duration: 100, start: 0.96, opacity: 0, easing: cubicIn }}
 		>
 			{#if wwise.status === 'connected'}
 				<!-- Connected Panel -->
@@ -119,7 +124,7 @@
 								type="text"
 								bind:value={host}
 								placeholder="localhost"
-								class="text-sm text-base px-3 border border-base rounded-lg bg-surface-50 h-9 w-full transition-all focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+								class="input-base text-base px-3 h-9"
 							/>
 						</div>
 						<div>
@@ -129,7 +134,7 @@
 								type="number"
 								bind:value={port}
 								placeholder="8080"
-								class="text-sm text-base px-3 border border-base rounded-lg bg-surface-50 h-9 w-full transition-all focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+								class="input-base text-base px-3 h-9"
 							/>
 						</div>
 					</div>

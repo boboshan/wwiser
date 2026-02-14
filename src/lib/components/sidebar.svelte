@@ -14,8 +14,7 @@
 	import logo from '$lib/assets/logo.svg';
 	import wwiserTitle from '$lib/assets/wwiser.svg';
 	import { type NavItem, siteConfig, iconMap } from '$lib/config/site';
-	import * as menu from '@zag-js/menu';
-	import { portal, useMachine, normalizeProps } from '@zag-js/svelte';
+	import Menu, { type MenuItem } from '$lib/components/menu.svelte';
 
 	interface Props {
 		tools: NavItem[];
@@ -37,12 +36,24 @@
 		onThemeChange
 	}: Props = $props();
 
-	// Menu machine for footer links
-	const menuService = useMachine(menu.machine, () => ({
-		id: 'footer-menu',
-		positioning: { placement: 'top-start' as const }
-	}));
-	const menuApi = $derived(menu.connect(menuService, normalizeProps));
+	const menuItems: MenuItem[] = [
+		{ value: 'about', label: 'About Wwiser', href: '/about', icon: Info, onclick: closeSidebar },
+		{ value: 'sep', label: '', separator: true },
+		{
+			value: 'website',
+			label: 'boboshan.com',
+			href: 'https://boboshan.com',
+			icon: Globe,
+			external: true
+		},
+		{
+			value: 'roll',
+			label: 'Roll - Video toolset',
+			href: 'https://roll.wwiser.net/',
+			icon: Film,
+			external: true
+		}
+	];
 
 	function closeSidebar() {
 		sidebarOpen = false;
@@ -167,60 +178,20 @@
 		<!-- More menu & theme toggle -->
 		<div class="flex items-center justify-between">
 			<!-- More menu trigger -->
-			<div>
-				<button
-					{...menuApi.getTriggerProps()}
-					class="text-sm text-muted px-2 py-1.5 rounded-lg bg-hover flex gap-1.5 transition-colors items-center data-[state=open]:text-surface-900 hover:text-surface-900 data-[state=open]:bg-surface-200 dark:data-[state=open]:text-surface-100 dark:hover:text-surface-100 dark:data-[state=open]:bg-surface-800"
-				>
-					<Ellipsis class="h-4 w-4" />
-					<span>More</span>
-				</button>
-
-				<!-- Menu popover -->
-				<div use:portal {...menuApi.getPositionerProps()}>
-					{#if menuApi.open}
-						<div
-							{...menuApi.getContentProps()}
-							class="py-1 border border-base rounded-lg bg-base min-w-48 shadow-lg z-50"
-						>
-							<!-- About -->
-							<a
-								{...menuApi.getItemProps({ value: 'about' })}
-								href="/about"
-								onclick={closeSidebar}
-								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 hover:text-surface-900 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:text-surface-100 dark:hover:text-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
-							>
-								<Info class="h-4 w-4" />
-								<span>About Wwiser</span>
-							</a>
-
-							<div class="my-1 border-t border-base"></div>
-
-							<!-- External Links -->
-							<a
-								{...menuApi.getItemProps({ value: 'website' })}
-								href="https://boboshan.com"
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 hover:text-surface-900 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:text-surface-100 dark:hover:text-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
-							>
-								<Globe class="h-4 w-4" />
-								<span>boboshan.com</span>
-							</a>
-							<a
-								{...menuApi.getItemProps({ value: 'roll' })}
-								href="https://roll.wwiser.net/"
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-sm text-muted px-3 py-2 no-underline flex gap-3 transition-colors items-center data-[highlighted]:text-surface-900 hover:text-surface-900 data-[highlighted]:bg-surface-100 hover:bg-surface-100 dark:data-[highlighted]:text-surface-100 dark:hover:text-surface-100 dark:data-[highlighted]:bg-surface-800 dark:hover:bg-surface-800"
-							>
-								<Film class="h-4 w-4" />
-								<span>Roll - Video toolset</span>
-							</a>
-						</div>
-					{/if}
-				</div>
-			</div>
+			<Menu id="footer-menu" items={menuItems}>
+				{#snippet trigger({ props, open })}
+					<button
+						{...props}
+						class={[
+							'text-sm text-muted px-2 py-1.5 rounded-lg bg-hover flex gap-1.5 transition-colors items-center ring-focus hover:text-surface-900 dark:hover:text-surface-100',
+							open && 'text-surface-900 bg-surface-200 dark:text-surface-100 dark:bg-surface-800'
+						]}
+					>
+						<Ellipsis class="h-4 w-4" />
+						<span>More</span>
+					</button>
+				{/snippet}
+			</Menu>
 
 			<!-- Theme toggle -->
 			<div class="p-0.5 rounded-lg bg-surface-200 flex dark:bg-surface-800">

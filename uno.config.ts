@@ -58,6 +58,7 @@ export default defineConfig({
 		'bg-elevated': 'bg-surface-50 dark:bg-surface-900',
 		'bg-muted': 'bg-surface-200 dark:bg-surface-800',
 		'border-base': 'border-surface-200 dark:border-surface-800',
+		'border-input': 'border-surface-200 dark:border-surface-700',
 		'border-subtle': 'border-surface-100 dark:border-surface-800/50',
 		// Text utilities - proper hierarchy with light/dark mode
 		'text-base': 'text-surface-900 dark:text-surface-100',
@@ -70,6 +71,24 @@ export default defineConfig({
 		// Interactive states
 		'bg-hover': 'hover:bg-surface-100 dark:hover:bg-surface-800',
 		'bg-active': 'bg-wwise/10',
+		// Focus & ring — unified across all inputs, selects, dropdowns, cards
+		'ring-focus':
+			'focus-visible:border-wwise focus-visible:outline-none focus-visible:ring-2 ring-wwise/20 dark:focus-visible:ring-wwise/30',
+		'ring-accent': 'border-wwise ring-2 ring-wwise/20 dark:ring-wwise/30',
+		'ring-accent-selected': 'border-wwise bg-wwise/5 ring-2 ring-wwise/20 dark:ring-wwise/30',
+		// Input — base styling for text inputs, textareas, selects
+		'input-base':
+			'text-sm border border-input rounded-lg bg-surface-50 w-full transition-all ring-focus dark:bg-surface-900',
+		// Dropdown — popover panel and items
+		'dropdown-content':
+			'mt-1.5 border rounded-xl max-h-72 w-full overflow-x-hidden overflow-y-auto p-1 border-input ring-focus bg-white shadow-lg dark:bg-surface-900 dark:shadow-2xl dark:shadow-black/40',
+		'dropdown-item':
+			'text-sm px-2.5 py-1.5 cursor-pointer rounded-lg transition-colors data-[highlighted]:text-wwise data-[highlighted]:bg-wwise/10 dark:data-[highlighted]:bg-wwise/15 data-[state=checked]:text-wwise data-[state=checked]:font-medium data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed',
+		// Menu — popover menu panel and items
+		'menu-content':
+			'p-1 border rounded-xl min-w-48 border-input bg-white shadow-lg dark:bg-surface-900 dark:shadow-2xl dark:shadow-black/40 ring-focus',
+		'menu-item':
+			'text-sm text-muted px-2.5 py-1.5 no-underline flex gap-3 rounded-lg transition-colors items-center data-[highlighted]:text-wwise hover:text-wwise data-[highlighted]:bg-wwise/10 hover:bg-wwise/10 dark:data-[highlighted]:bg-wwise/15 dark:hover:bg-wwise/15',
 		// Button variants
 		'btn-primary':
 			'bg-wwise hover:bg-wwise-400 active:bg-wwise-600 text-white font-semibold px-4 py-2.5 rounded-xl transition-all active:scale-98',

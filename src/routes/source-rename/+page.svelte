@@ -271,7 +271,7 @@
 			placeholder="Enter new filenames here, one per line (extension optional)..."
 			spellcheck="false"
 			rows={6}
-			class="text-sm text-base font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full resize-y transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+			class="input-base text-base font-mono px-3 py-2 resize-y"
 		></textarea>
 		<p class="text-xs text-muted m-0">
 			{clipboardNames.filter((n) => n.trim()).length} filename(s) parsed • .wav extension will be added

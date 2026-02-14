@@ -430,6 +430,7 @@
 									placeholder="Select group..."
 									id="{uid}-grp-{sc.container.id}"
 									onchange={(v) => handleGroupSelect(sc.container.id, v)}
+									compact
 								/>
 							</div>
 							{#if selectedGroupId && sc.switches.length > 0}
@@ -445,6 +446,7 @@
 										onchange={(v) => {
 											pendingDefaults.set(sc.container.id, v);
 										}}
+										compact
 									/>
 								</div>
 							{/if}

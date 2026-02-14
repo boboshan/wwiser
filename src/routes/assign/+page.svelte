@@ -9,7 +9,10 @@
 		ChevronRight,
 		CircleAlert,
 		SkipForward,
-		Check
+		Check,
+		Star,
+		Plus,
+		X
 	} from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
@@ -82,6 +85,11 @@
 	let allStateGroups = $state<WwiseObject[]>([]);
 	let pendingGroups = new SvelteMap<string, string>();
 	let pendingDefaults = new SvelteMap<string, string>();
+
+	// Inline editing for default switch on configured containers
+	let editingDefault = $state<string | null>(null);
+	let editingDefaultValue = $state<string | undefined>(undefined);
+	let inlineLoading = $state<string | null>(null);
 
 	const uid = $props.id();
 
@@ -400,6 +408,30 @@
 		}
 	}
 
+	async function setDefaultSwitch(containerId: string, switchId: string) {
+		inlineLoading = `default-${containerId}`;
+		try {
+			await wwise.setDefaultSwitchOrState(containerId, switchId);
+			// Reload container info
+			const container = switchContainers.find((sc) => sc.container.id === containerId)?.container;
+			if (container) {
+				const newInfo = await loadContainerInfo(container);
+				switchContainers = switchContainers.map((sc) =>
+					sc.container.id === containerId ? newInfo : sc
+				);
+			}
+			editingDefault = null;
+			editingDefaultValue = undefined;
+			statusMessage = 'Default switch set';
+			statusType = 'success';
+		} catch (e) {
+			statusMessage = e instanceof Error ? e.message : 'Failed to set default';
+			statusType = 'error';
+		} finally {
+			inlineLoading = null;
+		}
+	}
+
 	async function configureContainer(containerId: string) {
 		const groupId = pendingGroups.get(containerId);
 		if (!groupId) return;
@@ -598,7 +630,7 @@
 						class={[
 							'p-3 border rounded-lg cursor-pointer transition-all',
 							rule === r.value
-								? 'border-wwise bg-wwise/5 ring-1 ring-wwise/20'
+								? 'ring-accent-selected'
 								: 'border-base bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
 						]}
 					>
@@ -623,7 +655,7 @@
 					type="text"
 					bind:value={customRegex}
 					placeholder="(.+)_\d+$"
-					class="text-sm font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+					class="input-base font-mono px-3 py-2"
 				/>
 				<p class="text-xs text-muted">
 					Use capture groups. Example: <code
@@ -643,7 +675,7 @@
 					bind:value={customListText}
 					placeholder="Banana, Fruit"
 					rows="4"
-					class="text-sm font-mono px-3 py-2 border border-base rounded-lg bg-surface-50 w-full resize-y transition-colors focus:outline-none focus:border-wwise dark:bg-surface-800 focus:ring-1 focus:ring-wwise/20"
+					class="input-base font-mono px-3 py-2 resize-y"
 				></textarea>
 				{#if customMappings.length > 0}
 					<p class="text-xs text-muted">
@@ -755,8 +787,8 @@
 							<Badge variant="amber">Switch Container</Badge>
 							<span class="text-sm font-medium truncate">{sc.container.name}</span>
 						</div>
-						<div class="gap-4 grid sm:grid-cols-2 sm:items-end">
-							<div class="space-y-2">
+						<div class="gap-3 grid sm:grid-cols-2 sm:items-end">
+							<div class="space-y-1.5">
 								<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
 									>Switch/State Group</span
 								>
@@ -766,10 +798,11 @@
 									placeholder="Select group..."
 									id="{uid}-grp-{sc.container.id}"
 									onchange={(v) => handleGroupSelect(sc.container.id, v)}
+									compact
 								/>
 							</div>
 							{#if selectedGroupId && sc.switches.length > 0}
-								<div class="space-y-2">
+								<div class="space-y-1.5">
 									<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
 										>Default Switch (optional)</span
 									>
@@ -781,6 +814,7 @@
 										onchange={(v) => {
 											pendingDefaults.set(sc.container.id, v);
 										}}
+										compact
 									/>
 								</div>
 							{/if}
@@ -881,7 +915,66 @@
 									!items.some((p) => p.childId === c.id) &&
 									!fullyAssigned.some((fa) => fa.child.id === c.id)
 							)}
+							{@const isEditingDefault = editingDefault === sc.container.id}
+							{@const defaultItems = sc.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
 							<div class="mt-3 pt-3 border-t border-base">
+								<!-- No default switch warning -->
+								{#if !sc.defaultSwitch}
+									<div class="mb-3">
+										<div
+											class="text-sm p-3 border border-orange-500/20 rounded-lg bg-orange-500/8 dark:bg-orange-500/10"
+										>
+											<div class="flex gap-2 items-center">
+												<Star size={12} class="text-orange-500 shrink-0" />
+												<span class="text-orange-700 flex-1 dark:text-orange-300"
+													>No default switch/state assigned</span
+												>
+												{#if !isEditingDefault}
+													<button
+														onclick={() => {
+															editingDefault = sc.container.id;
+														}}
+														class="text-orange-500 p-1 rounded-full transition-colors hover:text-orange-700 hover:bg-orange-500/10 dark:hover:text-orange-300"
+														title="Set default"
+													>
+														<Plus size={14} />
+													</button>
+												{/if}
+											</div>
+											{#if isEditingDefault}
+												<div
+													class="mt-2 pt-2 border-t border-orange-500/20 flex gap-2 items-center"
+												>
+													<div class="flex-1">
+														<Combobox
+															items={defaultItems}
+															bind:value={editingDefaultValue}
+															placeholder="Search switches…"
+															id="{uid}-default-{sc.container.id}"
+															allowCustomValue={false}
+															disabled={inlineLoading === `default-${sc.container.id}`}
+															compact
+															onchange={(val) => {
+																if (val) setDefaultSwitch(sc.container.id, val);
+															}}
+														/>
+													</div>
+													<button
+														onclick={() => {
+															editingDefault = null;
+															editingDefaultValue = undefined;
+														}}
+														class="text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700"
+														title="Cancel"
+													>
+														<X size={14} />
+													</button>
+												</div>
+											{/if}
+										</div>
+									</div>
+								{/if}
+
 								{#if items.length > 0}
 									<div class="pl-3 border-l-2 border-surface-200 space-y-2 dark:border-surface-700">
 										{#each items as p (p.childId)}
@@ -927,7 +1020,8 @@
 														<select
 															value={p.selectedSwitchId}
 															onchange={(e) => selectSwitch(p.childId, e.currentTarget.value)}
-															class="text-sm text-wwise font-medium px-2 py-0.5 border border-wwise/30 rounded bg-wwise/5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-wwise/30"
+															class="text-sm text-wwise font-medium py-1 pl-2.5 pr-7 appearance-none border border-wwise/30 rounded-lg bg-wwise/5 cursor-pointer transition-all focus-visible:outline-none focus-visible:border-wwise dark:bg-wwise/10 focus-visible:ring-2 dark:focus-visible:ring-wwise/30"
+															style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%233069ff%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.4rem center;"
 														>
 															{#each p.matchedSwitches as sw (sw.id)}
 																{@const swExisting = p.switchExistingChildren.get(sw.id) ?? []}
