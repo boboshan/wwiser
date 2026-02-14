@@ -117,8 +117,10 @@
 </script>
 
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
+	import { historyStore } from '$lib/state/history.svelte';
 	import { Volume2 } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import VolumeGraph from './volume-graph.svelte';
@@ -151,6 +153,64 @@
 
 	// Cache for object details to reduce API calls
 	const objectCache = new SvelteMap<string, Awaited<ReturnType<typeof getObjectDetails>>>();
+
+	// ── Undo/redo refresh ──────────────────────────────────────────────
+
+	async function refreshSliderValues() {
+		if (volumeData.length === 0 || !wwise.isConnected) return;
+		// Re-fetch every unique object and update its SliderState in-place
+		const seen = new Set<string>();
+		for (const item of volumeData) {
+			for (const contrib of item.contributions) {
+				if (seen.has(contrib.id)) continue;
+				seen.add(contrib.id);
+				try {
+					const fresh = await getObjectDetails(contrib.id);
+					if (!fresh) continue;
+					contrib.volumeState.value = fresh.volume;
+					contrib.volumeState.confirm();
+					if (contrib.voiceVolumeState) {
+						contrib.voiceVolumeState.value = fresh.volume;
+						contrib.voiceVolumeState.confirm();
+					}
+					if (contrib.busVolumeState) {
+						contrib.busVolumeState.value = fresh.busVolume;
+						contrib.busVolumeState.confirm();
+					}
+					if (contrib.outputBusVolumeState) {
+						contrib.outputBusVolumeState.value = fresh.outputBusVolume;
+						contrib.outputBusVolumeState.confirm();
+					}
+				} catch {
+					// skip — stale data is acceptable
+				}
+			}
+		}
+		objectCache.clear();
+	}
+
+	let prevUndoLabel: string | null | undefined;
+	let prevRedoLabel: string | null | undefined;
+
+	$effect(() => {
+		const curUndo = historyStore.undoLabel;
+		const curRedo = historyStore.redoLabel;
+
+		if (prevUndoLabel === undefined) {
+			prevUndoLabel = curUndo;
+			prevRedoLabel = curRedo;
+			return;
+		}
+
+		if (curUndo !== prevUndoLabel || curRedo !== prevRedoLabel) {
+			prevUndoLabel = curUndo;
+			prevRedoLabel = curRedo;
+			const hasData = untrack(() => volumeData.length > 0);
+			if (hasData) {
+				refreshSliderValues();
+			}
+		}
+	});
 
 	// Set a property on a Wwise object
 	async function setObjectProperty(

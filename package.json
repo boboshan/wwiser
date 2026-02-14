@@ -1,13 +1,13 @@
 {
 	"name": "wwiser",
 	"private": true,
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "A collection of productivity tools for Wwise sound designers, powered by WAAPI",
 	"author": "bbs",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/bbs/wwiser"
+		"url": "https://github.com/boboshan/wwiser"
 	},
 	"keywords": [
 		"wwise",

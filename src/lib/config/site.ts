@@ -12,9 +12,10 @@ import {
 	ListChecks,
 	FileHeadphone,
 	Settings,
-	CopyPlus
+	CopyPlus,
+	Activity
 } from 'lucide-svelte';
-import type { ComponentType } from 'svelte';
+import type { SvelteComponent } from 'svelte';
 
 export const siteConfig = {
 	name: 'Wwiser',
@@ -24,7 +25,7 @@ export const siteConfig = {
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
 	url: 'https://wwiser.net',
 	author: 'bbs',
-	version: '0.0.3',
+	version: '0.0.4',
 	keywords: [
 		'wwise',
 		'waapi',
@@ -48,7 +49,8 @@ export type NavIcon =
 	| 'git-branch'
 	| 'file-audio'
 	| 'list-checks'
-	| 'copy-plus';
+	| 'copy-plus'
+	| 'activity';
 
 export interface NavItem {
 	id: string;
@@ -61,7 +63,7 @@ export interface NavItem {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const iconMap: Record<NavIcon, ComponentType<any>> = {
+export const iconMap: Record<NavIcon, typeof SvelteComponent<any>> = {
 	package: Package,
 	edit: FilePen,
 	volume: Volume2,
@@ -70,7 +72,8 @@ export const iconMap: Record<NavIcon, ComponentType<any>> = {
 	'git-branch': GitBranch,
 	'list-checks': ListChecks,
 	'file-audio': FileHeadphone,
-	'copy-plus': CopyPlus
+	'copy-plus': CopyPlus,
+	activity: Activity
 };
 
 export const navigation: NavItem[] = [
@@ -90,6 +93,15 @@ export const navigation: NavItem[] = [
 		shortDescription: 'Match to switches',
 		icon: 'git-branch',
 		href: '/assign',
+		featured: true
+	},
+	{
+		id: 'analyze',
+		name: 'Analyze',
+		description: 'Audit switch assignments — find gaps, conflicts, and health issues',
+		shortDescription: 'Switch assignment health',
+		icon: 'activity',
+		href: '/analyze',
 		featured: true
 	},
 	{
@@ -173,6 +185,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Assign Switch Children',
 		description:
 			'Automatically assign children of switch containers to their corresponding switches based on naming patterns. Configure switch groups and preview assignments before applying.'
+	},
+	analyze: {
+		title: 'Switch Analysis',
+		description:
+			'Audit switch container health. Find empty switches, unassigned children, multi-assignments, conflicts, and fix them inline.'
 	},
 	fill: {
 		title: 'Fill Blank Switches',
