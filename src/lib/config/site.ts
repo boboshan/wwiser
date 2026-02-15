@@ -17,9 +17,9 @@ import {
 	ListMusic
 } from 'lucide-svelte';
 import type { SvelteComponent } from 'svelte';
-import { PUBLIC_PREVIEW_FEATURES } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 
-export const previewEnabled = PUBLIC_PREVIEW_FEATURES === 'true';
+export const previewEnabled = env.PUBLIC_PREVIEW_FEATURES === 'true';
 
 export const siteConfig = {
 	name: 'Wwiser',
