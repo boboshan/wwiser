@@ -146,10 +146,9 @@
 		await stopPlayback();
 
 		try {
-			const result = await wwise.call<{ transport: number }>(
-				'ak.wwise.core.transport.create',
-				{ object: node.id }
-			);
+			const result = await wwise.call<{ transport: number }>('ak.wwise.core.transport.create', {
+				object: node.id
+			});
 			transportId = result.transport;
 			activeSegmentId = node.id;
 			activeSegmentName = node.name;
@@ -243,10 +242,9 @@
 		statePoller = setInterval(async () => {
 			if (transportId === null) return;
 			try {
-				const result = await wwise.call<{ state: string }>(
-					'ak.wwise.core.transport.getState',
-					{ transport: transportId }
-				);
+				const result = await wwise.call<{ state: string }>('ak.wwise.core.transport.getState', {
+					transport: transportId
+				});
 				if (result.state === 'stopped' && transportState !== 'stopped') {
 					transportState = 'stopped';
 					stopElapsedTimer();
@@ -307,11 +305,11 @@
 	{#if target}
 		<!-- Target Info -->
 		<section class="space-y-3">
-			<div class="border border-base rounded-xl bg-base p-4">
-				<div class="flex items-center gap-3">
+			<div class="p-4 border border-base rounded-xl bg-base">
+				<div class="flex gap-3 items-center">
 					<ListMusic size={18} class="text-wwise shrink-0" />
 					<div class="flex-1 min-w-0">
-						<div class="font-medium text-sm truncate">{target.name}</div>
+						<div class="text-sm font-medium truncate">{target.name}</div>
 						<div class="text-xs text-muted truncate">{target.path}</div>
 					</div>
 					<Badge variant="wwise">{target.type}</Badge>
@@ -322,14 +320,12 @@
 		<!-- Now Playing -->
 		{#if activeSegmentId}
 			<section class="space-y-3">
-				<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">
-					Now Playing
-				</h3>
-				<div class="border border-base rounded-xl bg-base p-4 flex items-center gap-3">
-					<div class="flex items-center gap-2">
+				<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">Now Playing</h3>
+				<div class="p-4 border border-base rounded-xl bg-base flex gap-3 items-center">
+					<div class="flex gap-2 items-center">
 						{#if isPlaying}
 							<button
-								class="h-9 w-9 rounded-lg flex items-center justify-center bg-amber-600 text-white transition-colors hover:bg-amber-500"
+								class="text-white rounded-lg bg-amber-600 flex h-9 w-9 transition-colors items-center justify-center hover:bg-amber-500"
 								onclick={togglePause}
 								title="Pause"
 							>
@@ -337,7 +333,7 @@
 							</button>
 						{:else if isPaused}
 							<button
-								class="h-9 w-9 rounded-lg flex items-center justify-center bg-green-600 text-white transition-colors hover:bg-green-500"
+								class="text-white rounded-lg bg-green-600 flex h-9 w-9 transition-colors items-center justify-center hover:bg-green-500"
 								onclick={togglePause}
 								title="Resume"
 							>
@@ -345,7 +341,7 @@
 							</button>
 						{/if}
 						<button
-							class="h-9 w-9 rounded-lg flex items-center justify-center bg-red-600 text-white transition-colors hover:bg-red-500"
+							class="text-white rounded-lg bg-red-600 flex h-9 w-9 transition-colors items-center justify-center hover:bg-red-500"
 							onclick={stopPlayback}
 							title="Stop"
 						>
@@ -358,7 +354,7 @@
 					</div>
 
 					<div
-						class="font-mono text-lg tabular-nums tracking-tight {isPlaying
+						class="text-lg tracking-tight font-mono tabular-nums {isPlaying
 							? 'text-green-500'
 							: isPaused
 								? 'text-amber-500'
@@ -377,9 +373,7 @@
 		<!-- Segment List -->
 		<section class="space-y-3">
 			<div class="flex items-center justify-between">
-				<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">
-					Segments
-				</h3>
+				<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">Segments</h3>
 				<span class="text-xs text-muted">
 					{segmentCount} segment{segmentCount !== 1 ? 's' : ''}
 				</span>
@@ -390,7 +384,7 @@
 					{#each flatNodes as node, i (`${node.id}-${i}`)}
 						{#if node.type === 'MusicSegment'}
 							<button
-								class="w-full py-3 flex items-center gap-3 text-left transition-colors border-b border-base last:border-b-0 hover:bg-surface-100 dark:hover:bg-surface-800 {activeSegmentId ===
+								class="py-3 text-left border-b border-base flex gap-3 w-full transition-colors items-center last:border-b-0 hover:bg-surface-100 dark:hover:bg-surface-800 {activeSegmentId ===
 								node.id
 									? 'bg-wwise/10'
 									: ''}"
@@ -398,10 +392,10 @@
 								onclick={() => handleSegmentClick(node)}
 							>
 								<div
-									class="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors {activeSegmentId ===
+									class="rounded-md flex shrink-0 h-7 w-7 transition-colors items-center justify-center {activeSegmentId ===
 									node.id
-										? 'bg-wwise text-white'
-										: 'bg-surface-200 text-muted dark:bg-surface-800 hover:text-surface-900 dark:hover:text-surface-100'}"
+										? 'text-white bg-wwise'
+										: 'text-muted bg-surface-200 hover:text-surface-900 dark:bg-surface-800 dark:hover:text-surface-100'}"
 								>
 									{#if activeSegmentId === node.id && isPlaying}
 										<Pause size={14} />
@@ -409,11 +403,11 @@
 										<Play size={14} class="ml-0.5" />
 									{/if}
 								</div>
-								<span class="flex-1 min-w-0 text-sm font-medium truncate">
+								<span class="text-sm font-medium flex-1 min-w-0 truncate">
 									{node.name}
 								</span>
 								{#if activeSegmentId === node.id}
-									<span class="text-xs font-mono tabular-nums text-wwise shrink-0">
+									<span class="text-xs text-wwise font-mono shrink-0 tabular-nums">
 										{elapsedFormatted}
 									</span>
 								{/if}
@@ -421,11 +415,11 @@
 						{:else}
 							<!-- Container group header -->
 							<div
-								class="py-2.5 flex items-center gap-2 text-xs text-muted border-b border-base last:border-b-0 bg-surface-50 dark:bg-surface-900"
+								class="text-xs text-muted py-2.5 border-b border-base bg-surface-50 flex gap-2 items-center last:border-b-0 dark:bg-surface-900"
 								style="padding-left: {16 + node.depth * 24}px; padding-right: 16px;"
 							>
-								<FolderOpen size={14} class="shrink-0 text-muted" />
-								<span class="truncate font-medium">{node.name}</span>
+								<FolderOpen size={14} class="text-muted shrink-0" />
+								<span class="font-medium truncate">{node.name}</span>
 								<Badge variant="default">
 									{node.type.replace('Music', '')}
 								</Badge>
@@ -434,9 +428,7 @@
 					{/each}
 				</div>
 			{:else}
-				<div
-					class="border border-base rounded-xl bg-base px-4 py-8 text-center text-sm text-muted"
-				>
+				<div class="text-sm text-muted px-4 py-8 text-center border border-base rounded-xl bg-base">
 					No segments found
 				</div>
 			{/if}
