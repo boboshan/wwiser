@@ -7,15 +7,17 @@
 		if (monacoPromise) return monacoPromise;
 
 		monacoPromise = (async () => {
-			// Import only the JSON worker (skip TS/CSS/HTML workers entirely)
-			const [editorWorker, jsonWorker] = await Promise.all([
+			// Import editor, JSON, and TypeScript workers
+			const [editorWorker, jsonWorker, tsWorker] = await Promise.all([
 				import('monaco-editor/esm/vs/editor/editor.worker?worker'),
-				import('monaco-editor/esm/vs/language/json/json.worker?worker')
+				import('monaco-editor/esm/vs/language/json/json.worker?worker'),
+				import('monaco-editor/esm/vs/language/typescript/ts.worker?worker')
 			]);
 
 			window.MonacoEnvironment = {
 				getWorker(_, label) {
 					if (label === 'json') return new jsonWorker.default();
+					if (label === 'typescript' || label === 'javascript') return new tsWorker.default();
 					return new editorWorker.default();
 				}
 			};
@@ -26,6 +28,23 @@
 			// JSON language support (validation, completions, formatting)
 			// @ts-expect-error — ESM subpath works at runtime; no .d.ts published
 			await import('monaco-editor/esm/vs/language/json/monaco.contribution');
+			// TypeScript/JavaScript language support (IntelliSense, diagnostics via worker)
+			// @ts-expect-error — ESM subpath works at runtime; no .d.ts published
+			const tsContrib =
+				await import('monaco-editor/esm/vs/language/typescript/monaco.contribution');
+			// Basic syntax highlighting / tokenizer for JavaScript & TypeScript
+			// @ts-expect-error — ESM subpath works at runtime; no .d.ts published
+			await import('monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution');
+			// @ts-expect-error — ESM subpath works at runtime; no .d.ts published
+			await import('monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution');
+
+			// Ensure typescript namespace is accessible on monaco.languages
+			// The ESM contribution may not auto-register on the editor.api module object
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			if (!(monaco.languages as any).typescript && tsContrib) {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				(monaco.languages as any).typescript = tsContrib;
+			}
 
 			// Define dark theme matching our design system
 			monaco.editor.defineTheme('wwiser-dark', {
@@ -35,7 +54,13 @@
 					{ token: 'string.key.json', foreground: '93b4ff' }, // wwise-300
 					{ token: 'string.value.json', foreground: '86efac' }, // green-300
 					{ token: 'number', foreground: 'fcd34d' }, // amber-300
-					{ token: 'keyword', foreground: 'c4b5fd' } // violet-300
+					{ token: 'keyword', foreground: 'c4b5fd' }, // violet-300
+					// JavaScript tokens
+					{ token: 'string', foreground: '86efac' }, // green-300
+					{ token: 'comment', foreground: '71717a' }, // surface-500
+					{ token: 'identifier', foreground: 'd4d4d8' }, // surface-300
+					{ token: 'type.identifier', foreground: '67e8f9' }, // cyan-300
+					{ token: 'delimiter', foreground: 'a1a1aa' } // surface-400
 				],
 				colors: {
 					'editor.background': '#09090b', // surface-950 - darker than page bg
@@ -59,7 +84,13 @@
 					{ token: 'string.key.json', foreground: '1340e1' }, // wwise-700
 					{ token: 'string.value.json', foreground: '16a34a' }, // green-600
 					{ token: 'number', foreground: 'd97706' }, // amber-600
-					{ token: 'keyword', foreground: '7c3aed' } // violet-600
+					{ token: 'keyword', foreground: '7c3aed' }, // violet-600
+					// JavaScript tokens
+					{ token: 'string', foreground: '16a34a' }, // green-600
+					{ token: 'comment', foreground: 'a1a1aa' }, // surface-400
+					{ token: 'identifier', foreground: '3f3f46' }, // surface-700
+					{ token: 'type.identifier', foreground: '0891b2' }, // cyan-600
+					{ token: 'delimiter', foreground: '71717a' } // surface-500
 				],
 				colors: {
 					'editor.background': '#f4f4f5', // surface-100 - distinct from page bg
@@ -91,6 +122,8 @@
 		language?: string;
 		readonly?: boolean;
 		height?: string;
+		resizable?: boolean;
+		extraLibs?: Array<{ content: string; filePath?: string }>;
 		onchange?: (value: string) => void;
 	}
 
@@ -99,6 +132,8 @@
 		language = 'json',
 		readonly = false,
 		height = '8rem',
+		resizable = false,
+		extraLibs,
 		onchange
 	}: Props = $props();
 
@@ -119,6 +154,41 @@
 		const initialValue = value; // Capture for initialization
 
 		getMonaco().then((monaco) => {
+			// Configure JS/TS defaults for JavaScript language
+			if (language === 'javascript') {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const tsLang = (monaco.languages as any).typescript;
+				tsLang.javascriptDefaults.setDiagnosticsOptions({
+					noSemanticValidation: false,
+					noSyntaxValidation: false,
+					diagnosticCodesToIgnore: [
+						1375, // 'await' only allowed at top level of a module
+						1378, // 'await' only allowed when 'module' is esnext/system
+						2307, // Cannot find module (no imports in sandbox)
+						1261 // file is not a module
+					]
+				});
+				tsLang.javascriptDefaults.setCompilerOptions({
+					target: tsLang.ScriptTarget.ESNext,
+					module: tsLang.ModuleKind.ESNext,
+					allowNonTsExtensions: true,
+					allowJs: true,
+					checkJs: true
+				});
+
+				// Add extra type definitions (e.g. wwise API)
+				if (extraLibs?.length) {
+					for (const lib of extraLibs) {
+						tsLang.javascriptDefaults.addExtraLib(
+							lib.content,
+							lib.filePath ?? `ts:${Math.random().toString(36).slice(2)}.d.ts`
+						);
+					}
+				}
+			}
+
+			const isJs = language === 'javascript';
+
 			editor = monaco.editor.create(container, {
 				value: initialValue,
 				language,
@@ -150,9 +220,10 @@
 				renderLineHighlight: 'none',
 				wordWrap: 'on',
 				wrappingStrategy: 'advanced',
+				fixedOverflowWidgets: true,
 				contextmenu: false,
-				quickSuggestions: language === 'json',
-				suggestOnTriggerCharacters: language === 'json',
+				quickSuggestions: language === 'json' || isJs,
+				suggestOnTriggerCharacters: language === 'json' || isJs,
 				formatOnPaste: true,
 				formatOnType: true
 			});
@@ -222,6 +293,7 @@
 
 <div
 	class="monaco-editor-container border border-base rounded-lg overflow-hidden"
+	class:resizable
 	style:height
 	use:mountEditor
 ></div>
@@ -230,6 +302,11 @@
 	.monaco-editor-container {
 		/* Light mode - distinct from page background (surface-100) */
 		background: #f4f4f5;
+	}
+
+	.monaco-editor-container.resizable {
+		resize: vertical;
+		min-height: 4rem;
 	}
 
 	:global(.dark) .monaco-editor-container {
