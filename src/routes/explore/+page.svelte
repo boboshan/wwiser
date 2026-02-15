@@ -801,7 +801,7 @@ declare const wwise: WwiseAPI;
 						onchange={(v) => (code = v)}
 						height="16rem"
 						resizable={true}
-						extraLibs={[{ content: wwiseTypeDefs, filePath: 'ts:wwise-api.d.ts' }]}
+						extraLibs={[{ content: wwiseTypeDefs, filePath: 'wwise-api.d.ts' }]}
 					/>
 				</div>
 			{/if}

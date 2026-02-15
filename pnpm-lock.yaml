@@ -26,9 +26,9 @@ importers:
       json5:
         specifier: ^2.2.3
         version: 2.2.3
-      monaco-editor:
-        specifier: ^0.55.1
-        version: 0.55.1
+      modern-monaco:
+        specifier: ^0.3.8
+        version: 0.3.8(typescript@5.9.3)
     devDependencies:
       '@eslint/compat':
         specifier: ^1.4.1
@@ -69,6 +69,9 @@ importers:
       lucide-svelte:
         specifier: ^0.564.0
         version: 0.564.0(svelte@5.51.0)
+      monaco-editor:
+        specifier: 0.55.1
+        version: 0.55.1
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
@@ -1437,6 +1440,11 @@ packages:
 
   mlly@1.8.0:
     resolution: {integrity: sha512-l8D9ODSRWLe2KHJSifWGwBqpTZXIXTeo8mlKjY+E2HAakaTeNpqAyBZ8GSqLzHgw4XmHmC8whvpjJNMbFZN7/g==}
+
+  modern-monaco@0.3.8:
+    resolution: {integrity: sha512-vQ6tlYorvHJs9FzlOBOqErDyJ3D1sAkm9EcOUUASvpqpUaAsj71vh8kH5WruC+jNQAD2BlTsyw04m0Eo0+RpqA==}
+    peerDependencies:
+      typescript: '>= 5.0.0'
 
   monaco-editor@0.55.1:
     resolution: {integrity: sha512-jz4x+TJNFHwHtwuV9vA9rMujcZRb0CEilTEwG2rRSpe/A7Jdkuj8xPKttCgOh+v/lkHy7HsZ64oj+q3xoAFl9A==}
@@ -3191,6 +3199,10 @@ snapshots:
       pathe: 2.0.3
       pkg-types: 1.3.1
       ufo: 1.6.3
+
+  modern-monaco@0.3.8(typescript@5.9.3):
+    dependencies:
+      typescript: 5.9.3
 
   monaco-editor@0.55.1:
     dependencies:
