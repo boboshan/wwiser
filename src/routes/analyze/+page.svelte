@@ -826,7 +826,7 @@
 											{/if}
 										</div>
 										{#if isEditingDefault}
-											<div class="mt-2 pt-2 border-t border-surface-700/30 flex gap-2 items-center">
+											<div class="mt-2 pt-2 border-t border-base flex gap-2 items-center">
 												<div class="flex-1">
 													<Combobox
 														items={defaultItems}
@@ -967,7 +967,7 @@
 														return { label: child.name + suffix, value: child.id };
 													})}
 													<div
-														class="mt-2 pt-2 border-t border-surface-700/30 flex gap-2 items-center"
+														class="mt-2 pt-2 border-t border-base flex gap-2 items-center"
 													>
 														<div class="flex-1">
 															<Combobox

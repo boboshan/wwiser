@@ -12,6 +12,7 @@
 	import { wwise } from '$lib/wwise/connection.svelte';
 	import {
 		navigation,
+		visibleNavigation,
 		explore,
 		getPageTitle,
 		getPageDescription,
@@ -92,7 +93,7 @@
 <div class="text-base font-sans bg-elevated flex h-screen overflow-hidden">
 	<!-- Sidebar -->
 	<Sidebar
-		tools={navigation}
+		tools={visibleNavigation}
 		{explore}
 		currentTool={currentToolId}
 		bind:sidebarOpen

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { siteConfig, navigation, explore, iconMap } from '$lib/config/site';
+	import { siteConfig, visibleNavigation, explore, iconMap } from '$lib/config/site';
 	import { ArrowRight, Terminal, Zap, Github } from 'lucide-svelte';
 	import logo from '$lib/assets/logo.svg';
 	import wordmark from '$lib/assets/wwiser.svg';
 	import { wwise } from '$lib/wwise/connection.svelte';
 
-	const tools = navigation.filter((t) => t.featured);
+	const tools = visibleNavigation.filter((t) => t.featured);
 </script>
 
 <div class="flex flex-col h-full items-center justify-center relative">
