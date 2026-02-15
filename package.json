@@ -1,7 +1,7 @@
 {
 	"name": "wwiser",
 	"private": true,
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "A collection of productivity tools for Wwise sound designers, powered by WAAPI",
 	"author": "bbs",
 	"license": "MIT",
@@ -61,6 +61,7 @@
 		"@zag-js/menu": "^1.33.1",
 		"@zag-js/select": "^1.33.1",
 		"@zag-js/svelte": "^1.33.1",
+		"@zag-js/toast": "^1.33.1",
 		"json5": "^2.2.3",
 		"monaco-editor": "^0.55.1"
 	}

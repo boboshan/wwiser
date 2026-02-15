@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
+	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
+	import { isNullGuid, normalizeId } from '$lib/wwise/helpers';
 	import {
 		RefreshCw,
 		GitBranch,
@@ -11,11 +14,13 @@
 		SkipForward,
 		Check,
 		Star,
+		FilePen,
 		Plus,
 		X
 	} from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
+	import { toaster } from '$lib/components/toast.svelte';
 	import GroupedCombobox, {
 		type GroupedComboboxGroup
 	} from '$lib/components/grouped-combobox.svelte';
@@ -61,8 +66,6 @@
 	let switchContainers = $state<SwitchContainerInfo[]>([]);
 	let isLoading = $state(false);
 	let isExecuting = $state(false);
-	let statusMessage = $state('');
-	let statusType = $state<'info' | 'success' | 'error'>('info');
 
 	// Settings
 	let rule = $state<AssignmentRule>('name_contains');
@@ -94,9 +97,19 @@
 
 	const uid = $props.id();
 
-	// Helpers
-	const isNullGuid = (id?: string) => !id || id === '{00000000-0000-0000-0000-000000000000}';
-	const normalizeId = (id: string) => id.replace(/[{}]/g, '').toLowerCase();
+	// ── Undo/redo refresh ───────────────────────────────────────────────
+
+	async function reloadAllContainers() {
+		const current = untrack(() => switchContainers);
+		if (current.length === 0 || !wwise.isConnected) return;
+		try {
+			switchContainers = await Promise.all(current.map((sc) => loadContainerInfo(sc.container)));
+		} catch {
+			// Reload failed — stale data is acceptable
+		}
+	}
+
+	watchUndoRedo(() => switchContainers.length > 0, reloadAllContainers);
 
 	// Parse custom list
 	const customMappings = $derived.by(() => {
@@ -303,12 +316,10 @@
 	async function loadSelection() {
 		if (!wwise.isConnected) return;
 		isLoading = true;
-		statusMessage = '';
 		try {
 			selectedObjects = await wwise.getSelectedObjects();
 			if (validContainers.length === 0) {
-				statusMessage = 'No switch containers selected';
-				statusType = 'info';
+				toaster.create({ title: 'No switch containers selected', type: 'info' });
 				switchContainers = [];
 				return;
 			}
@@ -328,11 +339,15 @@
 			for (const sc of switchContainers) {
 				if (!isNullGuid(sc.switchGroup?.id)) expandedIds.add(sc.container.id);
 			}
-			statusMessage = `Found ${validContainers.length} switch container(s)`;
-			statusType = 'info';
+			toaster.create({
+				title: `Found ${validContainers.length} switch container(s)`,
+				type: 'info'
+			});
 		} catch (e) {
-			statusMessage = e instanceof Error ? e.message : 'Failed to get selection';
-			statusType = 'error';
+			toaster.create({
+				title: e instanceof Error ? e.message : 'Failed to get selection',
+				type: 'error'
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -401,22 +416,16 @@
 
 	async function handleGroupSelect(containerId: string, groupId: string) {
 		pendingGroups.set(containerId, groupId);
-		// Clear previous default selection since it's no longer valid
 		pendingDefaults.delete(containerId);
-		try {
-			const switches = await wwise.getChildren(groupId);
-			switchContainers = switchContainers.map((sc) =>
-				sc.container.id === containerId ? { ...sc, switches } : sc
-			);
-		} catch {
-			// Failed to get switches from group
-		}
+		await configureContainer(containerId, groupId);
 	}
 
 	async function setDefaultSwitch(containerId: string, switchId: string) {
 		inlineLoading = `default-${containerId}`;
 		try {
+			await wwise.beginUndoGroup();
 			await wwise.setDefaultSwitchOrState(containerId, switchId);
+			await wwise.endUndoGroup('Set Default Switch');
 			// Reload container info
 			const container = switchContainers.find((sc) => sc.container.id === containerId)?.container;
 			if (container) {
@@ -427,24 +436,26 @@
 			}
 			editingDefault = null;
 			editingDefaultValue = undefined;
-			statusMessage = 'Default switch set';
-			statusType = 'success';
+			toaster.create({ title: 'Default switch set', type: 'success' });
 		} catch (e) {
-			statusMessage = e instanceof Error ? e.message : 'Failed to set default';
-			statusType = 'error';
+			await wwise.cancelUndoGroup();
+			toaster.create({
+				title: e instanceof Error ? e.message : 'Failed to set default',
+				type: 'error'
+			});
 		} finally {
 			inlineLoading = null;
 		}
 	}
 
-	async function configureContainer(containerId: string) {
-		const groupId = pendingGroups.get(containerId);
-		if (!groupId) return;
+	async function configureContainer(containerId: string, groupId?: string) {
+		const gid = groupId ?? pendingGroups.get(containerId);
+		if (!gid) return;
 		isLoading = true;
 		try {
-			await wwise.setSwitchGroupOrStateGroup(containerId, groupId);
-			const defaultId = pendingDefaults.get(containerId);
-			if (defaultId) await wwise.setDefaultSwitchOrState(containerId, defaultId);
+			await wwise.beginUndoGroup();
+			await wwise.setSwitchGroupOrStateGroup(containerId, gid);
+			await wwise.endUndoGroup('Configure Switch Group');
 
 			const container = switchContainers.find((sc) => sc.container.id === containerId)?.container;
 			if (container) {
@@ -455,11 +466,13 @@
 			}
 			pendingGroups.delete(containerId);
 			pendingDefaults.delete(containerId);
-			statusMessage = 'Container configured';
-			statusType = 'success';
+			toaster.create({ title: 'Container configured', type: 'success' });
 		} catch (e) {
-			statusMessage = e instanceof Error ? e.message : 'Failed to configure';
-			statusType = 'error';
+			await wwise.cancelUndoGroup();
+			toaster.create({
+				title: e instanceof Error ? e.message : 'Failed to configure',
+				type: 'error'
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -509,8 +522,6 @@
 	async function execute() {
 		if (totalAssignments === 0) return;
 		isExecuting = true;
-		statusMessage = 'Assigning...';
-		statusType = 'info';
 		try {
 			await wwise.beginUndoGroup();
 			let assigned = 0,
@@ -587,8 +598,10 @@
 			}
 
 			await wwise.endUndoGroup('Assign Switch Container Children');
-			statusMessage = `Assigned ${assigned} child(ren)${removed > 0 ? `, removed ${removed} existing` : ''}`;
-			statusType = 'success';
+			toaster.create({
+				title: `Assigned ${assigned} child(ren)${removed > 0 ? `, removed ${removed} existing` : ''}`,
+				type: 'success'
+			});
 			selectedObjects = [];
 			switchContainers = [];
 			itemResolutions.clear();
@@ -601,8 +614,10 @@
 			} catch {
 				// Failed to cancel undo group
 			}
-			statusMessage = e instanceof Error ? e.message : 'Assignment failed';
-			statusType = 'error';
+			toaster.create({
+				title: e instanceof Error ? e.message : 'Assignment failed',
+				type: 'error'
+			});
 		} finally {
 			isExecuting = false;
 		}
@@ -619,7 +634,7 @@
 			<button
 				onclick={loadSelection}
 				disabled={!wwise.isConnected || isLoading}
-				class="text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex flex-1 gap-2 h-10 transition-colors items-center justify-center dark:bg-surface-800 hover:bg-surface-300 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed dark:hover:bg-surface-700"
+				class="btn-secondary flex-1 sm:flex-none"
 			>
 				<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
 				{isLoading ? 'Loading...' : 'Get Selection'}
@@ -630,7 +645,7 @@
 					totalAssignments === 0 ||
 					isExecuting ||
 					unconfigured.length > 0}
-				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed"
+				class="btn-action flex-1 sm:flex-none"
 			>
 				<GitBranch size={16} />
 				{isExecuting
@@ -777,22 +792,6 @@
 		{/if}
 	</div>
 
-	<!-- Status -->
-	{#if statusMessage}
-		<div
-			class={[
-				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
-				statusType === 'success' &&
-					'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
-				statusType === 'error' &&
-					'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
-				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
-			]}
-		>
-			{statusMessage}
-		</div>
-	{/if}
-
 	<!-- Skipped warning -->
 	{#if skippedObjects.length > 0}
 		<Alert variant="warning">
@@ -804,7 +803,7 @@
 	{#if unconfigured.length > 0}
 		<section>
 			<h3
-				class="text-[10px] text-amber-600 tracking-wider font-medium mb-4 flex gap-1.5 uppercase items-center dark:text-amber-400"
+				class="text-[10px] text-muted tracking-wider font-medium mb-4 flex gap-1.5 uppercase items-center"
 			>
 				<Settings2 size={14} />
 				Needs Configuration ({unconfigured.length})
@@ -812,51 +811,24 @@
 			<div class="space-y-3">
 				{#each unconfigured as sc (sc.container.id)}
 					{@const selectedGroupId = pendingGroups.get(sc.container.id)}
-					{@const selectedDefaultId = pendingDefaults.get(sc.container.id)}
-					<div class="p-4 border border-amber-500/30 rounded-xl bg-amber-900/10 space-y-4">
+					<div class="p-4 border border-base rounded-xl bg-base space-y-4">
 						<div class="flex gap-2 items-center">
-							<Badge variant="amber">Switch Container</Badge>
+							<Badge variant="wwise">Switch Container</Badge>
 							<span class="text-sm font-medium truncate">{sc.container.name}</span>
 						</div>
-						<div class="gap-3 grid sm:grid-cols-2 sm:items-end">
-							<div class="space-y-1.5">
-								<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
-									>Switch/State Group</span
-								>
-								<GroupedCombobox
-									groups={groupOptions}
-									value={selectedGroupId}
-									placeholder="Select group..."
-									id="{uid}-grp-{sc.container.id}"
-									onchange={(v) => handleGroupSelect(sc.container.id, v)}
-									compact
-								/>
-							</div>
-							{#if selectedGroupId && sc.switches.length > 0}
-								<div class="space-y-1.5">
-									<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
-										>Default Switch (optional)</span
-									>
-									<Combobox
-										items={sc.switches.map((s) => ({ label: s.name, value: s.id }))}
-										value={selectedDefaultId}
-										placeholder="Select default..."
-										id="{uid}-def-{sc.container.id}"
-										onchange={(v) => {
-											pendingDefaults.set(sc.container.id, v);
-										}}
-										compact
-									/>
-								</div>
-							{/if}
+						<div class="space-y-1.5">
+							<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
+								>Switch/State Group</span
+							>
+							<GroupedCombobox
+								groups={groupOptions}
+								value={selectedGroupId}
+								placeholder="Select group..."
+								id="{uid}-grp-{sc.container.id}"
+								onchange={(v) => handleGroupSelect(sc.container.id, v)}
+								compact
+							/>
 						</div>
-						<button
-							onclick={() => configureContainer(sc.container.id)}
-							disabled={!selectedGroupId || isLoading}
-							class="text-sm text-white font-medium px-4 rounded-lg bg-wwise flex gap-2 h-9 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							Configure
-						</button>
 					</div>
 				{/each}
 			</div>
@@ -907,25 +879,28 @@
 					{/if}
 				</div>
 			</div>
-			<div class="space-y-2">
+			<div class="space-y-3">
 				{#each configured as sc (sc.container.id)}
 					{@const items = previews.get(sc.container.id) ?? []}
 					{@const expanded = expandedIds.has(sc.container.id)}
-					<div class="p-4 border border-base rounded-lg bg-base">
+					<div class="border border-base rounded-xl bg-base overflow-hidden">
 						<!-- Container header -->
 						<button
 							onclick={() => toggleExpand(sc.container.id)}
-							class="text-left flex gap-2 w-full items-center"
+							class="p-4 text-left flex gap-3 w-full transition-colors items-center hover:bg-surface-50 dark:hover:bg-surface-800/50"
 						>
-							{#if expanded}<ChevronDown
-									size={14}
-									class="text-muted shrink-0"
-								/>{:else}<ChevronRight size={14} class="text-muted shrink-0" />{/if}
+							{#if expanded}
+								<ChevronDown size={14} class="text-muted shrink-0" />
+							{:else}
+								<ChevronRight size={14} class="text-muted shrink-0" />
+							{/if}
 							<div class="flex flex-1 gap-2 min-w-0 items-center">
 								<Badge variant="wwise">Switch Container</Badge>
 								<span class="text-sm text-base font-medium truncate">{sc.container.name}</span>
 							</div>
-							<span class="text-xs text-muted shrink-0">{sc.switchGroup?.name ?? '—'}</span>
+							<span class="text-xs text-muted shrink-0 hidden sm:inline"
+								>{sc.switchGroup?.name ?? '—'}</span
+							>
 							<span
 								class={[
 									'text-xs px-2 py-0.5 rounded-full shrink-0',
@@ -948,7 +923,7 @@
 							)}
 							{@const isEditingDefault = editingDefault === sc.container.id}
 							{@const defaultItems = sc.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
-							<div class="mt-3 pt-3 border-t border-base">
+							<div class="px-4 pb-4 pt-4 border-t border-base">
 								<!-- No default switch warning -->
 								{#if !sc.defaultSwitch}
 									<div class="mb-3">
@@ -995,7 +970,58 @@
 															editingDefault = null;
 															editingDefaultValue = undefined;
 														}}
-														class="text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700"
+														class="btn-cancel"
+														title="Cancel"
+													>
+														<X size={14} />
+													</button>
+												</div>
+											{/if}
+										</div>
+									</div>
+								{:else if sc.defaultSwitch}
+									<div class="mb-3">
+										<div
+											class="text-sm p-3 border-base rounded-lg bg-surface-50 dark:bg-surface-800/30"
+										>
+											<div class="flex gap-2 items-center">
+												<Star size={12} class="text-green-500 shrink-0" />
+												<span class="text-muted">Default:</span>
+												<span class="text-base font-medium flex-1">{sc.defaultSwitch.name}</span>
+												{#if !isEditingDefault}
+													<button
+														onclick={() => {
+															editingDefault = sc.container.id;
+														}}
+														class="text-muted/50 p-1 rounded-full transition-colors hover:text-muted hover:bg-surface-200 dark:hover:bg-surface-600"
+														title="Change default"
+													>
+														<FilePen size={12} />
+													</button>
+												{/if}
+											</div>
+											{#if isEditingDefault}
+												<div class="mt-2 pt-2 border-t border-base flex gap-2 items-center">
+													<div class="flex-1">
+														<Combobox
+															items={defaultItems}
+															bind:value={editingDefaultValue}
+															placeholder="Search switches…"
+															id="{uid}-default-edit-{sc.container.id}"
+															allowCustomValue={false}
+															disabled={inlineLoading === `default-${sc.container.id}`}
+															compact
+															onchange={(val) => {
+																if (val) setDefaultSwitch(sc.container.id, val);
+															}}
+														/>
+													</div>
+													<button
+														onclick={() => {
+															editingDefault = null;
+															editingDefaultValue = undefined;
+														}}
+														class="btn-cancel"
 														title="Cancel"
 													>
 														<X size={14} />

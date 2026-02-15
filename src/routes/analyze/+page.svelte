@@ -2,7 +2,7 @@
 	import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 	import { untrack } from 'svelte';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
-	import { historyStore } from '$lib/state/history.svelte';
+	import { isNullGuid, normalizeId as nid } from '$lib/wwise/helpers';
 	import {
 		RefreshCw,
 		ChevronDown,
@@ -20,6 +20,7 @@
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
 	import Combobox from '$lib/components/combobox.svelte';
+	import { toaster } from '$lib/components/toast.svelte';
 
 	// ── Types ────────────────────────────────────────────────────────────
 
@@ -53,8 +54,6 @@
 	let selectedObjects = $state<WwiseObject[]>([]);
 	let containers = $state<ContainerAnalysis[]>([]);
 	let isLoading = $state(false);
-	let statusMessage = $state('');
-	let statusType = $state<'info' | 'success' | 'error'>('info');
 	let expandedIds = new SvelteSet<string>();
 
 	// Inline editing
@@ -76,10 +75,7 @@
 		healthy: true
 	});
 
-	// ── Helpers ──────────────────────────────────────────────────────────
-
-	const isNullGuid = (id?: string) => !id || id === '{00000000-0000-0000-0000-000000000000}';
-	const nid = (id: string) => id.replace(/[{}]/g, '').toLowerCase();
+	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
 
 	// ── Undo/redo refresh ───────────────────────────────────────────────
 
@@ -93,28 +89,7 @@
 		}
 	}
 
-	let prevUndoLabel: string | null | undefined;
-	let prevRedoLabel: string | null | undefined;
-
-	$effect(() => {
-		const curUndo = historyStore.undoLabel;
-		const curRedo = historyStore.redoLabel;
-
-		if (prevUndoLabel === undefined) {
-			prevUndoLabel = curUndo;
-			prevRedoLabel = curRedo;
-			return;
-		}
-
-		if (curUndo !== prevUndoLabel || curRedo !== prevRedoLabel) {
-			prevUndoLabel = curUndo;
-			prevRedoLabel = curRedo;
-			const hasContainers = untrack(() => containers.length > 0);
-			if (hasContainers) {
-				reloadAllContainers();
-			}
-		}
-	});
+	watchUndoRedo(() => containers.length > 0, reloadAllContainers);
 
 	// ── Derived analysis ─────────────────────────────────────────────────
 
@@ -251,14 +226,12 @@
 	async function loadSelection() {
 		if (!wwise.isConnected) return;
 		isLoading = true;
-		statusMessage = '';
 		addingToSwitch = null;
 		try {
 			selectedObjects = await wwise.getSelectedObjects();
 			const valid = selectedObjects.filter((o) => o.type === 'SwitchContainer');
 			if (valid.length === 0) {
-				statusMessage = 'No switch containers selected';
-				statusType = 'info';
+				toaster.create({ title: 'No switch containers selected', type: 'info' });
 				containers = [];
 				return;
 			}
@@ -272,15 +245,18 @@
 				if (!isNullGuid(c.switchGroup?.id)) expandedIds.add(c.container.id);
 			}
 			if (failed > 0) {
-				statusMessage = `Loaded ${containers.length} container${containers.length !== 1 ? 's' : ''}, ${failed} failed`;
-				statusType = 'error';
+				toaster.create({
+					title: `Loaded ${containers.length} container${containers.length !== 1 ? 's' : ''}, ${failed} failed`,
+					type: 'error'
+				});
 			} else {
-				statusMessage = `Loaded ${valid.length} switch container${valid.length !== 1 ? 's' : ''}`;
-				statusType = 'info';
+				toaster.create({
+					title: `Loaded ${valid.length} switch container${valid.length !== 1 ? 's' : ''}`,
+					type: 'info'
+				});
 			}
 		} catch (e) {
-			statusMessage = e instanceof Error ? e.message : 'Failed to load';
-			statusType = 'error';
+			toaster.create({ title: e instanceof Error ? e.message : 'Failed to load', type: 'error' });
 		} finally {
 			isLoading = false;
 		}
@@ -376,8 +352,7 @@
 			} catch {
 				// cancel failed
 			}
-			statusMessage = e instanceof Error ? e.message : 'Failed to assign';
-			statusType = 'error';
+			toaster.create({ title: e instanceof Error ? e.message : 'Failed to assign', type: 'error' });
 		} finally {
 			inlineLoading = null;
 		}
@@ -396,8 +371,7 @@
 			} catch {
 				// cancel failed
 			}
-			statusMessage = e instanceof Error ? e.message : 'Failed to remove';
-			statusType = 'error';
+			toaster.create({ title: e instanceof Error ? e.message : 'Failed to remove', type: 'error' });
 		} finally {
 			inlineLoading = null;
 		}
@@ -418,8 +392,10 @@
 			} catch {
 				// cancel failed
 			}
-			statusMessage = e instanceof Error ? e.message : 'Failed to set default';
-			statusType = 'error';
+			toaster.create({
+				title: e instanceof Error ? e.message : 'Failed to set default',
+				type: 'error'
+			});
 		} finally {
 			inlineLoading = null;
 		}
@@ -467,28 +443,12 @@
 		<button
 			onclick={loadSelection}
 			disabled={!wwise.isConnected || isLoading}
-			class="text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex shrink-0 gap-2 h-10 transition-colors items-center justify-center dark:bg-surface-800 hover:bg-surface-300 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-700"
+			class="btn-secondary shrink-0"
 		>
 			<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
 			{isLoading ? 'Loading...' : 'Get Selection'}
 		</button>
 	</div>
-
-	<!-- Status message -->
-	{#if statusMessage}
-		<div
-			class={[
-				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
-				statusType === 'success' &&
-					'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
-				statusType === 'error' &&
-					'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
-				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
-			]}
-		>
-			{statusMessage}
-		</div>
-	{/if}
 
 	<!-- Unconfigured warning -->
 	{#if unconfigured.length > 0}
@@ -672,9 +632,9 @@
 					{#if expanded && s}
 						{@const isEditingDefault = editingDefault === c.container.id}
 						{@const defaultItems = c.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
-						<div class="px-4 pb-4 border-t border-base">
+						<div class="px-4 pb-4 pt-4 border-t border-base">
 							<!-- Stats row -->
-							<div class="mt-4 gap-3 grid grid-cols-2 lg:grid-cols-6 sm:grid-cols-4">
+							<div class="gap-3 grid grid-cols-2 lg:grid-cols-6 sm:grid-cols-4">
 								<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
 									<p class="text-lg text-base font-semibold m-0 tabular-nums">{s.totalSwitches}</p>
 									<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Switches</p>
@@ -795,7 +755,7 @@
 														editingDefault = null;
 														editingDefaultValue = undefined;
 													}}
-													class="text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700"
+													class="btn-cancel"
 													title="Cancel"
 												>
 													<X size={14} />
@@ -846,7 +806,7 @@
 														editingDefault = null;
 														editingDefaultValue = undefined;
 													}}
-													class="text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700"
+													class="btn-cancel"
 													title="Cancel"
 												>
 													<X size={14} />
@@ -966,9 +926,7 @@
 																	: '';
 														return { label: child.name + suffix, value: child.id };
 													})}
-													<div
-														class="mt-2 pt-2 border-t border-base flex gap-2 items-center"
-													>
+													<div class="mt-2 pt-2 border-t border-base flex gap-2 items-center">
 														<div class="flex-1">
 															<Combobox
 																items={comboItems}
@@ -988,7 +946,7 @@
 																addingToSwitch = null;
 																addingChildValue = undefined;
 															}}
-															class="text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700"
+															class="btn-cancel"
 															title="Cancel"
 														>
 															<X size={14} />

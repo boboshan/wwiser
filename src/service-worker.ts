@@ -17,7 +17,18 @@ const PRECACHE_ASSETS = [
 ];
 
 // App routes to cache for offline access
-const APP_ROUTES = ['/', '/wrap', '/volume', '/rename', '/assign', '/explore'];
+const APP_ROUTES = [
+	'/',
+	'/about',
+	'/wrap',
+	'/volume',
+	'/rename',
+	'/assign',
+	'/fill',
+	'/copy',
+	'/analyze',
+	'/explore'
+];
 
 // External CDN resources - multiple sources for redundancy
 const CDN_RESOURCES = new Set([

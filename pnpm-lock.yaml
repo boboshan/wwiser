@@ -20,6 +20,9 @@ importers:
       '@zag-js/svelte':
         specifier: ^1.33.1
         version: 1.33.1(svelte@5.51.0)
+      '@zag-js/toast':
+        specifier: ^1.33.1
+        version: 1.33.1
       json5:
         specifier: ^2.2.3
         version: 2.2.3
@@ -1022,6 +1025,9 @@ packages:
     resolution: {integrity: sha512-FGOvPPdM5AcYSEOsNGFBn4uwmpcGNpkwLc5CnexzyC9ow/IKcSGjbcv1QbbyprhsOvNNsjJPzHdyFUtun8yObQ==}
     peerDependencies:
       svelte: '>=5'
+
+  '@zag-js/toast@1.33.1':
+    resolution: {integrity: sha512-kI2/VJcBQGgHpmuWiIDqPn8ejFEODh5YhjWbnvjGRG+x3XoPuMq6hhxXV6VWJslbZJtTmzxDcP+Xamdrf1hbZA==}
 
   '@zag-js/types@1.33.1':
     resolution: {integrity: sha512-huJdwaeyptKDuZqhhFQRWNiMAJEdei4fTAQ3xIBw07GW27zKwust4Bn0y+8PYlnVVQn2auH4lpIXXwPccFRclQ==}
@@ -2826,6 +2832,15 @@ snapshots:
       '@zag-js/types': 1.33.1
       '@zag-js/utils': 1.33.1
       svelte: 5.51.0
+
+  '@zag-js/toast@1.33.1':
+    dependencies:
+      '@zag-js/anatomy': 1.33.1
+      '@zag-js/core': 1.33.1
+      '@zag-js/dismissable': 1.33.1
+      '@zag-js/dom-query': 1.33.1
+      '@zag-js/types': 1.33.1
+      '@zag-js/utils': 1.33.1
 
   '@zag-js/types@1.33.1':
     dependencies:

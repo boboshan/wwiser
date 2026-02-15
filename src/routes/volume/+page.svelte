@@ -117,13 +117,13 @@
 </script>
 
 <script lang="ts">
-	import { untrack } from 'svelte';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
-	import { historyStore } from '$lib/state/history.svelte';
+	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
 	import { Volume2 } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import VolumeGraph from './volume-graph.svelte';
+	import { toaster } from '$lib/components/toast.svelte';
 
 	// Types
 	interface VolumeInfo {
@@ -147,8 +147,6 @@
 	// State
 	let volumeData = $state<VolumeInfo[]>([]);
 	let isLoading = $state(false);
-	let statusMessage = $state('');
-	let statusType = $state<'info' | 'success' | 'error'>('info');
 	let isSaving = $state(false);
 
 	// Cache for object details to reduce API calls
@@ -189,28 +187,7 @@
 		objectCache.clear();
 	}
 
-	let prevUndoLabel: string | null | undefined;
-	let prevRedoLabel: string | null | undefined;
-
-	$effect(() => {
-		const curUndo = historyStore.undoLabel;
-		const curRedo = historyStore.redoLabel;
-
-		if (prevUndoLabel === undefined) {
-			prevUndoLabel = curUndo;
-			prevRedoLabel = curRedo;
-			return;
-		}
-
-		if (curUndo !== prevUndoLabel || curRedo !== prevRedoLabel) {
-			prevUndoLabel = curUndo;
-			prevRedoLabel = curRedo;
-			const hasData = untrack(() => volumeData.length > 0);
-			if (hasData) {
-				refreshSliderValues();
-			}
-		}
-	});
+	watchUndoRedo(() => volumeData.length > 0, refreshSliderValues);
 
 	// Set a property on a Wwise object
 	async function setObjectProperty(
@@ -259,8 +236,10 @@
 			await wwise.cancelUndoGroup();
 			// Revert slider to its last confirmed value
 			contrib.getSlider(property)?.revert();
-			statusMessage = e instanceof Error ? e.message : 'Failed to update volume';
-			statusType = 'error';
+			toaster.create({
+				title: e instanceof Error ? e.message : 'Failed to update volume',
+				type: 'error'
+			});
 		} finally {
 			isSaving = false;
 		}
@@ -469,7 +448,6 @@
 		if (!wwise.isConnected) return;
 
 		isLoading = true;
-		statusMessage = '';
 		volumeData = [];
 		objectCache.clear(); // Clear cache for fresh calculation
 
@@ -477,8 +455,7 @@
 			const selectedObjects = await wwise.getSelectedObjects();
 
 			if (selectedObjects.length === 0) {
-				statusMessage = 'No objects selected in Wwise';
-				statusType = 'info';
+				toaster.create({ title: 'No objects selected in Wwise', type: 'info' });
 				isLoading = false;
 				return;
 			}
@@ -488,8 +465,10 @@
 			const skippedCount = selectedObjects.length - supportedObjects.length;
 
 			if (supportedObjects.length === 0) {
-				statusMessage = 'No supported objects selected (Sound, Containers, or Buses)';
-				statusType = 'info';
+				toaster.create({
+					title: 'No supported objects selected (Sound, Containers, or Buses)',
+					type: 'info'
+				});
 				isLoading = false;
 				return;
 			}
@@ -612,11 +591,15 @@
 
 			volumeData = results;
 			const skippedText = skippedCount > 0 ? ` (${skippedCount} unsupported skipped)` : '';
-			statusMessage = `Calculated volume for ${results.length} object${results.length !== 1 ? 's' : ''}${skippedText}`;
-			statusType = 'success';
+			toaster.create({
+				title: `Calculated volume for ${results.length} object${results.length !== 1 ? 's' : ''}${skippedText}`,
+				type: 'success'
+			});
 		} catch (e) {
-			statusMessage = e instanceof Error ? e.message : 'Failed to calculate volumes';
-			statusType = 'error';
+			toaster.create({
+				title: e instanceof Error ? e.message : 'Failed to calculate volumes',
+				type: 'error'
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -632,7 +615,7 @@
 		</p>
 		<div class="flex shrink-0 gap-3 items-center">
 			<button
-				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed"
+				class="btn-action flex-1 sm:flex-none"
 				onclick={calculate}
 				disabled={!wwise.isConnected || isLoading}
 			>
@@ -658,12 +641,5 @@
 			</div>
 			<VolumeGraph {volumeData} {isSaving} onVolumeChange={handleVolumeChange} />
 		</section>
-	{/if}
-
-	<!-- Status Message -->
-	{#if statusMessage && volumeData.length === 0}
-		<Alert variant={statusType}>
-			{statusMessage}
-		</Alert>
 	{/if}
 </div>

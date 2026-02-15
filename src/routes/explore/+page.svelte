@@ -1,8 +1,16 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { wwise } from '$lib/wwise/connection.svelte';
-	import { Play, Radio, Square, Trash2, Copy, Plug, LoaderCircle } from 'lucide-svelte';
-	import Alert from '$lib/components/alert.svelte';
+	import {
+		Play,
+		Radio,
+		Square,
+		Trash2,
+		Copy,
+		Plug,
+		LoaderCircle,
+		CircleAlert
+	} from 'lucide-svelte';
 	import MonacoEditor from '$lib/components/monaco-editor.svelte';
 	import Combobox from '$lib/components/combobox.svelte';
 	import Select from '$lib/components/select.svelte';
@@ -303,67 +311,72 @@
 
 <div class="flex flex-col gap-6 h-full">
 	{#if !wwise.isConnected}
-		<!-- Connect Section -->
-		<div class="p-6 border border-base rounded-xl bg-base max-w-md">
-			<div class="mb-4 flex gap-3 items-center">
-				<div class="rounded-lg bg-wwise/15 flex h-12 w-12 items-center justify-center">
-					<Plug size={24} class="text-wwise" />
+		<!-- Inline Connect Form -->
+		<div class="max-w-sm w-full">
+			<div class="p-6 border border-base rounded-2xl bg-base space-y-5">
+				<div class="flex gap-3 items-center">
+					<div
+						class="rounded-lg bg-surface-200 flex shrink-0 h-10 w-10 items-center justify-center dark:bg-surface-800"
+					>
+						<Plug size={20} class="text-muted" />
+					</div>
+					<div>
+						<p class="text-sm text-base font-medium m-0">Connect to Wwise</p>
+						<p class="text-xs text-muted m-0">Enter WAAPI server details</p>
+					</div>
 				</div>
-				<div>
-					<h3 class="text-base font-semibold m-0">Connect to Wwise</h3>
-					<p class="text-sm text-muted m-0">Enter your WAAPI server details</p>
-				</div>
-			</div>
 
-			<div class="space-y-4">
-				<div class="gap-3 grid grid-cols-3">
-					<div class="col-span-2">
-						<label for="waapi-host" class="text-xs text-muted font-medium mb-1 block">Host</label>
+				<div class="space-y-3">
+					<div>
+						<label for="explore-host" class="text-xs text-muted mb-1.5 block">Host</label>
 						<input
-							id="waapi-host"
+							id="explore-host"
 							type="text"
 							bind:value={host}
 							placeholder="localhost"
-							spellcheck="false"
-							class="input-base px-3 py-2"
+							class="input-base text-base px-3 h-9"
 						/>
 					</div>
 					<div>
-						<label for="waapi-port" class="text-xs text-muted font-medium mb-1 block">Port</label>
+						<label for="explore-port" class="text-xs text-muted mb-1.5 block">Port</label>
 						<input
-							id="waapi-port"
+							id="explore-port"
 							type="number"
 							bind:value={port}
 							placeholder="8080"
-							class="input-base px-3 py-2"
+							class="input-base text-base px-3 h-9"
 						/>
 					</div>
 				</div>
+
+				{#if wwise.status === 'error' && wwise.error}
+					<div class="p-3 border border-red-500/20 rounded-lg bg-red-500/10 flex gap-2 items-start">
+						<CircleAlert size={14} class="text-red-500 mt-0.5 shrink-0" />
+						<p class="text-xs text-red-500 m-0">{wwise.error}</p>
+					</div>
+				{/if}
 
 				<button
 					onclick={handleConnect}
 					disabled={wwise.status === 'connecting'}
-					class="text-sm text-white font-medium px-4 py-2 rounded-lg bg-wwise flex gap-2 w-full transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="btn-action h-9 w-full"
 				>
 					{#if wwise.status === 'connecting'}
-						<LoaderCircle size={16} class="animate-spin" />
-						Connecting...
+						<LoaderCircle size={14} class="animate-spin" />
+						<span>Connecting...</span>
 					{:else}
-						<Plug size={16} />
-						Connect
+						<Plug size={14} />
+						<span>Connect</span>
 					{/if}
 				</button>
 
-				{#if wwise.error}
-					<Alert variant="error">{wwise.error}</Alert>
-				{/if}
+				<p class="text-xs text-muted leading-relaxed m-0">
+					Add <code class="text-wwise px-1 py-0.5 rounded bg-wwise/10">https://wwiser.net</code>
+					to
+					<strong>User Preferences → Allow browser connections from</strong>. Do not include
+					<code class="text-amber-500 px-1 py-0.5 rounded bg-amber-500/20">/</code> at the end.
+				</p>
 			</div>
-
-			<p class="text-xs text-muted mb-0 mt-4">
-				Add <code class="text-wwise px-1 py-0.5 rounded bg-wwise/10">https://wwiser.net</code> to
-				<strong>User Preferences → Allow browser connections from</strong>. Do not include
-				<code class="text-amber-500 px-1 py-0.5 rounded bg-amber-500/20">/</code> at the end.
-			</p>
 		</div>
 	{:else}
 		<div class="flex flex-1 flex-col gap-4 min-h-0">
@@ -440,11 +453,7 @@
 
 				<!-- Execute Button -->
 				{#if mode === 'call'}
-					<button
-						onclick={executeCall}
-						disabled={!selectedUri || isLoading}
-						class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex gap-2 h-10 transition-colors items-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed"
-					>
+					<button onclick={executeCall} disabled={!selectedUri || isLoading} class="btn-action">
 						<Play size={16} />
 						{isLoading ? 'Calling...' : 'Execute'}
 					</button>
