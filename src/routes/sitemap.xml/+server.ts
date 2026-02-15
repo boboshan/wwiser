@@ -1,4 +1,4 @@
-import { siteConfig, visibleNavigation, explore } from '$lib/config/site';
+import { siteConfig, navigation, explore } from '$lib/config/site';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async () => {
@@ -6,7 +6,7 @@ export const GET: RequestHandler = async () => {
 		{ path: '/', priority: 1.0, changefreq: 'weekly' },
 		{ path: '/about', priority: 0.5, changefreq: 'monthly' },
 		{ path: explore.href, priority: 0.9, changefreq: 'weekly' },
-		...visibleNavigation.map((item) => ({
+		...navigation.map((item) => ({
 			path: item.href,
 			priority: 0.8,
 			changefreq: 'weekly' as const

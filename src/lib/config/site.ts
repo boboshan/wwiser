@@ -17,9 +17,6 @@ import {
 	ListMusic
 } from 'lucide-svelte';
 import type { SvelteComponent } from 'svelte';
-import { env } from '$env/dynamic/public';
-
-export const previewEnabled = env.PUBLIC_PREVIEW_FEATURES === 'true';
 
 export const siteConfig = {
 	name: 'Wwiser',
@@ -65,7 +62,6 @@ export interface NavItem {
 	icon: NavIcon;
 	href: string;
 	featured?: boolean;
-	preview?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,8 +147,7 @@ export const navigation: NavItem[] = [
 		description: 'Rename source audio files referenced by sounds',
 		shortDescription: 'Rename source files',
 		icon: 'file-audio',
-		href: '/source-rename',
-		preview: true
+		href: '/source-rename'
 	},
 	{
 		id: 'monitor',
@@ -161,13 +156,9 @@ export const navigation: NavItem[] = [
 		shortDescription: 'Segment navigator',
 		icon: 'list-music',
 		href: '/monitor',
-		featured: true,
-		preview: true
+		featured: true
 	}
 ];
-
-/** Navigation items filtered by preview flag — use this in the UI */
-export const visibleNavigation = navigation.filter((item) => !item.preview || previewEnabled);
 
 export const explore: NavItem = {
 	id: 'explore',
