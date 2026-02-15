@@ -1,17 +1,39 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
+	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
 	import { RefreshCw, Pencil, ClipboardPaste, Copy } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
+	import { toaster } from '$lib/components/toast.svelte';
 
 	// State
 	let selectedObjects = $state<WwiseObject[]>([]);
 	let namesText = $state('');
 	let isLoading = $state(false);
 	let isExecuting = $state(false);
-	let statusMessage = $state('');
-	let statusType = $state<'info' | 'success' | 'error'>('info');
+
+	// ── Undo/redo refresh ───────────────────────────────────────────────
+
+	async function refreshObjects() {
+		const current = untrack(() => selectedObjects);
+		if (current.length === 0 || !wwise.isConnected) return;
+		try {
+			const refreshed = await wwise.getObjects({ id: current.map((o) => o.id) }, [
+				'id',
+				'name',
+				'type',
+				'path'
+			]);
+			const byId = new Map(refreshed.map((o) => [o.id, o]));
+			selectedObjects = current.map((o) => byId.get(o.id) ?? o);
+		} catch {
+			// Refresh failed — stale data is acceptable
+		}
+	}
+
+	watchUndoRedo(() => selectedObjects.length > 0, refreshObjects);
 
 	// Derive clipboardNames from the text
 	const clipboardNames = $derived(namesText.split('\n'));
@@ -38,22 +60,20 @@
 
 	async function refreshSelection() {
 		if (!wwise.isConnected) {
-			statusMessage = 'Not connected to Wwise';
-			statusType = 'error';
+			toaster.create({ title: 'Not connected to Wwise', type: 'error' });
 			return;
 		}
 
 		isLoading = true;
-		statusMessage = 'Fetching selection...';
-		statusType = 'info';
 
 		try {
 			selectedObjects = await wwise.getSelectedObjects();
-			statusMessage = `Found ${selectedObjects.length} selected object(s)`;
-			statusType = 'info';
+			toaster.create({ title: `Found ${selectedObjects.length} selected object(s)`, type: 'info' });
 		} catch (error) {
-			statusMessage = error instanceof Error ? error.message : 'Failed to get selection';
-			statusType = 'error';
+			toaster.create({
+				title: error instanceof Error ? error.message : 'Failed to get selection',
+				type: 'error'
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -64,41 +84,39 @@
 			const text = await navigator.clipboard.readText();
 			namesText = text;
 			const count = text.split('\n').filter((line) => line.trim()).length;
-			statusMessage = `Parsed ${count} name(s) from clipboard`;
-			statusType = 'info';
+			toaster.create({ title: `Parsed ${count} name(s) from clipboard`, type: 'info' });
 		} catch {
-			statusMessage = 'Failed to read clipboard. Please allow clipboard access.';
-			statusType = 'error';
+			toaster.create({
+				title: 'Failed to read clipboard. Please allow clipboard access.',
+				type: 'error'
+			});
 		}
 	}
 
 	function pasteFromSelection() {
 		if (selectedObjects.length === 0) {
-			statusMessage = 'No objects selected. Get selection first.';
-			statusType = 'error';
+			toaster.create({ title: 'No objects selected. Get selection first.', type: 'error' });
 			return;
 		}
 		namesText = selectedObjects.map((obj) => obj.name).join('\n');
-		statusMessage = `Populated ${selectedObjects.length} name(s) from selection`;
-		statusType = 'info';
+		toaster.create({
+			title: `Populated ${selectedObjects.length} name(s) from selection`,
+			type: 'info'
+		});
 	}
 
 	async function executeRename() {
 		if (!wwise.isConnected) {
-			statusMessage = 'Not connected to Wwise';
-			statusType = 'error';
+			toaster.create({ title: 'Not connected to Wwise', type: 'error' });
 			return;
 		}
 
 		if (objectsToRename.length === 0) {
-			statusMessage = 'No objects to rename';
-			statusType = 'error';
+			toaster.create({ title: 'No objects to rename', type: 'error' });
 			return;
 		}
 
 		isExecuting = true;
-		statusMessage = 'Renaming objects...';
-		statusType = 'info';
 
 		try {
 			await wwise.beginUndoGroup();
@@ -115,16 +133,17 @@
 
 			await wwise.endUndoGroup('Rename Objects');
 
-			statusMessage = `Renamed ${renamedCount} object(s)`;
-			statusType = 'success';
+			toaster.create({ title: `Renamed ${renamedCount} object(s)`, type: 'success' });
 
 			// Clear state after success
 			selectedObjects = [];
 			namesText = '';
 		} catch (error) {
 			await wwise.cancelUndoGroup();
-			statusMessage = error instanceof Error ? error.message : 'Rename operation failed';
-			statusType = 'error';
+			toaster.create({
+				title: error instanceof Error ? error.message : 'Rename operation failed',
+				type: 'error'
+			});
 		} finally {
 			isExecuting = false;
 		}
@@ -142,7 +161,7 @@
 			<button
 				onclick={refreshSelection}
 				disabled={!wwise.isConnected || isLoading}
-				class="text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex flex-1 gap-2 h-10 transition-colors items-center justify-center dark:bg-surface-800 hover:bg-surface-300 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed dark:hover:bg-surface-700"
+				class="btn-secondary flex-1 sm:flex-none"
 			>
 				<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
 				{isLoading ? 'Loading...' : 'Get Selection'}
@@ -150,7 +169,7 @@
 			<button
 				onclick={executeRename}
 				disabled={!wwise.isConnected || objectsToRename.length === 0 || isExecuting}
-				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed"
+				class="btn-action flex-1 sm:flex-none"
 			>
 				<Pencil size={16} />
 				{isExecuting ? 'Renaming...' : 'Rename Objects'}
@@ -168,15 +187,12 @@
 				<button
 					onclick={pasteFromSelection}
 					disabled={selectedObjects.length === 0}
-					class="text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="btn-accent-sm"
 				>
 					<Copy size={14} />
 					Paste from Selection
 				</button>
-				<button
-					onclick={pasteFromClipboard}
-					class="text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20"
-				>
+				<button onclick={pasteFromClipboard} class="btn-accent-sm">
 					<ClipboardPaste size={14} />
 					Paste from Clipboard
 				</button>
@@ -193,22 +209,6 @@
 			{clipboardNames.filter((n) => n.trim()).length} name(s) parsed
 		</p>
 	</div>
-
-	<!-- Status -->
-	{#if statusMessage}
-		<div
-			class={[
-				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
-				statusType === 'success' &&
-					'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
-				statusType === 'error' &&
-					'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
-				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
-			]}
-		>
-			{statusMessage}
-		</div>
-	{/if}
 
 	<!-- Skipped Objects Warning -->
 	{#if skippedObjects.length > 0 && selectedObjects.length > 0 && clipboardNames.length > 0}

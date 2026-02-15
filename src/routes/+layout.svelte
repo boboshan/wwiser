@@ -19,6 +19,7 @@
 	} from '$lib/config/site';
 	import { ChevronDown, Sun, Moon, Monitor, Undo2, Redo2 } from 'lucide-svelte';
 	import logo from '$lib/assets/logo.svg';
+	import Toaster from '$lib/components/toaster.svelte';
 
 	const { children } = $props();
 
@@ -61,6 +62,10 @@
 		themeStore.theme === 'light' ? Sun : themeStore.theme === 'dark' ? Moon : Monitor
 	);
 
+	const undoTitle = $derived(historyStore.undoLabel ? `Undo: ${historyStore.undoLabel}` : 'Undo');
+
+	const redoTitle = $derived(historyStore.redoLabel ? `Redo: ${historyStore.redoLabel}` : 'Redo');
+
 	// Global keyboard shortcut handler
 	function handleKeydown(e: KeyboardEvent) {
 		const mod = e.metaKey || e.ctrlKey;
@@ -82,6 +87,28 @@
 </script>
 
 <Seo title={pageTitle} description={pageDescription} canonical={canonicalUrl} />
+<Toaster />
+
+{#snippet undoRedoButtons(btnClass: string)}
+	<button
+		onclick={() => wwise.undo()}
+		disabled={historyStore.isUndoing}
+		title={undoTitle}
+		class="{btnClass} disabled:opacity-30 disabled:cursor-not-allowed"
+		aria-label={undoTitle}
+	>
+		<Undo2 class="h-4 w-4" />
+	</button>
+	<button
+		onclick={() => wwise.redo()}
+		disabled={historyStore.isRedoing}
+		title={redoTitle}
+		class="{btnClass} disabled:opacity-30 disabled:cursor-not-allowed"
+		aria-label={redoTitle}
+	>
+		<Redo2 class="h-4 w-4" />
+	</button>
+{/snippet}
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
@@ -110,24 +137,9 @@
 				{#if wwise.isConnected && isToolPage}
 					<div class="border-l border-base h-5"></div>
 					<div class="flex gap-1 items-center">
-						<button
-							onclick={() => wwise.undo()}
-							disabled={historyStore.isUndoing}
-							title={historyStore.undoLabel ? `Undo: ${historyStore.undoLabel}` : 'Undo'}
-							class="text-muted p-1.5 rounded-md transition-colors hover:text-surface-900 hover:bg-surface-200 disabled:opacity-30 disabled:cursor-not-allowed dark:hover:text-surface-100 dark:hover:bg-surface-800 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
-							aria-label="Undo"
-						>
-							<Undo2 class="h-4 w-4" />
-						</button>
-						<button
-							onclick={() => wwise.redo()}
-							disabled={historyStore.isRedoing}
-							title={historyStore.redoLabel ? `Redo: ${historyStore.redoLabel}` : 'Redo'}
-							class="text-muted p-1.5 rounded-md transition-colors hover:text-surface-900 hover:bg-surface-200 disabled:opacity-30 disabled:cursor-not-allowed dark:hover:text-surface-100 dark:hover:bg-surface-800 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
-							aria-label="Redo"
-						>
-							<Redo2 class="h-4 w-4" />
-						</button>
+						{@render undoRedoButtons(
+							'text-muted p-1.5 rounded-md transition-colors hover:text-surface-900 hover:bg-surface-200 dark:hover:text-surface-100 dark:hover:bg-surface-800 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
+						)}
 					</div>
 				{/if}
 			</div>
@@ -150,24 +162,9 @@
 			<div class="flex-1"></div>
 			{#if wwise.isConnected && isToolPage}
 				<div class="flex gap-0.5 items-center">
-					<button
-						onclick={() => wwise.undo()}
-						disabled={historyStore.isUndoing}
-						title={historyStore.undoLabel ? `Undo: ${historyStore.undoLabel}` : 'Undo'}
-						class="text-muted p-2 rounded-lg bg-hover transition-colors hover:text-surface-900 disabled:opacity-30 disabled:cursor-not-allowed dark:hover:text-surface-100"
-						aria-label={historyStore.undoLabel ? `Undo: ${historyStore.undoLabel}` : 'Undo'}
-					>
-						<Undo2 class="h-4 w-4" />
-					</button>
-					<button
-						onclick={() => wwise.redo()}
-						disabled={historyStore.isRedoing}
-						title={historyStore.redoLabel ? `Redo: ${historyStore.redoLabel}` : 'Redo'}
-						class="text-muted p-2 rounded-lg bg-hover transition-colors hover:text-surface-900 disabled:opacity-30 disabled:cursor-not-allowed dark:hover:text-surface-100"
-						aria-label={historyStore.redoLabel ? `Redo: ${historyStore.redoLabel}` : 'Redo'}
-					>
-						<Redo2 class="h-4 w-4" />
-					</button>
+					{@render undoRedoButtons(
+						'text-muted p-2 rounded-lg bg-hover transition-colors hover:text-surface-900 dark:hover:text-surface-100'
+					)}
 				</div>
 			{/if}
 			<ConnectionPanel />
@@ -181,7 +178,9 @@
 		</header>
 
 		<!-- Scrollable Content Area -->
-		<main class="p-4 bg-surface-50 flex-1 overflow-y-auto lg:p-8 md:p-6 dark:bg-surface-900">
+		<main
+			class="p-4 pb-16 bg-surface-50 flex-1 overflow-y-auto lg:p-8 md:p-6 lg:pb-20 md:pb-16 dark:bg-surface-900"
+		>
 			<div class="mx-auto flex flex-col h-full max-w-6xl">
 				{@render children()}
 			</div>

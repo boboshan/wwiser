@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import {
 		wwise,
@@ -6,10 +7,12 @@
 		type ContainerType,
 		type WwiseObject
 	} from '$lib/wwise/connection.svelte';
+	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
 	import { RefreshCw, Package } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Select from '$lib/components/select.svelte';
 	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
+	import { toaster } from '$lib/components/toast.svelte';
 
 	// Types that cannot be wrapped at all
 	const NON_WRAPPABLE_TYPES = ['Project'];
@@ -66,8 +69,27 @@
 	let selectedObjects = $state<WwiseObject[]>([]);
 	let isLoading = $state(false);
 	let isExecuting = $state(false);
-	let statusMessage = $state('');
-	let statusType = $state<'info' | 'success' | 'error'>('info');
+
+	// ── Undo/redo refresh ───────────────────────────────────────────────
+
+	async function refreshObjects() {
+		const current = untrack(() => selectedObjects);
+		if (current.length === 0 || !wwise.isConnected) return;
+		try {
+			const refreshed = await wwise.getObjects({ id: current.map((o) => o.id) }, [
+				'id',
+				'name',
+				'type',
+				'path'
+			]);
+			const byId = new Map(refreshed.map((o) => [o.id, o]));
+			selectedObjects = current.map((o) => byId.get(o.id) ?? o);
+		} catch {
+			// Refresh failed — stale data is acceptable
+		}
+	}
+
+	watchUndoRedo(() => selectedObjects.length > 0, refreshObjects);
 
 	// Convert CONTAINER_TYPES to Select items
 	const containerItems = CONTAINER_TYPES.map((t) => ({ label: t.label, value: t.value }));
@@ -193,22 +215,20 @@
 
 	async function refreshSelection() {
 		if (!wwise.isConnected) {
-			statusMessage = 'Not connected to Wwise';
-			statusType = 'error';
+			toaster.create({ title: 'Not connected to Wwise', type: 'error' });
 			return;
 		}
 
 		isLoading = true;
-		statusMessage = 'Fetching selection...';
-		statusType = 'info';
 
 		try {
 			selectedObjects = await wwise.getSelectedObjects();
-			statusMessage = `Found ${selectedObjects.length} selected object(s)`;
-			statusType = 'info';
+			toaster.create({ title: `Found ${selectedObjects.length} selected object(s)`, type: 'info' });
 		} catch (error) {
-			statusMessage = error instanceof Error ? error.message : 'Failed to get selection';
-			statusType = 'error';
+			toaster.create({
+				title: error instanceof Error ? error.message : 'Failed to get selection',
+				type: 'error'
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -216,20 +236,16 @@
 
 	async function executeWrap() {
 		if (!wwise.isConnected) {
-			statusMessage = 'Not connected to Wwise';
-			statusType = 'error';
+			toaster.create({ title: 'Not connected to Wwise', type: 'error' });
 			return;
 		}
 
 		if (selectedObjects.length === 0) {
-			statusMessage = 'No objects selected';
-			statusType = 'error';
+			toaster.create({ title: 'No objects selected', type: 'error' });
 			return;
 		}
 
 		isExecuting = true;
-		statusMessage = 'Creating parent containers...';
-		statusType = 'info';
 
 		try {
 			await wwise.beginUndoGroup();
@@ -283,14 +299,18 @@
 
 			await wwise.endUndoGroup('Wrap Objects');
 
-			statusMessage = `Created ${createdCount} container(s), moved ${movedCount} object(s)`;
-			statusType = 'success';
+			toaster.create({
+				title: `Created ${createdCount} container(s), moved ${movedCount} object(s)`,
+				type: 'success'
+			});
 
 			selectedObjects = [];
 		} catch (error) {
 			await wwise.cancelUndoGroup();
-			statusMessage = error instanceof Error ? error.message : 'Wrap operation failed';
-			statusType = 'error';
+			toaster.create({
+				title: error instanceof Error ? error.message : 'Wrap operation failed',
+				type: 'error'
+			});
 		} finally {
 			isExecuting = false;
 		}
@@ -310,7 +330,7 @@
 			<button
 				onclick={refreshSelection}
 				disabled={!wwise.isConnected || isLoading}
-				class="text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex flex-1 gap-2 h-10 transition-colors items-center justify-center dark:bg-surface-800 hover:bg-surface-300 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed dark:hover:bg-surface-700"
+				class="btn-secondary flex-1 sm:flex-none"
 			>
 				<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
 				{isLoading ? 'Loading...' : 'Get Selection'}
@@ -318,7 +338,7 @@
 			<button
 				onclick={executeWrap}
 				disabled={!wwise.isConnected || wrappableObjects.length === 0 || isExecuting}
-				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed"
+				class="btn-action flex-1 sm:flex-none"
 			>
 				<Package size={16} />
 				{isExecuting ? 'Wrapping...' : 'Wrap Objects'}
@@ -402,22 +422,6 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- Status -->
-	{#if statusMessage}
-		<div
-			class={[
-				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
-				statusType === 'success' &&
-					'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
-				statusType === 'error' &&
-					'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
-				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
-			]}
-		>
-			{statusMessage}
-		</div>
-	{/if}
 
 	<!-- Skipped Objects Warning -->
 	{#if skippedObjects.length > 0}

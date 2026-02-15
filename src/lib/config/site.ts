@@ -16,7 +16,7 @@ import {
 	Activity,
 	ListMusic
 } from 'lucide-svelte';
-import type { SvelteComponent } from 'svelte';
+import type { Component } from 'svelte';
 
 export const siteConfig = {
 	name: 'Wwiser',
@@ -26,7 +26,7 @@ export const siteConfig = {
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
 	url: 'https://wwiser.net',
 	author: 'bbs',
-	version: '0.0.6',
+	version: '0.0.7',
 	keywords: [
 		'wwise',
 		'waapi',
@@ -64,8 +64,9 @@ export interface NavItem {
 	featured?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const iconMap: Record<NavIcon, typeof SvelteComponent<any>> = {
+// Lucide icons export legacy SvelteComponent classes; cast needed for Svelte 5 Component type
+
+export const iconMap = {
 	package: Package,
 	edit: FilePen,
 	volume: Volume2,
@@ -77,7 +78,7 @@ export const iconMap: Record<NavIcon, typeof SvelteComponent<any>> = {
 	'copy-plus': CopyPlus,
 	activity: Activity,
 	'list-music': ListMusic
-};
+} as unknown as Record<NavIcon, Component<Record<string, never>>>;
 
 export const navigation: NavItem[] = [
 	{
@@ -217,11 +218,6 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Batch Rename',
 		description:
 			'Batch rename multiple Wwise objects with powerful pattern matching. Use regex, find/replace, and preview changes before applying.'
-	},
-	'source-rename': {
-		title: 'Source Rename',
-		description:
-			'Rename source audio files of selected Wwise objects. Batch rename the original WAV files referenced by Sound objects.'
 	},
 	copy: {
 		title: 'Copy Objects',

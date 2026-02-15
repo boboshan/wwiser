@@ -90,8 +90,16 @@ export default defineConfig({
 		'menu-item':
 			'text-sm text-muted px-2.5 py-1.5 no-underline flex gap-3 rounded-lg transition-colors items-center data-[highlighted]:text-wwise hover:text-wwise data-[highlighted]:bg-wwise/10 hover:bg-wwise/10 dark:data-[highlighted]:bg-wwise/15 dark:hover:bg-wwise/15',
 		// Button variants
-		'btn-primary':
-			'bg-wwise hover:bg-wwise-400 active:bg-wwise-600 text-white font-semibold px-4 py-2.5 rounded-xl transition-all active:scale-98',
+		'btn-action':
+			'text-sm text-white font-medium px-5 rounded-lg bg-wwise flex gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed',
+		'btn-secondary':
+			'text-sm text-base font-medium px-4 rounded-lg bg-surface-200 flex gap-2 h-10 transition-colors items-center justify-center dark:bg-surface-800 hover:bg-surface-300 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-700',
+		'btn-accent-sm':
+			'text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20 disabled:opacity-50 disabled:cursor-not-allowed',
+		'btn-danger-sm':
+			'text-xs text-red-500 font-medium px-3 py-1.5 rounded-md bg-red-500/10 flex gap-1.5 transition-colors items-center hover:bg-red-500/20',
+		'btn-cancel':
+			'text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700',
 		'btn-ghost':
 			'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover px-4 py-2 rounded-xl transition-colors font-medium',
 		// Card

@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { wwise, type WwiseObject, type ConflictResolution } from '$lib/wwise/connection.svelte';
+	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
 	import { RefreshCw, CopyPlus, Trash2 } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
 	import Select, { type SelectItem } from '$lib/components/select.svelte';
+	import { toaster } from '$lib/components/toast.svelte';
 
 	// State
 	let sourceObjects = $state<WwiseObject[]>([]);
@@ -11,8 +14,6 @@
 	let isLoadingSources = $state(false);
 	let isLoadingTargets = $state(false);
 	let isExecuting = $state(false);
-	let statusMessage = $state('');
-	let statusType = $state<'info' | 'success' | 'error'>('info');
 	let onNameConflict = $state<ConflictResolution>('rename');
 
 	const conflictItems: SelectItem[] = [
@@ -22,6 +23,29 @@
 		{ value: 'merge', label: 'Merge' }
 	];
 
+	// ── Undo/redo refresh ───────────────────────────────────────────────
+
+	async function refreshObjects() {
+		const currentSources = untrack(() => sourceObjects);
+		const currentTargets = untrack(() => targetObjects);
+		if ((currentSources.length === 0 && currentTargets.length === 0) || !wwise.isConnected) return;
+		try {
+			const allIds = [...currentSources.map((o) => o.id), ...currentTargets.map((o) => o.id)];
+			const refreshed = await wwise.getObjects({ id: allIds }, ['id', 'name', 'type', 'path']);
+			const byId = new Map(refreshed.map((o) => [o.id, o]));
+			if (currentSources.length > 0) {
+				sourceObjects = currentSources.map((o) => byId.get(o.id) ?? o);
+			}
+			if (currentTargets.length > 0) {
+				targetObjects = currentTargets.map((o) => byId.get(o.id) ?? o);
+			}
+		} catch {
+			// Refresh failed — stale data is acceptable
+		}
+	}
+
+	watchUndoRedo(() => sourceObjects.length > 0 || targetObjects.length > 0, refreshObjects);
+
 	// Derived
 	const totalCopies = $derived(sourceObjects.length * targetObjects.length);
 	const canExecute = $derived(
@@ -30,22 +54,20 @@
 
 	async function getSourceSelection() {
 		if (!wwise.isConnected) {
-			statusMessage = 'Not connected to Wwise';
-			statusType = 'error';
+			toaster.create({ title: 'Not connected to Wwise', type: 'error' });
 			return;
 		}
 
 		isLoadingSources = true;
-		statusMessage = 'Fetching source selection...';
-		statusType = 'info';
 
 		try {
 			sourceObjects = await wwise.getSelectedObjects();
-			statusMessage = `Got ${sourceObjects.length} source object(s)`;
-			statusType = 'info';
+			toaster.create({ title: `Got ${sourceObjects.length} source object(s)`, type: 'info' });
 		} catch (error) {
-			statusMessage = error instanceof Error ? error.message : 'Failed to get selection';
-			statusType = 'error';
+			toaster.create({
+				title: error instanceof Error ? error.message : 'Failed to get selection',
+				type: 'error'
+			});
 		} finally {
 			isLoadingSources = false;
 		}
@@ -53,22 +75,20 @@
 
 	async function getTargetSelection() {
 		if (!wwise.isConnected) {
-			statusMessage = 'Not connected to Wwise';
-			statusType = 'error';
+			toaster.create({ title: 'Not connected to Wwise', type: 'error' });
 			return;
 		}
 
 		isLoadingTargets = true;
-		statusMessage = 'Fetching target selection...';
-		statusType = 'info';
 
 		try {
 			targetObjects = await wwise.getSelectedObjects();
-			statusMessage = `Got ${targetObjects.length} target object(s)`;
-			statusType = 'info';
+			toaster.create({ title: `Got ${targetObjects.length} target object(s)`, type: 'info' });
 		} catch (error) {
-			statusMessage = error instanceof Error ? error.message : 'Failed to get selection';
-			statusType = 'error';
+			toaster.create({
+				title: error instanceof Error ? error.message : 'Failed to get selection',
+				type: 'error'
+			});
 		} finally {
 			isLoadingTargets = false;
 		}
@@ -76,20 +96,16 @@
 
 	function clearSources() {
 		sourceObjects = [];
-		statusMessage = '';
 	}
 
 	function clearTargets() {
 		targetObjects = [];
-		statusMessage = '';
 	}
 
 	async function executeCopy() {
 		if (!canExecute) return;
 
 		isExecuting = true;
-		statusMessage = 'Copying objects...';
-		statusType = 'info';
 
 		try {
 			await wwise.beginUndoGroup();
@@ -105,12 +121,16 @@
 
 			await wwise.endUndoGroup('Copy Objects');
 
-			statusMessage = `Copied ${sourceObjects.length} object(s) into ${targetObjects.length} target(s) (${copiedCount} total)`;
-			statusType = 'success';
+			toaster.create({
+				title: `Copied ${sourceObjects.length} object(s) into ${targetObjects.length} target(s) (${copiedCount} total)`,
+				type: 'success'
+			});
 		} catch (error) {
 			await wwise.cancelUndoGroup();
-			statusMessage = error instanceof Error ? error.message : 'Copy operation failed';
-			statusType = 'error';
+			toaster.create({
+				title: error instanceof Error ? error.message : 'Copy operation failed',
+				type: 'error'
+			});
 		} finally {
 			isExecuting = false;
 		}
@@ -125,11 +145,7 @@
 			select targets in Wwise.
 		</p>
 		<div class="flex shrink-0 gap-3 items-center">
-			<button
-				onclick={executeCopy}
-				disabled={!canExecute}
-				class="text-sm text-white font-medium px-5 rounded-lg bg-wwise flex flex-1 gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 sm:flex-none disabled:cursor-not-allowed"
-			>
+			<button onclick={executeCopy} disabled={!canExecute} class="btn-action flex-1 sm:flex-none">
 				<CopyPlus size={16} />
 				{isExecuting ? 'Copying...' : 'Copy Objects'}
 			</button>
@@ -146,10 +162,7 @@
 				</span>
 				<div class="flex gap-2">
 					{#if sourceObjects.length > 0}
-						<button
-							onclick={clearSources}
-							class="text-xs text-red-500 font-medium px-3 py-1.5 rounded-md bg-red-500/10 flex gap-1.5 transition-colors items-center hover:bg-red-500/20"
-						>
+						<button onclick={clearSources} class="btn-danger-sm">
 							<Trash2 size={14} />
 							Clear
 						</button>
@@ -157,7 +170,7 @@
 					<button
 						onclick={getSourceSelection}
 						disabled={!wwise.isConnected || isLoadingSources}
-						class="text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="btn-accent-sm"
 					>
 						<RefreshCw size={14} class={isLoadingSources ? 'animate-spin' : ''} />
 						{isLoadingSources ? 'Loading...' : 'Get Selection'}
@@ -193,10 +206,7 @@
 				</span>
 				<div class="flex gap-2">
 					{#if targetObjects.length > 0}
-						<button
-							onclick={clearTargets}
-							class="text-xs text-red-500 font-medium px-3 py-1.5 rounded-md bg-red-500/10 flex gap-1.5 transition-colors items-center hover:bg-red-500/20"
-						>
+						<button onclick={clearTargets} class="btn-danger-sm">
 							<Trash2 size={14} />
 							Clear
 						</button>
@@ -204,7 +214,7 @@
 					<button
 						onclick={getTargetSelection}
 						disabled={!wwise.isConnected || isLoadingTargets}
-						class="text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="btn-accent-sm"
 					>
 						<RefreshCw size={14} class={isLoadingTargets ? 'animate-spin' : ''} />
 						{isLoadingTargets ? 'Loading...' : 'Get Selection'}
@@ -244,22 +254,6 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- Status -->
-	{#if statusMessage}
-		<div
-			class={[
-				'text-sm px-4 py-3 rounded-lg flex gap-2 items-center',
-				statusType === 'success' &&
-					'text-green-600 border border-green-500/20 bg-green-500/10 dark:text-green-400',
-				statusType === 'error' &&
-					'text-red-600 border border-red-500/20 bg-red-500/10 dark:text-red-400',
-				statusType === 'info' && 'text-wwise border border-wwise/20 bg-wwise/10'
-			]}
-		>
-			{statusMessage}
-		</div>
-	{/if}
 
 	<!-- Preview -->
 	{#if sourceObjects.length > 0 && targetObjects.length > 0}
