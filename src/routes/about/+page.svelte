@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { siteConfig, visibleNavigation, explore, iconMap } from '$lib/config/site';
+	import { siteConfig, navigation, explore, iconMap } from '$lib/config/site';
 	import { Github, ExternalLink, WifiOff, Download, Zap } from 'lucide-svelte';
 
-	const tools = [explore, ...visibleNavigation];
+	const tools = [explore, ...navigation];
 </script>
 
 <div class="max-w-2xl">

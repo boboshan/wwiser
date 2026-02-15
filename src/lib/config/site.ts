@@ -10,16 +10,11 @@ import {
 	Terminal,
 	GitBranch,
 	ListChecks,
-	FileHeadphone,
 	Settings,
 	CopyPlus,
-	Activity,
-	ListMusic
+	Activity
 } from 'lucide-svelte';
 import type { SvelteComponent } from 'svelte';
-import { env } from '$env/dynamic/public';
-
-export const previewEnabled = env.PUBLIC_PREVIEW_FEATURES === 'true';
 
 export const siteConfig = {
 	name: 'Wwiser',
@@ -51,11 +46,9 @@ export type NavIcon =
 	| 'terminal'
 	| 'settings'
 	| 'git-branch'
-	| 'file-audio'
 	| 'list-checks'
 	| 'copy-plus'
-	| 'activity'
-	| 'list-music';
+	| 'activity';
 
 export interface NavItem {
 	id: string;
@@ -65,7 +58,6 @@ export interface NavItem {
 	icon: NavIcon;
 	href: string;
 	featured?: boolean;
-	preview?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,10 +69,8 @@ export const iconMap: Record<NavIcon, typeof SvelteComponent<any>> = {
 	settings: Settings,
 	'git-branch': GitBranch,
 	'list-checks': ListChecks,
-	'file-audio': FileHeadphone,
 	'copy-plus': CopyPlus,
-	activity: Activity,
-	'list-music': ListMusic
+	activity: Activity
 };
 
 export const navigation: NavItem[] = [
@@ -144,30 +134,8 @@ export const navigation: NavItem[] = [
 		shortDescription: 'Copy into targets',
 		icon: 'copy-plus',
 		href: '/copy'
-	},
-	{
-		id: 'source-rename',
-		name: 'Source Rename',
-		description: 'Rename source audio files referenced by sounds',
-		shortDescription: 'Rename source files',
-		icon: 'file-audio',
-		href: '/source-rename',
-		preview: true
-	},
-	{
-		id: 'monitor',
-		name: 'Monitor',
-		description: 'Jump to any segment in a music playlist to quickly test transitions',
-		shortDescription: 'Segment navigator',
-		icon: 'list-music',
-		href: '/monitor',
-		featured: true,
-		preview: true
 	}
 ];
-
-/** Navigation items filtered by preview flag — use this in the UI */
-export const visibleNavigation = navigation.filter((item) => !item.preview || previewEnabled);
 
 export const explore: NavItem = {
 	id: 'explore',
@@ -236,11 +204,6 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Copy Objects',
 		description:
 			'Copy selected Wwise objects into one or more target containers. Select sources, select targets, preview and execute.'
-	},
-	monitor: {
-		title: 'Playlist Monitor',
-		description:
-			'Jump to any segment in a music playlist to quickly test transitions. Load a playlist container, see all segments, and play any one directly.'
 	}
 };
 
