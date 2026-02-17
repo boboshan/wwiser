@@ -11,7 +11,7 @@
 <div class="flex flex-col min-h-full items-center relative">
 	<!-- Ambient glow -->
 	<div
-		class="rounded-full bg-wwise/8 h-[500px] w-[500px] pointer-events-none left-1/2 top-[30%] absolute blur-[140px] md:h-[800px] md:w-[800px] -translate-x-1/2 -translate-y-1/2 -z-1 md:blur-[200px]"
+		class="rounded-full bg-wwise/8 h-full w-full max-h-[500px] max-w-[500px] pointer-events-none left-1/2 top-[30%] absolute blur-[140px] md:max-h-[800px] md:max-w-[800px] -translate-x-1/2 -translate-y-1/2 -z-1 md:blur-[200px]"
 	></div>
 
 	<div
