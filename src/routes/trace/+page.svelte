@@ -653,20 +653,19 @@
 	<!-- Header -->
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<p class="text-sm text-muted leading-relaxed m-0">
-			Trace the signal path from an Event through containers to audio files. Coverage gaps are
-			highlighted in red.
+			Trace the signal path from an Event through containers to audio files. Coverage gaps are highlighted in red.
 		</p>
-		<div class="flex gap-2 shrink-0">
+		<div class="flex shrink-0 gap-3 items-center">
 			{#if !eventsLoaded}
-				<button onclick={loadEvents} disabled={!wwise.isConnected || eventsLoading} class="btn-secondary">
-					<Search size={14} />
+				<button onclick={loadEvents} disabled={!wwise.isConnected || eventsLoading} class="btn-secondary flex-1 sm:flex-none">
+					<Search size={16} />
 					{eventsLoading ? 'Loading…' : 'Load Events'}
 				</button>
 			{/if}
 			<button
 				onclick={getSelection}
 				disabled={!wwise.isConnected || isTracing}
-				class="btn-secondary"
+				class="btn-secondary flex-1 sm:flex-none"
 			>
 				<RefreshCw size={16} class={isTracing ? 'animate-spin' : ''} />
 				{isTracing ? 'Tracing…' : 'Get Selection'}
