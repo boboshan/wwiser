@@ -8,6 +8,7 @@
 		Terminal,
 		Ellipsis,
 		Info,
+		CircleHelp,
 		Globe,
 		Film
 	} from 'lucide-svelte';
@@ -38,6 +39,7 @@
 
 	const menuItems: MenuItem[] = [
 		{ value: 'about', label: 'About Wwiser', href: '/about', icon: Info, onclick: closeSidebar },
+		{ value: 'faq', label: 'FAQ', href: '/faq', icon: CircleHelp, onclick: closeSidebar },
 		{ value: 'sep', label: '', separator: true },
 		{
 			value: 'website',

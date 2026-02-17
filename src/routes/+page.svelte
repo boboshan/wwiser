@@ -11,11 +11,11 @@
 <div class="flex flex-col min-h-full items-center relative">
 	<!-- Ambient glow -->
 	<div
-		class="rounded-full bg-wwise/5 h-[500px] w-[500px] pointer-events-none left-1/2 top-[30%] absolute blur-[140px] md:h-[800px] md:w-[800px] -translate-x-1/2 -translate-y-1/2 -z-1 md:blur-[200px]"
+		class="rounded-full bg-wwise/8 h-[500px] w-[500px] pointer-events-none left-1/2 top-[30%] absolute blur-[140px] md:h-[800px] md:w-[800px] -translate-x-1/2 -translate-y-1/2 -z-1 md:blur-[200px]"
 	></div>
 
 	<div
-		class="mx-auto my-auto px-4 py-8 max-w-xl w-full relative space-y-8 md:py-12 sm:px-6 md:space-y-12"
+		class="mx-auto my-auto px-4 py-8 flex flex-col gap-8 max-w-xl w-full relative md:py-12 sm:px-6"
 	>
 		<!-- Brand -->
 		<div class="text-center space-y-4 md:space-y-6">

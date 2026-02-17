@@ -24,7 +24,7 @@ export const siteConfig = {
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
 	url: 'https://wwiser.net',
 	author: 'bbs',
-	version: '0.0.8',
+	version: '0.0.9',
 	keywords: [
 		'wwise',
 		'waapi',
@@ -163,6 +163,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'About',
 		description:
 			'About Wwiser - a collection of modern productivity tools for Wwise sound designers. Learn more about features and links.'
+	},
+	faq: {
+		title: 'FAQ',
+		description:
+			'Frequently asked questions about Wwiser and troubleshooting tips for WAAPI connectivity and Wwise integration.'
 	},
 	explore: {
 		title: 'WAAPI Explorer',

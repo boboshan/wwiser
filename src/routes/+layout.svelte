@@ -34,6 +34,7 @@
 		const path = page.url.pathname;
 		if (path === '/') return 'home';
 		if (path === '/about' || path.startsWith('/about/')) return 'about';
+		if (path === '/faq' || path.startsWith('/faq/')) return 'faq';
 		if (path.startsWith(explore.href)) return explore.id;
 		const tool = navigation.find((t) => path.startsWith(t.href));
 		return tool?.id ?? 'explore';
@@ -42,6 +43,7 @@
 	const currentToolName = $derived.by(() => {
 		if (currentToolId === 'home') return 'Home';
 		if (currentToolId === 'about') return 'About';
+		if (currentToolId === 'faq') return 'FAQ';
 		if (currentToolId === explore.id) return explore.name;
 		const tool = navigation.find((t) => t.id === currentToolId);
 		return tool?.name ?? 'Tool';
@@ -54,7 +56,10 @@
 
 	// Only show undo/redo on actual tool pages
 	const isToolPage = $derived(
-		currentToolId !== 'home' && currentToolId !== 'about' && currentToolId !== explore.id
+		currentToolId !== 'home' &&
+			currentToolId !== 'about' &&
+			currentToolId !== 'faq' &&
+			currentToolId !== explore.id
 	);
 
 	// Theme icon component based on current theme

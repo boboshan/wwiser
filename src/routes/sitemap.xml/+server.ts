@@ -5,6 +5,7 @@ export const GET: RequestHandler = async () => {
 	const pages = [
 		{ path: '/', priority: 1.0, changefreq: 'weekly' },
 		{ path: '/about', priority: 0.5, changefreq: 'monthly' },
+		{ path: '/faq', priority: 0.5, changefreq: 'monthly' },
 		{ path: explore.href, priority: 0.9, changefreq: 'weekly' },
 		...navigation.map((item) => ({
 			path: item.href,

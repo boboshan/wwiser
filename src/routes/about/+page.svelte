@@ -34,7 +34,7 @@
 	const techStack = ['SvelteKit', 'TypeScript', 'UnoCSS', 'WAAPI'] as const;
 </script>
 
-<div class="pb-8 max-w-2xl space-y-12">
+<div class="pb-8 flex flex-col gap-6 max-w-2xl">
 	<!-- Intro -->
 	<div class="space-y-4">
 		<p class="text-sm text-base leading-relaxed max-w-xl">
@@ -49,8 +49,8 @@
 			and lets you perform common tasks faster than the built-in UI allows.
 		</p>
 		<p class="text-sm text-muted leading-relaxed max-w-xl">
-			No data leaves your machine. Wwiser runs entirely client-side — there's no server, no
-			account, and no telemetry. It's a static site you can install as a PWA and use offline.
+			No data leaves your machine. Wwiser runs entirely client-side — there's no server, no account,
+			and no telemetry. It's a static site you can install as a PWA and use offline.
 		</p>
 	</div>
 
@@ -85,8 +85,8 @@
 				</div>
 				<p class="text-sm text-base font-medium">Connect to Wwise</p>
 				<p class="text-xs text-muted/60 leading-relaxed mt-1">
-					Wwiser connects via WebSocket to Wwise's WAAPI on localhost. Make sure WAAPI is enabled
-					in your Wwise project settings.
+					Wwiser connects via WebSocket to Wwise's WAAPI on localhost. Make sure WAAPI is enabled in
+					your Wwise project settings.
 				</p>
 			</div>
 			<div
@@ -154,9 +154,9 @@
 				</div>
 				<div class="space-y-2">
 					<p class="text-sm text-base leading-relaxed">
-						Wwiser is a static site with no backend. All communication happens directly between
-						your browser and Wwise over a local WebSocket connection. Nothing is sent to any
-						server — there are no analytics, cookies, or tracking of any kind.
+						Wwiser is a static site with no backend. All communication happens directly between your
+						browser and Wwise over a local WebSocket connection. Nothing is sent to any server —
+						there are no analytics, cookies, or tracking of any kind.
 					</p>
 					<p class="text-xs text-muted/60 leading-relaxed">
 						The source code is fully open. You can audit it, self-host it, or run it completely
@@ -192,7 +192,7 @@
 	</section>
 
 	<!-- Footer -->
-	<footer class="pt-6 border-t border-surface-100 dark:border-surface-800/50">
+	<footer class="pt-4 border-t border-surface-100 dark:border-surface-800/50">
 		<div class="text-xs text-muted flex flex-wrap gap-4 items-center justify-between">
 			<div class="flex flex-wrap gap-1.5">
 				{#each techStack as tech (tech)}
