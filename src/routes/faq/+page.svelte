@@ -34,10 +34,10 @@
 	}
 </script>
 
-<div class="flex flex-col gap-6 max-w-2xl">
+<div class="flex flex-col gap-6 max-w-4xl">
 	<!-- Intro -->
 	<div class="space-y-4">
-		<p class="text-sm text-muted leading-relaxed max-w-xl">
+		<p class="text-sm text-muted leading-relaxed">
 			Common questions and troubleshooting tips for working with Wwiser and WAAPI.
 		</p>
 	</div>

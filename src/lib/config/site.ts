@@ -12,7 +12,8 @@ import {
 	ListChecks,
 	Settings,
 	CopyPlus,
-	Activity
+	Activity,
+	Network
 } from 'lucide-svelte';
 import type { Component } from 'svelte';
 
@@ -24,7 +25,7 @@ export const siteConfig = {
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
 	url: 'https://wwiser.net',
 	author: 'bbs',
-	version: '0.0.9',
+	version: '0.1.0',
 	keywords: [
 		'wwise',
 		'waapi',
@@ -48,7 +49,8 @@ export type NavIcon =
 	| 'git-branch'
 	| 'list-checks'
 	| 'copy-plus'
-	| 'activity';
+	| 'activity'
+	| 'network';
 
 export interface NavItem {
 	id: string;
@@ -71,7 +73,8 @@ export const iconMap = {
 	'git-branch': GitBranch,
 	'list-checks': ListChecks,
 	'copy-plus': CopyPlus,
-	activity: Activity
+	activity: Activity,
+	network: Network
 } as unknown as Record<
 	NavIcon,
 	Component<{ size?: number; class?: string; [key: string]: unknown }>
@@ -103,6 +106,15 @@ export const navigation: NavItem[] = [
 		shortDescription: 'Switch assignment health',
 		icon: 'activity',
 		href: '/analyze',
+		featured: true
+	},
+	{
+		id: 'trace',
+		name: 'Trace',
+		description: 'Trace signal paths from Events through containers to audio — spot coverage gaps instantly',
+		shortDescription: 'Event logic flow',
+		icon: 'network',
+		href: '/trace',
 		featured: true
 	},
 	{
@@ -188,6 +200,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Switch Analysis',
 		description:
 			'Audit switch container health. Find empty switches, unassigned children, multi-assignments, conflicts, and fix them inline.'
+	},
+	trace: {
+		title: 'Logic Trace',
+		description:
+			'Trace the signal path from a Wwise Event through switch containers, random containers, and actor-mixers down to audio files. Instantly spot coverage gaps in switch hierarchies.'
 	},
 	fill: {
 		title: 'Fill Blank Switches',

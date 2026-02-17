@@ -184,9 +184,9 @@
 
 		<!-- Scrollable Content Area -->
 		<main
-			class="p-4 pb-16 bg-surface-50 flex-1 overflow-y-auto lg:p-8 md:p-6 lg:pb-20 md:pb-16 dark:bg-surface-900"
+			class="p-4 pb-8 bg-surface-50 flex-1 overflow-y-auto lg:p-8 md:p-6 lg:pb-12 md:pb-10 dark:bg-surface-900"
 		>
-			<div class="mx-auto flex flex-col h-full max-w-6xl">
+			<div class="mx-auto flex flex-col max-w-6xl">
 				{@render children()}
 			</div>
 		</main>

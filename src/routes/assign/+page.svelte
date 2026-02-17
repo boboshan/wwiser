@@ -319,7 +319,7 @@
 		try {
 			selectedObjects = await wwise.getSelectedObjects();
 			if (validContainers.length === 0) {
-				toaster.create({ title: 'No switch containers selected', type: 'info' });
+				toaster.create({ title: 'No switch containers selected', type: 'warning' });
 				switchContainers = [];
 				return;
 			}

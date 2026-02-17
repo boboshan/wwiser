@@ -134,7 +134,7 @@
 			orphanObjects = skipped;
 
 			if (containerMap.size === 0) {
-				toaster.create({ title: 'Select switch containers or their children', type: 'info' });
+				toaster.create({ title: 'No switch containers selected', type: 'warning' });
 				switchContainers = [];
 				return;
 			}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as toast from '@zag-js/toast';
 	import { normalizeProps, useMachine } from '@zag-js/svelte';
-	import { CircleCheck, CircleX, Info, Loader, X } from 'lucide-svelte';
+	import { CircleCheck, CircleX, Info, Loader, TriangleAlert, X } from 'lucide-svelte';
 
 	interface Props {
 		toast: toast.Options;
@@ -17,6 +17,7 @@
 
 	const icons = {
 		info: Info,
+		warning: TriangleAlert,
 		success: CircleCheck,
 		error: CircleX,
 		loading: Loader
@@ -34,9 +35,11 @@
 			<div
 				class="mt-0.5 shrink-0"
 				class:text-wwise={api.type === 'info'}
+				class:text-amber-500={api.type === 'warning'}
 				class:text-green-600={api.type === 'success'}
 				class:text-red-600={api.type === 'error'}
 				class:text-surface-500={api.type === 'loading'}
+				class:dark:text-amber-400={api.type === 'warning'}
 				class:dark:text-green-400={api.type === 'success'}
 				class:dark:text-red-400={api.type === 'error'}
 			>

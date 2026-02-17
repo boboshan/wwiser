@@ -34,10 +34,10 @@
 	const techStack = ['SvelteKit', 'TypeScript', 'UnoCSS', 'WAAPI'] as const;
 </script>
 
-<div class="pb-8 flex flex-col gap-6 max-w-2xl">
+<div class="pb-8 flex flex-col gap-6 max-w-4xl">
 	<!-- Intro -->
 	<div class="space-y-4">
-		<p class="text-sm text-base leading-relaxed max-w-xl">
+		<p class="text-sm text-base leading-relaxed">
 			<strong>Wwiser</strong> is a collection of browser-based productivity tools built for Wwise
 			sound designers. It connects to your local Wwise session through the
 			<a
@@ -48,7 +48,7 @@
 			>
 			and lets you perform common tasks faster than the built-in UI allows.
 		</p>
-		<p class="text-sm text-muted leading-relaxed max-w-xl">
+		<p class="text-sm text-muted leading-relaxed">
 			No data leaves your machine. Wwiser runs entirely client-side — there's no server, no account,
 			and no telemetry. It's a static site you can install as a PWA and use offline.
 		</p>

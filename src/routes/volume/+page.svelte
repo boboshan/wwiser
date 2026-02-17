@@ -455,7 +455,7 @@
 			const selectedObjects = await wwise.getSelectedObjects();
 
 			if (selectedObjects.length === 0) {
-				toaster.create({ title: 'No objects selected in Wwise', type: 'info' });
+				toaster.create({ title: 'No objects selected', type: 'warning' });
 				isLoading = false;
 				return;
 			}
@@ -466,8 +466,8 @@
 
 			if (supportedObjects.length === 0) {
 				toaster.create({
-					title: 'No supported objects selected (Sound, Containers, or Buses)',
-					type: 'info'
+					title: 'No supported objects selected',
+					type: 'warning'
 				});
 				isLoading = false;
 				return;

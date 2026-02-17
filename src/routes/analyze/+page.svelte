@@ -231,7 +231,7 @@
 			selectedObjects = await wwise.getSelectedObjects();
 			const valid = selectedObjects.filter((o) => o.type === 'SwitchContainer');
 			if (valid.length === 0) {
-				toaster.create({ title: 'No switch containers selected', type: 'info' });
+				toaster.create({ title: 'No switch containers selected', type: 'warning' });
 				containers = [];
 				return;
 			}

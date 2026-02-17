@@ -27,7 +27,8 @@ const APP_ROUTES = [
 	'/fill',
 	'/copy',
 	'/analyze',
-	'/explore'
+	'/explore',
+	'/trace'
 ];
 
 // External CDN resources - multiple sources for redundancy

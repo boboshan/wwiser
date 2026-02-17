@@ -1,7 +1,7 @@
 {
 	"name": "wwiser",
 	"private": true,
-	"version": "0.0.9",
+	"version": "0.1.0",
 	"description": "A collection of productivity tools for Wwise sound designers, powered by WAAPI",
 	"author": "bbs",
 	"license": "MIT",
@@ -48,14 +48,14 @@
 		"monaco-editor": "0.55.1",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
-		"svelte": "^5.51.2",
+		"svelte": "^5.51.3",
 		"svelte-check": "^4.4.0",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.56.0",
 		"unocss": "^66.6.0",
 		"vite": "^7.3.1",
 		"vitest": "^4.0.18",
-		"wrangler": "^4.65.0"
+		"wrangler": "^4.66.0"
 	},
 	"dependencies": {
 		"@zag-js/combobox": "^1.33.1",
