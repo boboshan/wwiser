@@ -1,38 +1,73 @@
-# sv
+# Wwiser
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Modern Wwise utilities — a collection of productivity tools for Wwise sound designers, powered by WAAPI.
 
-## Creating a project
+🌐 **Live at [wwiser.net](https://wwiser.net)**
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Features
+
+### 🖥️ WAAPI Explorer
+
+Interactive WAAPI explorer for Wwise. Test functions, subscribe to events, and learn the Wwise Authoring API in real-time.
+
+### 🎁 Wrap
+
+Quickly wrap selected Wwise objects in parent containers. Automatically group by naming patterns and create Random, Sequence, or Switch containers.
+
+### 🔀 Assign
+
+Automatically assign children of switch containers to their corresponding switches based on naming patterns. Configure switch groups and preview assignments before applying.
+
+### 🔊 Volume
+
+Calculate the final output volume of Wwise objects including all hierarchy and bus chain contributions. Visualize volume attenuation paths.
+
+### ✏️ Rename
+
+Batch rename multiple Wwise objects with powerful pattern matching. Use regex, find/replace, and preview changes before applying.
+
+## Getting Started
+
+### Installation
 
 ```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+pnpm install
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### Development
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+pnpm dev
 ```
 
-## Building
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-To create a production version of your app:
+### Building
 
 ```sh
-npm run build
+pnpm build
 ```
 
-You can preview the production build with `npm run preview`.
+Preview the production build:
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```sh
+pnpm preview
+```
+
+## Connecting to Wwise
+
+**In Wwise (Project > User Preferences):**
+
+1. Enable **Wwise Authoring API**
+2. Set port to `8080` (default)
+3. Add `https://wwiser.net` (or `http://localhost:5173` for local dev) to **Allow browser connections from**
+
+**In Wwiser:**
+
+1. Click the connection panel
+2. Enter host (`localhost`) and port (`8080`)
+3. Click **Connect**
+
+## License
+
+MIT
