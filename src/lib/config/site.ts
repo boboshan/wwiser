@@ -72,7 +72,10 @@ export const iconMap = {
 	'list-checks': ListChecks,
 	'copy-plus': CopyPlus,
 	activity: Activity
-} as unknown as Record<NavIcon, Component<Record<string, never>>>;
+} as unknown as Record<
+	NavIcon,
+	Component<{ size?: number; class?: string; [key: string]: unknown }>
+>;
 
 export const navigation: NavItem[] = [
 	{

@@ -2,6 +2,7 @@
 	// Monaco singleton — loaded once from CDN via modern-monaco and shared across all editor instances.
 	// modern-monaco handles worker setup, Shiki-based syntax highlighting, and LSP automatically.
 	import { init, Workspace, type TextmateTheme } from 'modern-monaco';
+	import { SvelteSet } from 'svelte/reactivity';
 
 	type Monaco = Awaited<ReturnType<typeof init>>;
 
@@ -112,7 +113,7 @@
 	}
 
 	// Track which extra-lib paths have already been opened as text documents
-	const openedLibs = new Set<string>();
+	const openedLibs = new SvelteSet<string>();
 
 	/**
 	 * Initialise modern-monaco with a shared Workspace.
