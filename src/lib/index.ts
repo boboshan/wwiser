@@ -2,3 +2,6 @@
 
 // Re-export site configuration
 export * from './config/site';
+
+// Toast
+export { toaster } from './components/toast.svelte';

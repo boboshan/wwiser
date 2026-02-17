@@ -4,6 +4,7 @@
  */
 
 import { browser } from '$app/environment';
+import { historyStore } from '$lib/state/history.svelte';
 
 // ============================================================================
 // Types
@@ -24,6 +25,14 @@ export interface WwiseObject {
 	type: string;
 	path: string;
 	parent?: WwiseObject;
+}
+
+export interface AudioSourceInfo {
+	id: string;
+	name: string;
+	type: string;
+	path: string;
+	originalFilePath: string;
 }
 
 // ============================================================================
@@ -68,7 +77,7 @@ interface AutobahnSession {
 	) => Promise<{ kwargs?: unknown } | unknown>;
 	subscribe: (
 		topic: string,
-		handler: (args: unknown[], kwargs: Record<string, unknown>) => void,
+		publish: (args: unknown[], kwargs: Record<string, unknown>) => void,
 		options?: Record<string, unknown>
 	) => Promise<AutobahnSubscription>;
 }
@@ -106,6 +115,7 @@ class WwiseConnection {
 	#session: AutobahnSession | null = null;
 	#host = '127.0.0.1';
 	#port = 8080;
+	#changeSubscriptions: { unsubscribe: () => Promise<void> }[] = [];
 
 	get url() {
 		return `ws://${this.#host}:${this.#port}/waapi`;
@@ -120,6 +130,9 @@ class WwiseConnection {
 		if (this.status === 'connecting' || this.status === 'connected') {
 			return this.isConnected;
 		}
+
+		// Note: Browsers allow ws:// connections to localhost from HTTPS pages
+		// (localhost is considered a secure context), so we don't block HTTPS here.
 
 		this.#host = host;
 		this.#port = port;
@@ -143,6 +156,11 @@ class WwiseConnection {
 						await this.#fetchProject();
 					} catch {
 						// Project fetch failed, connection still valid
+					}
+					try {
+						await this.#subscribeToChanges();
+					} catch {
+						// Change subscription failed, undo labels will be best-effort
 					}
 					resolve(true);
 				};
@@ -178,11 +196,13 @@ class WwiseConnection {
 
 	disconnect() {
 		if (this.#connection) {
+			this.#unsubscribeFromChanges();
 			this.#connection.close();
 			this.#connection = null;
 			this.#session = null;
 			this.status = 'disconnected';
 			this.project = null;
+			historyStore.clear();
 		}
 	}
 
@@ -256,6 +276,19 @@ class WwiseConnection {
 		});
 	}
 
+	async copyObject(
+		objectId: string,
+		newParent: string,
+		onNameConflict: ConflictResolution = 'rename'
+	): Promise<WwiseObject | null> {
+		const result = await this.call<WwiseObject>('ak.wwise.core.object.copy', {
+			object: objectId,
+			parent: newParent,
+			onNameConflict
+		});
+		return result ?? null;
+	}
+
 	async getObject(
 		objectId: string,
 		returns: string[] = ['id', 'name', 'type', 'path', 'parent']
@@ -268,20 +301,245 @@ class WwiseConnection {
 		return result?.return?.[0] ?? null;
 	}
 
+	async getObjects(
+		query: { id?: string[]; path?: string[]; search?: string[]; ofType?: string[] },
+		returns: string[] = ['id', 'name', 'type', 'path']
+	): Promise<WwiseObject[]> {
+		const result = await this.call<{ return: WwiseObject[] }>(
+			'ak.wwise.core.object.get',
+			{ from: query },
+			{ return: returns }
+		);
+		return result?.return ?? [];
+	}
+
+	async getChildren(
+		objectId: string,
+		returns: string[] = ['id', 'name', 'type', 'path']
+	): Promise<WwiseObject[]> {
+		const result = await this.call<{ return: WwiseObject[] }>(
+			'ak.wwise.core.object.get',
+			{
+				from: { id: [objectId] },
+				transform: [{ select: ['children'] }]
+			},
+			{ return: returns }
+		);
+		return result?.return ?? [];
+	}
+
+	async getProperty<T = unknown>(objectId: string, property: string): Promise<T | null> {
+		const result = await this.call<{ return: Array<{ [key: string]: T }> }>(
+			'ak.wwise.core.object.get',
+			{ from: { id: [objectId] } },
+			{ return: [property] }
+		);
+		return result?.return?.[0]?.[property] ?? null;
+	}
+
+	async setProperty(objectId: string, property: string, value: unknown): Promise<void> {
+		await this.call('ak.wwise.core.object.setProperty', {
+			object: objectId,
+			property,
+			value
+		});
+	}
+
+	async setReference(objectId: string, reference: string, value: string | null): Promise<void> {
+		await this.call('ak.wwise.core.object.setReference', {
+			object: objectId,
+			reference,
+			value
+		});
+	}
+
+	async getReference(objectId: string, reference: string): Promise<WwiseObject | null> {
+		const result = await this.call<{ return: Array<{ [key: string]: WwiseObject }> }>(
+			'ak.wwise.core.object.get',
+			{ from: { id: [objectId] } },
+			{ return: [`@${reference}`] }
+		);
+		return result?.return?.[0]?.[`@${reference}`] ?? null;
+	}
+
+	// -------------------------------------------------------------------------
+	// Switch Container Operations
+	// -------------------------------------------------------------------------
+
+	async getAllSwitchGroups(): Promise<WwiseObject[]> {
+		return this.getObjects({ ofType: ['SwitchGroup'] }, ['id', 'name', 'type', 'path']);
+	}
+
+	async getAllStateGroups(): Promise<WwiseObject[]> {
+		return this.getObjects({ ofType: ['StateGroup'] }, ['id', 'name', 'type', 'path']);
+	}
+
+	async getSwitchGroupOrStateGroup(objectId: string): Promise<WwiseObject | null> {
+		// Get the SwitchGroupOrStateGroup reference from a switch container
+		return this.getReference(objectId, 'SwitchGroupOrStateGroup');
+	}
+
+	async setSwitchGroupOrStateGroup(containerId: string, groupId: string): Promise<void> {
+		await this.setReference(containerId, 'SwitchGroupOrStateGroup', groupId);
+	}
+
+	async getDefaultSwitchOrState(containerId: string): Promise<WwiseObject | null> {
+		return this.getReference(containerId, 'DefaultSwitchOrState');
+	}
+
+	async setDefaultSwitchOrState(containerId: string, switchOrStateId: string): Promise<void> {
+		await this.setReference(containerId, 'DefaultSwitchOrState', switchOrStateId);
+	}
+
+	async getSwitchContainerAssignments(
+		containerId: string
+	): Promise<Array<{ child: string; stateOrSwitch: string }>> {
+		const result = await this.call<{
+			return: Array<{ child: string; stateOrSwitch: string }>;
+		}>('ak.wwise.core.switchContainer.getAssignments', {
+			id: containerId
+		});
+		return result?.return ?? [];
+	}
+
+	async assignSwitchContainerChild(
+		containerId: string,
+		childId: string,
+		switchOrStateId: string
+	): Promise<void> {
+		await this.call('ak.wwise.core.switchContainer.addAssignment', {
+			stateOrSwitch: switchOrStateId,
+			child: childId
+		});
+	}
+
+	async removeSwitchContainerAssignment(
+		containerId: string,
+		childId: string,
+		switchOrStateId: string
+	): Promise<void> {
+		await this.call('ak.wwise.core.switchContainer.removeAssignment', {
+			stateOrSwitch: switchOrStateId,
+			child: childId
+		});
+	}
+
+	// -------------------------------------------------------------------------
+	// Audio Source Operations
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Get audio source file info for objects (Sound, MusicTrack, etc.)
+	 * Returns the original file path of the audio source
+	 */
+	async getAudioSourceOriginalFilePath(objectId: string): Promise<string | null> {
+		const result = await this.call<{ return: Array<{ 'sound:originalWavFilePath': string }> }>(
+			'ak.wwise.core.object.get',
+			{ from: { id: [objectId] } },
+			{ return: ['sound:originalWavFilePath'] }
+		);
+		return result?.return?.[0]?.['sound:originalWavFilePath'] ?? null;
+	}
+
+	/**
+	 * Get audio sources for selected objects
+	 * Returns objects that have audio sources (Sound objects or objects containing them)
+	 */
+	async getAudioSources(objectIds: string[]): Promise<AudioSourceInfo[]> {
+		const result = await this.call<{
+			return: Array<{
+				id: string;
+				name: string;
+				type: string;
+				path: string;
+				'sound:originalWavFilePath': string;
+			}>;
+		}>(
+			'ak.wwise.core.object.get',
+			{ from: { id: objectIds } },
+			{ return: ['id', 'name', 'type', 'path', 'sound:originalWavFilePath'] }
+		);
+		return (result?.return ?? [])
+			.filter((obj) => obj['sound:originalWavFilePath'])
+			.map((obj) => ({
+				id: obj.id,
+				name: obj.name,
+				type: obj.type,
+				path: obj.path,
+				originalFilePath: obj['sound:originalWavFilePath']
+			}));
+	}
+
+	/**
+	 * Rename an AudioSource object
+	 * The AudioSource name in Wwise reflects the source file name (without path/extension)
+	 */
+	async setAudioSourceOriginalFilePath(objectId: string, newFilePath: string): Promise<void> {
+		// Extract just the filename without extension for the AudioSource name
+		const separator = newFilePath.includes('\\') ? '\\' : '/';
+		const parts = newFilePath.split(separator);
+		const fileName = parts[parts.length - 1];
+		const nameWithoutExt = fileName.replace(/\.[^.]+$/, '');
+
+		await this.call('ak.wwise.core.object.setName', {
+			object: objectId,
+			value: nameWithoutExt
+		});
+	}
+
+	/**
+	 * Execute a command on selected objects (for file operations)
+	 */
+	async executeCommand(command: string, objects?: string[]): Promise<void> {
+		const args: Record<string, unknown> = { command };
+		if (objects) {
+			args.objects = objects;
+		}
+		await this.call('ak.wwise.ui.commands.execute', args);
+	}
+
 	// -------------------------------------------------------------------------
 	// Undo Group
 	// -------------------------------------------------------------------------
 
 	async beginUndoGroup(): Promise<void> {
+		historyStore.beginInternalOp();
 		await this.call('ak.wwise.core.undo.beginGroup', {});
 	}
 
 	async endUndoGroup(displayName = 'Wwiser Operation'): Promise<void> {
 		await this.call('ak.wwise.core.undo.endGroup', { displayName });
+		historyStore.push(displayName);
+		historyStore.endInternalOp();
 	}
 
 	async cancelUndoGroup(): Promise<void> {
 		await this.call('ak.wwise.core.undo.cancelGroup', {});
+		historyStore.endInternalOp();
+	}
+
+	async undo(): Promise<void> {
+		historyStore.beginInternalOp();
+		historyStore.setUndoing(true);
+		try {
+			await this.call('ak.wwise.core.undo.undo', {});
+			historyStore.didUndo();
+		} finally {
+			historyStore.setUndoing(false);
+			historyStore.endInternalOp();
+		}
+	}
+
+	async redo(): Promise<void> {
+		historyStore.beginInternalOp();
+		historyStore.setRedoing(true);
+		try {
+			await this.call('ak.wwise.core.undo.redo', {});
+			historyStore.didRedo();
+		} finally {
+			historyStore.setRedoing(false);
+			historyStore.endInternalOp();
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -290,7 +548,7 @@ class WwiseConnection {
 
 	async subscribe(
 		topic: string,
-		handler: (data: Record<string, unknown>) => void,
+		publish: (data: Record<string, unknown>) => void,
 		options: Record<string, unknown> = {}
 	): Promise<{ unsubscribe: () => Promise<void> }> {
 		if (!this.#session) {
@@ -301,7 +559,7 @@ class WwiseConnection {
 			const subscription = await this.#session.subscribe(
 				topic,
 				(_args: unknown[], kwargs: Record<string, unknown>) => {
-					handler(kwargs);
+					publish(kwargs);
 				},
 				options
 			);
@@ -345,6 +603,39 @@ class WwiseConnection {
 	// Private
 	// -------------------------------------------------------------------------
 
+	async #subscribeToChanges(): Promise<void> {
+		// Subscribe to WAAPI notifications that indicate something changed in the project.
+		// When these fire outside of a Wwiser-initiated operation, we know an external
+		// change happened (e.g. user edited directly in Wwise Authoring) and our
+		// undo/redo labels are stale.
+		const topics = [
+			'ak.wwise.core.object.nameChanged',
+			'ak.wwise.core.object.created',
+			'ak.wwise.core.object.postDeleted',
+			'ak.wwise.core.object.propertyChanged',
+			'ak.wwise.core.object.childAdded',
+			'ak.wwise.core.object.childRemoved'
+		];
+
+		const handler = () => historyStore.onExternalChange();
+
+		for (const topic of topics) {
+			try {
+				const sub = await this.subscribe(topic, handler);
+				this.#changeSubscriptions.push(sub);
+			} catch {
+				// Some topics may not be available in all Wwise versions
+			}
+		}
+	}
+
+	#unsubscribeFromChanges(): void {
+		for (const sub of this.#changeSubscriptions) {
+			sub.unsubscribe().catch(() => {});
+		}
+		this.#changeSubscriptions = [];
+	}
+
 	async #fetchProject(): Promise<void> {
 		const info = await this.call<{ projectPath?: string }>('ak.wwise.core.getInfo', {});
 		if (info?.projectPath) {
@@ -380,6 +671,7 @@ class WwiseConnection {
 		return new Promise((resolve, reject) => {
 			const script = document.createElement('script');
 			script.src = url;
+			script.crossOrigin = 'anonymous';
 			script.onload = () => resolve();
 			script.onerror = () => reject(new Error(`Failed to load: ${url}`));
 			document.head.appendChild(script);

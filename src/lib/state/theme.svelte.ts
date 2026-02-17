@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 
 function createThemeStore() {
-	let theme = $state<'light' | 'dark' | 'system'>('system');
+	let theme = $state<'light' | 'dark' | 'system'>('dark');
 	let resolvedTheme = $state<'light' | 'dark'>('dark');
 
 	function init() {

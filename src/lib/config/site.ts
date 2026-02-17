@@ -3,15 +3,28 @@
  * Centralized config for site metadata, navigation, and SEO defaults
  */
 
+import {
+	Package,
+	FilePen,
+	Volume2,
+	Terminal,
+	GitBranch,
+	ListChecks,
+	Settings,
+	CopyPlus,
+	Activity
+} from 'lucide-svelte';
+import type { Component } from 'svelte';
+
 export const siteConfig = {
 	name: 'Wwiser',
 	tagline: 'Modern Wwise utilities',
 	title: 'Wwiser - Modern Wwise utilities',
 	description:
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
-	url: 'https://wwiser.dev',
+	url: 'https://wwiser.net',
 	author: 'bbs',
-	version: '0.0.1',
+	version: '0.0.8',
 	keywords: [
 		'wwise',
 		'waapi',
@@ -22,39 +35,114 @@ export const siteConfig = {
 		'wwise tools'
 	],
 	social: {
-		github: 'https://github.com/bbs/wwiser'
+		github: 'https://github.com/boboshan/wwiser'
 	}
 } as const;
+
+export type NavIcon =
+	| 'package'
+	| 'volume'
+	| 'edit'
+	| 'terminal'
+	| 'settings'
+	| 'git-branch'
+	| 'list-checks'
+	| 'copy-plus'
+	| 'activity';
 
 export interface NavItem {
 	id: string;
 	name: string;
 	description: string;
-	icon: 'package' | 'volume' | 'edit' | 'terminal' | 'settings';
+	shortDescription: string;
+	icon: NavIcon;
 	href: string;
+	featured?: boolean;
 }
+
+// Lucide icons export legacy SvelteComponent classes; cast needed for Svelte 5 Component type
+
+export const iconMap = {
+	package: Package,
+	edit: FilePen,
+	volume: Volume2,
+	terminal: Terminal,
+	settings: Settings,
+	'git-branch': GitBranch,
+	'list-checks': ListChecks,
+	'copy-plus': CopyPlus,
+	activity: Activity
+} as unknown as Record<NavIcon, Component<Record<string, never>>>;
 
 export const navigation: NavItem[] = [
 	{
 		id: 'wrap',
 		name: 'Wrap',
-		description: 'Create parent containers',
+		description: 'Wrap objects in containers with auto-grouping',
+		shortDescription: 'Wrap in containers',
 		icon: 'package',
-		href: '/wrap'
+		href: '/wrap',
+		featured: true
+	},
+	{
+		id: 'assign',
+		name: 'Assign',
+		description: 'Match children to switches by naming rules',
+		shortDescription: 'Match to switches',
+		icon: 'git-branch',
+		href: '/assign',
+		featured: true
+	},
+	{
+		id: 'analyze',
+		name: 'Analyze',
+		description: 'Audit switch assignments — find gaps, conflicts, and health issues',
+		shortDescription: 'Switch assignment health',
+		icon: 'activity',
+		href: '/analyze',
+		featured: true
+	},
+	{
+		id: 'fill',
+		name: 'Fill',
+		description: 'Fill blank switches with selected children',
+		shortDescription: 'Fill blank switches',
+		icon: 'list-checks',
+		href: '/fill'
 	},
 	{
 		id: 'volume',
-		name: 'Effective Volume',
-		description: 'Calculate cumulative volume',
+		name: 'Volume',
+		description: 'Calculate effective volume across hierarchy and buses',
+		shortDescription: 'Effective volume calc',
 		icon: 'volume',
-		href: '/volume'
+		href: '/volume',
+		featured: true
+	},
+	{
+		id: 'rename',
+		name: 'Rename',
+		description: 'Batch rename objects from a clipboard list',
+		shortDescription: 'Batch rename objects',
+		icon: 'edit',
+		href: '/rename',
+		featured: true
+	},
+	{
+		id: 'copy',
+		name: 'Copy',
+		description: 'Copy selected objects into target containers',
+		shortDescription: 'Copy into targets',
+		icon: 'copy-plus',
+		href: '/copy'
 	}
 ];
 
 export const explore: NavItem = {
 	id: 'explore',
 	name: 'WAAPI Explorer',
-	description: 'Learn and test WAAPI',
+	description: 'Call functions, subscribe to topics, and inspect results live',
+	shortDescription: 'Live WAAPI console',
 	icon: 'terminal',
 	href: '/explore'
 };
@@ -63,6 +151,16 @@ export const explore: NavItem = {
  * SEO metadata for each page
  */
 export const pageSeo: Record<string, { title: string; description: string }> = {
+	home: {
+		title: 'Wwiser - Modern Wwise utilities',
+		description:
+			'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.'
+	},
+	about: {
+		title: 'About',
+		description:
+			'About Wwiser - a collection of modern productivity tools for Wwise sound designers. Learn more about features and links.'
+	},
 	explore: {
 		title: 'WAAPI Explorer',
 		description:
@@ -73,6 +171,21 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		description:
 			'Quickly wrap selected Wwise objects in parent containers. Automatically group by naming patterns and create Random, Sequence, or Switch containers.'
 	},
+	assign: {
+		title: 'Assign Switch Children',
+		description:
+			'Automatically assign children of switch containers to their corresponding switches based on naming patterns. Configure switch groups and preview assignments before applying.'
+	},
+	analyze: {
+		title: 'Switch Analysis',
+		description:
+			'Audit switch container health. Find empty switches, unassigned children, multi-assignments, conflicts, and fix them inline.'
+	},
+	fill: {
+		title: 'Fill Blank Switches',
+		description:
+			'Fill unassigned switches in switch containers by assigning selected children to every blank switch at once.'
+	},
 	volume: {
 		title: 'Effective Volume Calculator',
 		description:
@@ -82,6 +195,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Batch Rename',
 		description:
 			'Batch rename multiple Wwise objects with powerful pattern matching. Use regex, find/replace, and preview changes before applying.'
+	},
+	copy: {
+		title: 'Copy Objects',
+		description:
+			'Copy selected Wwise objects into one or more target containers. Select sources, select targets, preview and execute.'
 	}
 };
 

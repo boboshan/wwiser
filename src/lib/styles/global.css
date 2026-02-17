@@ -1,9 +1,8 @@
 /* Wwiser Global Styles */
-@import './tokens.css';
 
 /* Base Styles */
 html {
-	color-scheme: light dark;
+	color-scheme: light;
 }
 
 html.dark {
@@ -11,8 +10,8 @@ html.dark {
 }
 
 body {
-	background: #fafaf9;
-	color: #211f1d;
+	background: #fafafa; /* surface-50 */
+	color: #18181b; /* surface-900 */
 	font-family:
 		system-ui,
 		-apple-system,
@@ -21,49 +20,98 @@ body {
 }
 
 html.dark body {
-	background: #141211;
-	color: #f5f5f4;
+	background: #09090b; /* surface-950 */
+	color: #f4f4f5; /* surface-100 */
 }
 
 /* Focus States */
 :focus-visible {
-	outline: 2px solid #3069ff;
-	outline-offset: 2px;
+	outline: 1px solid #3069ff;
+	outline-offset: 0;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar Styling - Light Mode */
 ::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-	background: #e7e5e4;
-}
-
-html.dark ::-webkit-scrollbar-track {
-	background: #211f1d;
+	background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-	background: #a8a29e;
+	background: #d4d4d8; /* surface-300 */
 	border-radius: 9999px;
 }
 
-html.dark ::-webkit-scrollbar-thumb {
-	background: #44403c;
+::-webkit-scrollbar-thumb:hover {
+	background: #a1a1aa; /* surface-400 */
 }
 
-::-webkit-scrollbar-thumb:hover {
-	background: #78716c;
+/* Scrollbar Styling - Dark Mode */
+html.dark ::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+	background: #3f3f46; /* surface-700 */
 }
 
 html.dark ::-webkit-scrollbar-thumb:hover {
-	background: #57534e;
+	background: #52525b; /* surface-600 */
 }
 
 /* Selection */
 ::selection {
 	background: #3069ff;
-	color: #f5f5f4;
+	color: #fafafa;
+}
+
+/* Zag.js dropdown stacking — feeds into --z-index on positioner */
+[data-scope][data-part='content'] {
+	z-index: 50;
+}
+
+/* Zag.js dropdown animations */
+@keyframes dropdown-in {
+	from {
+		opacity: 0;
+		scale: 0.96;
+	}
+	to {
+		opacity: 1;
+		scale: 1;
+	}
+}
+
+[data-scope][data-part='content'][data-state='open'] {
+	animation: dropdown-in 150ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Zag.js toast */
+.toast-group {
+	z-index: 100;
+}
+
+.toast-root {
+	translate: var(--x) var(--y);
+	scale: var(--scale);
+	z-index: var(--z-index);
+	height: var(--height);
+	opacity: var(--opacity);
+	will-change: translate, opacity, scale;
+	transition:
+		translate 400ms,
+		scale 400ms,
+		opacity 400ms;
+	transition-timing-function: cubic-bezier(0.21, 1.02, 0.73, 1);
+}
+
+.toast-root[data-state='closed'] {
+	transition:
+		translate 400ms,
+		scale 400ms,
+		opacity 200ms;
+	transition-timing-function: cubic-bezier(0.06, 0.71, 0.55, 1);
 }

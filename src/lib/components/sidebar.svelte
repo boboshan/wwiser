@@ -1,8 +1,20 @@
 <script lang="ts">
-	import { Package, FilePen, X, Sun, Moon, Monitor, Volume2, Terminal } from 'lucide-svelte';
+	import {
+		Package,
+		X,
+		Sun,
+		Moon,
+		Monitor,
+		Terminal,
+		Ellipsis,
+		Info,
+		Globe,
+		Film
+	} from 'lucide-svelte';
 	import logo from '$lib/assets/logo.svg';
 	import wwiserTitle from '$lib/assets/wwiser.svg';
-	import { type NavItem, siteConfig } from '$lib/config/site';
+	import { type NavItem, siteConfig, iconMap } from '$lib/config/site';
+	import Menu, { type MenuItem } from '$lib/components/menu.svelte';
 
 	interface Props {
 		tools: NavItem[];
@@ -24,13 +36,24 @@
 		onThemeChange
 	}: Props = $props();
 
-	// Map icon names to components
-	const iconMap: Record<string, typeof Package> = {
-		package: Package,
-		edit: FilePen,
-		volume: Volume2,
-		terminal: Terminal
-	};
+	const menuItems: MenuItem[] = [
+		{ value: 'about', label: 'About Wwiser', href: '/about', icon: Info, onclick: closeSidebar },
+		{ value: 'sep', label: '', separator: true },
+		{
+			value: 'website',
+			label: 'boboshan.com',
+			href: 'https://boboshan.com',
+			icon: Globe,
+			external: true
+		},
+		{
+			value: 'roll',
+			label: 'Roll - Video toolset',
+			href: 'https://roll.wwiser.net/',
+			icon: Film,
+			external: true
+		}
+	];
 
 	function closeSidebar() {
 		sidebarOpen = false;
@@ -64,7 +87,7 @@
 >
 	<!-- Logo -->
 	<div class="p-5 border-b border-base flex items-center justify-between">
-		<a href="/app" class="group no-underline flex gap-3 items-center">
+		<a href="/" class="group no-underline flex gap-3 items-center">
 			<div class="flex shrink-0 h-10 w-10">
 				<img src={logo} alt="Wwiser" class="h-full w-full" />
 			</div>
@@ -75,7 +98,7 @@
 		</a>
 		<!-- Mobile close button -->
 		<button
-			class="hover-bg text-muted p-2 rounded-lg transition-colors hover:text-base lg:hidden"
+			class="text-muted p-2 rounded-lg bg-hover transition-colors hover:text-surface-900 lg:hidden dark:hover:text-surface-100"
 			onclick={closeSidebar}
 			aria-label="Close menu"
 		>
@@ -93,10 +116,10 @@
 				href={explore.href}
 				onclick={closeSidebar}
 				class={[
-					'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline mb-4',
+					'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline mb-4',
 					currentTool === explore.id
 						? 'bg-wwise/10 text-wwise'
-						: 'text-muted hover:text-base hover-bg'
+						: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
 				]}
 			>
 				<div
@@ -104,14 +127,14 @@
 						'rounded-md p-2 transition-colors',
 						currentTool === explore.id
 							? 'bg-wwise/15 text-wwise'
-							: 'bg-surface-100 dark:bg-surface-800 text-surface-500'
+							: 'bg-surface-200 dark:bg-surface-800 text-surface-500 group-hover:bg-surface-300 dark:group-hover:bg-surface-700 group-hover:text-surface-700 dark:group-hover:text-surface-300'
 					]}
 				>
 					<Icon class="h-4 w-4" />
 				</div>
 				<div class="flex-1 min-w-0">
 					<span class="block truncate">{explore.name}</span>
-					<span class="text-xs text-muted block truncate">{explore.description}</span>
+					<span class="text-xs text-muted/60 block truncate">{explore.shortDescription}</span>
 				</div>
 			</a>
 		{/if}
@@ -125,10 +148,10 @@
 					href={tool.href}
 					onclick={closeSidebar}
 					class={[
-						'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline',
+						'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline',
 						currentTool === tool.id
 							? 'bg-wwise/10 text-wwise'
-							: 'text-muted hover:text-base hover-bg'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
 					]}
 				>
 					<div
@@ -136,73 +159,79 @@
 							'rounded-md p-2 transition-colors',
 							currentTool === tool.id
 								? 'bg-wwise/15 text-wwise'
-								: 'bg-surface-100 dark:bg-surface-800 text-surface-500'
+								: 'bg-surface-200 dark:bg-surface-800 text-surface-500 group-hover:bg-surface-300 dark:group-hover:bg-surface-700 group-hover:text-surface-700 dark:group-hover:text-surface-300'
 						]}
 					>
 						<Icon class="h-4 w-4" />
 					</div>
 					<div class="flex-1 min-w-0">
 						<span class="block truncate">{tool.name}</span>
-						<span class="text-xs text-muted block truncate">{tool.description}</span>
+						<span class="text-xs text-muted/60 block truncate">{tool.shortDescription}</span>
 					</div>
 				</a>
 			{/each}
 		</div>
 	</nav>
 
-	<!-- Footer with theme toggle -->
-	<div class="px-3 py-4 border-t border-base flex items-center justify-between">
-		<a
-			href="https://roll.wwiser.app/"
-			target="_blank"
-			rel="noopener noreferrer"
-			class="hover-bg text-sm text-muted font-medium p-2 rounded-lg no-underline flex gap-1.5 transition-colors items-center hover:text-base"
-			title="Video toolset in the browser"
-		>
-			Roll
-			<svg
-				class="opacity-50 h-3.5 w-3.5"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-				<polyline points="15 3 21 3 21 9" />
-				<line x1="10" y1="14" x2="21" y2="3" />
-			</svg>
-		</a>
-		<div class="p-0.5 rounded-lg bg-surface-100 flex dark:bg-surface-800">
-			<button
-				onclick={() => setTheme('light')}
-				class={[
-					'p-1.5 rounded-md transition-all',
-					theme === 'light' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
-				]}
-				aria-label="Light theme"
-			>
-				<Sun class="h-4 w-4" />
-			</button>
-			<button
-				onclick={() => setTheme('dark')}
-				class={[
-					'p-1.5 rounded-md transition-all',
-					theme === 'dark' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
-				]}
-				aria-label="Dark theme"
-			>
-				<Moon class="h-4 w-4" />
-			</button>
-			<button
-				onclick={() => setTheme('system')}
-				class={[
-					'p-1.5 rounded-md transition-all',
-					theme === 'system' ? 'bg-base text-base shadow-sm' : 'text-muted hover:text-base'
-				]}
-				aria-label="System theme"
-			>
-				<Monitor class="h-4 w-4" />
-			</button>
+	<!-- Footer -->
+	<div class="px-3 py-3 border-t border-base">
+		<!-- More menu & theme toggle -->
+		<div class="flex items-center justify-between">
+			<!-- More menu trigger -->
+			<Menu id="footer-menu" items={menuItems}>
+				{#snippet trigger({ props, open })}
+					<button
+						{...props}
+						class={[
+							'text-sm text-muted px-2 py-1.5 rounded-lg bg-hover flex gap-1.5 transition-colors items-center ring-focus hover:text-surface-900 dark:hover:text-surface-100',
+							open && 'text-surface-900 bg-surface-200 dark:text-surface-100 dark:bg-surface-800'
+						]}
+					>
+						<Ellipsis class="h-4 w-4" />
+						<span>More</span>
+					</button>
+				{/snippet}
+			</Menu>
+
+			<!-- Theme toggle -->
+			<div class="p-0.5 rounded-lg bg-surface-200 flex dark:bg-surface-800">
+				<button
+					onclick={() => setTheme('light')}
+					class={[
+						'p-1.5 rounded-md transition-all',
+						theme === 'light'
+							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+					]}
+					aria-label="Light theme"
+				>
+					<Sun class="h-4 w-4" />
+				</button>
+				<button
+					onclick={() => setTheme('dark')}
+					class={[
+						'p-1.5 rounded-md transition-all',
+						theme === 'dark'
+							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+					]}
+					aria-label="Dark theme"
+				>
+					<Moon class="h-4 w-4" />
+				</button>
+				<button
+					onclick={() => setTheme('system')}
+					class={[
+						'p-1.5 rounded-md transition-all',
+						theme === 'system'
+							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+					]}
+					aria-label="System theme"
+				>
+					<Monitor class="h-4 w-4" />
+				</button>
+			</div>
 		</div>
 	</div>
 </aside>
