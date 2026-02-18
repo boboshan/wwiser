@@ -13,7 +13,8 @@ import {
 	Settings,
 	CopyPlus,
 	Activity,
-	Network
+	Network,
+	Layers
 } from 'lucide-svelte';
 import type { Component } from 'svelte';
 
@@ -25,7 +26,7 @@ export const siteConfig = {
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
 	url: 'https://wwiser.net',
 	author: 'bbs',
-	version: '0.1.0',
+	version: '0.2.0',
 	keywords: [
 		'wwise',
 		'waapi',
@@ -50,7 +51,8 @@ export type NavIcon =
 	| 'list-checks'
 	| 'copy-plus'
 	| 'activity'
-	| 'network';
+	| 'network'
+	| 'layers';
 
 export interface NavItem {
 	id: string;
@@ -74,7 +76,8 @@ export const iconMap = {
 	'list-checks': ListChecks,
 	'copy-plus': CopyPlus,
 	activity: Activity,
-	network: Network
+	network: Network,
+	layers: Layers
 } as unknown as Record<
 	NavIcon,
 	Component<{ size?: number; class?: string; [key: string]: unknown }>
@@ -111,7 +114,8 @@ export const navigation: NavItem[] = [
 	{
 		id: 'trace',
 		name: 'Trace',
-		description: 'Trace signal paths from Events through containers to audio — spot coverage gaps instantly',
+		description:
+			'Trace signal paths from Events through containers to audio — spot coverage gaps instantly',
 		shortDescription: 'Event logic flow',
 		icon: 'network',
 		href: '/trace',
@@ -150,6 +154,16 @@ export const navigation: NavItem[] = [
 		shortDescription: 'Copy into targets',
 		icon: 'copy-plus',
 		href: '/copy'
+	},
+	{
+		id: 'batch',
+		name: 'Batch Action',
+		description:
+			'Add the same Action to many Events at once — Set Switch, Set State, Play, Stop, and more',
+		shortDescription: 'Batch event actions',
+		icon: 'layers',
+		href: '/batch',
+		featured: true
 	}
 ];
 
@@ -225,6 +239,11 @@ export const pageSeo: Record<string, { title: string; description: string }> = {
 		title: 'Copy Objects',
 		description:
 			'Copy selected Wwise objects into one or more target containers. Select sources, select targets, preview and execute.'
+	},
+	batch: {
+		title: 'Batch Event Action',
+		description:
+			'Add the same Action to many Wwise Events at once. Supports Set Switch, Set State, Set Game Parameter, Play, Stop, and more.'
 	}
 };
 

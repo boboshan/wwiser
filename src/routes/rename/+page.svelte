@@ -5,7 +5,8 @@
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
 	import { RefreshCw, Pencil, ClipboardPaste, Copy } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
-	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
+	import { getTypeDisplayName } from '$lib/wwise/constants';
+	import Badge from '$lib/components/badge.svelte';
 	import { toaster } from '$lib/components/toast.svelte';
 
 	// State

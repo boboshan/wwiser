@@ -1,27 +1,6 @@
 <script lang="ts" module>
-	// Type name formatting - converts PascalCase Wwise types to readable names
-	export const TYPE_DISPLAY_NAMES: Record<string, string> = {
-		ActorMixer: 'Actor-Mixer',
-		BlendContainer: 'Blend Container',
-		RandomSequenceContainer: 'Random Sequence',
-		SwitchContainer: 'Switch Container',
-		AuxBus: 'Aux Bus',
-		WorkUnit: 'Work Unit',
-		SoundBank: 'Sound Bank',
-		GameParameter: 'Game Parameter',
-		StateGroup: 'State Group',
-		SwitchGroup: 'Switch Group',
-		AudioDevice: 'Audio Device',
-		ControlSurfaceBinding: 'Control Surface Binding',
-		ControlSurfaceSession: 'Control Surface Session',
-		ModulatorLfo: 'Modulator LFO',
-		ModulatorEnvelope: 'Modulator Envelope',
-		ModulatorTime: 'Modulator Time'
-	};
-
-	export function getTypeDisplayName(type: string): string {
-		return TYPE_DISPLAY_NAMES[type] ?? type;
-	}
+	// Re-export from centralized constants for backward compatibility
+	export { TYPE_DISPLAY_NAMES, getTypeDisplayName } from '$lib/wwise/constants';
 
 	export type BadgeVariant = 'default' | 'wwise' | 'purple' | 'blue' | 'green' | 'red' | 'amber';
 </script>

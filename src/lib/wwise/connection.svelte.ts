@@ -6,49 +6,24 @@
 import { browser } from '$app/environment';
 import { historyStore } from '$lib/state/history.svelte';
 
-// ============================================================================
-// Types
-// ============================================================================
+// Re-export shared types & constants so existing imports keep working
+export type {
+	Status,
+	ConflictResolution,
+	WwiseObject,
+	AudioSourceInfo,
+	ProjectInfo,
+	ContainerType
+} from './types';
+export { CONTAINER_TYPES } from './constants';
 
-export type Status = 'disconnected' | 'connecting' | 'connected' | 'error';
-export type ConflictResolution = 'fail' | 'rename' | 'replace' | 'merge';
-
-export interface ProjectInfo {
-	name: string;
-	path: string;
-	isDirty: boolean;
-}
-
-export interface WwiseObject {
-	id: string;
-	name: string;
-	type: string;
-	path: string;
-	parent?: WwiseObject;
-}
-
-export interface AudioSourceInfo {
-	id: string;
-	name: string;
-	type: string;
-	path: string;
-	originalFilePath: string;
-}
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-export const CONTAINER_TYPES = [
-	{ value: 'ActorMixer', label: 'Actor-Mixer' },
-	{ value: 'BlendContainer', label: 'Blend Container' },
-	{ value: 'RandomSequenceContainer', label: 'Random Container' },
-	{ value: 'SwitchContainer', label: 'Switch Container' },
-	{ value: 'Folder', label: 'Folder' },
-	{ value: 'WorkUnit', label: 'Work Unit' }
-] as const;
-
-export type ContainerType = (typeof CONTAINER_TYPES)[number]['value'];
+import type {
+	Status,
+	ConflictResolution,
+	WwiseObject,
+	AudioSourceInfo,
+	ProjectInfo
+} from './types';
 
 const AUTOBAHN_URLS = [
 	'https://unpkg.com/autobahn-browser@22.11.1/autobahn.min.js',

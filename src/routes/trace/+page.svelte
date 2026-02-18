@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
 	import { isNullGuid, normalizeId as nid } from '$lib/wwise/helpers';
 	import {
@@ -13,15 +14,14 @@
 		Shuffle,
 		Volume2,
 		Box,
-		CircleAlert,
 		CircleCheck,
 		Circle,
 		Blend,
 		Folder,
-		CircleHelp
+		CircleQuestionMark
 	} from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
-	import { getTypeDisplayName } from '$lib/components/badge.svelte';
+	import { getTypeDisplayName } from '$lib/wwise/constants';
 	import Combobox from '$lib/components/combobox.svelte';
 	import { toaster } from '$lib/components/toast.svelte';
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
@@ -126,7 +126,7 @@
 	let previousEventId: string | undefined = undefined;
 	let traceRoot = $state<TraceNode | null>(null);
 	let isTracing = $state(false);
-	let collapsedIds = $state(new Set<string>());
+	let collapsedIds = new SvelteSet<string>();
 
 	const uid = $props.id();
 
@@ -223,7 +223,7 @@
 			}
 			selectedEventId = eventObj.id;
 			traceRoot = await buildTrace(eventObj);
-			collapsedIds = new Set();
+			collapsedIds.clear();
 			toaster.create({ title: `Traced: ${eventObj.name}`, type: 'info' });
 		} catch (e) {
 			toaster.create({
@@ -242,7 +242,7 @@
 		isTracing = true;
 		try {
 			traceRoot = await buildTrace(eventObj);
-			collapsedIds = new Set();
+			collapsedIds.clear();
 			toaster.create({ title: `Traced: ${eventObj.name}`, type: 'info' });
 		} catch (e) {
 			toaster.create({
@@ -430,9 +430,7 @@
 
 		if (!switchGroup || isNullGuid(switchGroup.id)) {
 			// No switch group — just list children
-			const childNodes = await Promise.all(
-				children.map((c) => traceObject(c, depth + 1, visited))
-			);
+			const childNodes = await Promise.all(children.map((c) => traceObject(c, depth + 1, visited)));
 			return {
 				id: nextId(),
 				object: container,
@@ -452,7 +450,7 @@
 		}
 
 		// Build switch → children map
-		const switchToChildren = new Map<string, WwiseObject[]>();
+		const switchToChildren = new SvelteMap<string, WwiseObject[]>();
 		for (const sw of switches) {
 			switchToChildren.set(nid(sw.id), []);
 		}
@@ -529,15 +527,14 @@
 		visited: Set<string>
 	): Promise<TraceNode> {
 		const children = await wwise.getChildren(obj.id);
-		const childNodes = await Promise.all(
-			children.map((c) => traceObject(c, depth + 1, visited))
-		);
+		const childNodes = await Promise.all(children.map((c) => traceObject(c, depth + 1, visited)));
 		const hasGap = childNodes.some((c) => c.status === 'gap');
 		return {
 			id: nextId(),
 			object: obj,
 			nodeType,
-			status: children.length === 0 && nodeType !== 'sound' ? 'warning' : hasGap ? 'gap' : 'neutral',
+			status:
+				children.length === 0 && nodeType !== 'sound' ? 'warning' : hasGap ? 'gap' : 'neutral',
 			children: childNodes
 		};
 	}
@@ -566,28 +563,25 @@
 	// ── UI helpers ───────────────────────────────────────────────────────
 
 	function toggleCollapse(nodeId: string) {
-		const next = new Set(collapsedIds);
-		if (next.has(nodeId)) {
-			next.delete(nodeId);
+		if (collapsedIds.has(nodeId)) {
+			collapsedIds.delete(nodeId);
 		} else {
-			next.add(nodeId);
+			collapsedIds.add(nodeId);
 		}
-		collapsedIds = next;
 	}
 
 	function expandAll() {
-		collapsedIds = new Set();
+		collapsedIds.clear();
 	}
 
 	function collapseAll() {
 		if (!traceRoot) return;
-		const ids = new Set<string>();
+		collapsedIds.clear();
 		function walk(node: TraceNode) {
-			if (node.children.length > 0) ids.add(node.id);
+			if (node.children.length > 0) collapsedIds.add(node.id);
 			for (const c of node.children) walk(c);
 		}
 		walk(traceRoot);
-		collapsedIds = ids;
 	}
 
 	function getNodeIcon(node: TraceNode): { icon: typeof Zap; color: string } {
@@ -621,7 +615,7 @@
 			case 'folder':
 				return { icon: Folder, color: 'text-amber-500' };
 			default:
-				return { icon: CircleHelp, color: 'text-surface-400' };
+				return { icon: CircleQuestionMark, color: 'text-surface-400' };
 		}
 	}
 
@@ -653,11 +647,16 @@
 	<!-- Header -->
 	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<p class="text-sm text-muted leading-relaxed m-0">
-			Trace the signal path from an Event through containers to audio files. Coverage gaps are highlighted in red.
+			Trace the signal path from an Event through containers to audio files. Coverage gaps are
+			highlighted in red.
 		</p>
 		<div class="flex shrink-0 gap-3 items-center">
 			{#if !eventsLoaded}
-				<button onclick={loadEvents} disabled={!wwise.isConnected || eventsLoading} class="btn-secondary flex-1 sm:flex-none">
+				<button
+					onclick={loadEvents}
+					disabled={!wwise.isConnected || eventsLoading}
+					class="btn-secondary flex-1 sm:flex-none"
+				>
 					<Search size={16} />
 					{eventsLoading ? 'Loading…' : 'Load Events'}
 				</button>
@@ -693,7 +692,7 @@
 					/>
 				</div>
 				{#if isTracing}
-					<div class="shrink-0 flex items-center gap-2 text-sm text-muted px-2">
+					<div class="text-sm text-muted px-2 flex shrink-0 gap-2 items-center">
 						<RefreshCw size={14} class="animate-spin" />
 						Tracing…
 					</div>
@@ -706,7 +705,7 @@
 	{#if traceRoot && traceStats}
 		<div class="p-5 border border-base rounded-xl bg-base">
 			<div class="flex gap-3 items-end">
-				<div class="gap-3 grid flex-1 grid-cols-2 sm:grid-cols-4 lg:grid-cols-6">
+				<div class="flex-1 gap-3 grid grid-cols-2 lg:grid-cols-6 sm:grid-cols-4">
 					<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
 						<p class="text-lg text-base font-semibold m-0 tabular-nums">{traceStats.total}</p>
 						<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Nodes</p>
@@ -716,7 +715,9 @@
 						<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Containers</p>
 					</div>
 					<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
-						<p class="text-lg text-purple-500 font-semibold m-0 tabular-nums">{traceStats.switches}</p>
+						<p class="text-lg text-purple-500 font-semibold m-0 tabular-nums">
+							{traceStats.switches}
+						</p>
 						<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Switches</p>
 					</div>
 					<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
@@ -725,12 +726,18 @@
 					</div>
 					{#if traceStats.gaps > 0}
 						<div class="p-3 border border-red-500/10 rounded-lg bg-red-500/5">
-							<p class="text-lg text-red-600 font-semibold m-0 tabular-nums dark:text-red-400">{traceStats.gaps}</p>
-							<p class="text-[10px] text-red-600/70 tracking-wider m-0 uppercase dark:text-red-400/70">Gaps</p>
+							<p class="text-lg text-red-600 font-semibold m-0 tabular-nums dark:text-red-400">
+								{traceStats.gaps}
+							</p>
+							<p
+								class="text-[10px] text-red-600/70 tracking-wider m-0 uppercase dark:text-red-400/70"
+							>
+								Gaps
+							</p>
 						</div>
 					{/if}
 				</div>
-				<div class="flex gap-1 shrink-0 self-end">
+				<div class="flex shrink-0 gap-1 self-end">
 					<button
 						onclick={expandAll}
 						class="text-xs text-muted px-2 py-1 rounded-md bg-hover transition-colors hover:text-base"
@@ -773,7 +780,7 @@
 							disabled={!hasChildren}
 						>
 							<!-- Chevron -->
-							<span class="w-3.5 shrink-0 flex items-center justify-center">
+							<span class="flex shrink-0 w-3.5 items-center justify-center">
 								{#if hasChildren}
 									{#if isCollapsed}
 										<ChevronRight size={11} class="text-muted/60" />
@@ -788,9 +795,10 @@
 
 							<!-- Action type prefix for merged action→target -->
 							{#if node.actionType}
-								<span class="text-[11px] text-muted/70 font-medium shrink-0">{node.actionType}</span>
+								<span class="text-muted/70 text-[11px] font-medium shrink-0">{node.actionType}</span
+								>
 								{#if node.nodeType !== 'action'}
-									<span class="text-muted/30 text-[10px]">→</span>
+									<span class="text-[10px] text-muted/30">→</span>
 								{/if}
 							{/if}
 
@@ -812,7 +820,9 @@
 
 							<!-- Right-aligned contextual info -->
 							{#if isGap && node.nodeType === 'switch' && node.meta}
-								<span class="text-[11px] text-red-500 font-medium ml-auto shrink-0">{node.meta}</span>
+								<span class="text-[11px] text-red-500 font-medium ml-auto shrink-0"
+									>{node.meta}</span
+								>
 							{:else if isWarning && node.meta}
 								<span class="text-[11px] text-amber-500 ml-auto shrink-0">{node.meta}</span>
 							{:else if typeLabel}

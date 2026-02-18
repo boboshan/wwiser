@@ -2,7 +2,7 @@
 	import { tick } from 'svelte';
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { VolumeContribution } from './+page.svelte';
-	import { getTypeDisplayName } from '$lib/components/badge.svelte';
+	import { getTypeDisplayName } from '$lib/wwise/constants';
 	import Badge from '$lib/components/badge.svelte';
 	import VolumeSlider from './volume-slider.svelte';
 	import type { WwiseObject } from '$lib/wwise/connection.svelte';

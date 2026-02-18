@@ -1,65 +1,22 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
+	import { wwise, type WwiseObject, type ContainerType } from '$lib/wwise/connection.svelte';
 	import {
-		wwise,
 		CONTAINER_TYPES,
-		type ContainerType,
-		type WwiseObject
-	} from '$lib/wwise/connection.svelte';
+		NON_WRAPPABLE_TYPES,
+		FOLDER_ONLY_TYPES,
+		UNIVERSAL_CONTAINERS,
+		NAMING_RULES,
+		getTypeDisplayName
+	} from '$lib/wwise/constants';
+	import type { NamingRule } from '$lib/wwise/constants';
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
 	import { RefreshCw, Package } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Select from '$lib/components/select.svelte';
-	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
+	import Badge from '$lib/components/badge.svelte';
 	import { toaster } from '$lib/components/toast.svelte';
-
-	// Types that cannot be wrapped at all
-	const NON_WRAPPABLE_TYPES = ['Project'];
-
-	// Types that can only be wrapped with Folder or WorkUnit (not actor-mixer containers)
-	const FOLDER_ONLY_TYPES = new Set([
-		'WorkUnit',
-		'Bus',
-		'AuxBus',
-		'Event',
-		'SoundBank',
-		'Soundcaster',
-		'Query',
-		'GameParameter',
-		'State',
-		'StateGroup',
-		'Switch',
-		'SwitchGroup',
-		'Trigger',
-		'Effect',
-		'AudioDevice',
-		'Conversion',
-		'ControlSurfaceBinding',
-		'ControlSurfaceSession',
-		'Attenuation',
-		'ModulatorLfo',
-		'ModulatorEnvelope',
-		'ModulatorTime',
-		'Folder'
-	]);
-
-	// Container types that can wrap any type
-	const UNIVERSAL_CONTAINERS = new Set(['Folder', 'WorkUnit']);
-
-	// Naming rules
-	type NamingRule = 'omit_suffix' | 'prefix' | 'same_name' | 'custom_regex';
-
-	const NAMING_RULES = [
-		{
-			value: 'omit_suffix',
-			label: 'Omit Last Suffix',
-			description: 'Remove trailing _01, _A, etc.'
-		},
-		{ value: 'prefix', label: 'Use Prefix', description: 'Use text before first underscore' },
-		{ value: 'same_name', label: 'Same Name', description: 'Use the object name as-is' },
-		{ value: 'custom_regex', label: 'Custom Regex', description: 'Apply custom regex pattern' }
-	] as const;
 
 	// State
 	let containerType = $state<ContainerType>('RandomSequenceContainer');

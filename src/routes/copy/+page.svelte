@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { wwise, type WwiseObject, type ConflictResolution } from '$lib/wwise/connection.svelte';
+	import { CONFLICT_RESOLUTION_ITEMS, getTypeDisplayName } from '$lib/wwise/constants';
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
 	import { RefreshCw, CopyPlus, Trash2 } from 'lucide-svelte';
 	import Alert from '$lib/components/alert.svelte';
-	import Badge, { getTypeDisplayName } from '$lib/components/badge.svelte';
-	import Select, { type SelectItem } from '$lib/components/select.svelte';
+	import Badge from '$lib/components/badge.svelte';
+	import Select from '$lib/components/select.svelte';
 	import { toaster } from '$lib/components/toast.svelte';
 
 	// State
@@ -15,13 +16,6 @@
 	let isLoadingTargets = $state(false);
 	let isExecuting = $state(false);
 	let onNameConflict = $state<ConflictResolution>('rename');
-
-	const conflictItems: SelectItem[] = [
-		{ value: 'rename', label: 'Rename (auto-suffix)' },
-		{ value: 'replace', label: 'Replace existing' },
-		{ value: 'fail', label: 'Fail on conflict' },
-		{ value: 'merge', label: 'Merge' }
-	];
 
 	// ── Undo/redo refresh ───────────────────────────────────────────────
 
@@ -250,7 +244,11 @@
 				Name Conflict
 			</span>
 			<div class="max-w-xs">
-				<Select id="conflict-select" items={conflictItems} bind:value={onNameConflict} />
+				<Select
+					id="conflict-select"
+					items={CONFLICT_RESOLUTION_ITEMS}
+					bind:value={onNameConflict}
+				/>
 			</div>
 		</div>
 	</div>

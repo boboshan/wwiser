@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import { SliderState } from './volume-slider.svelte';
-	import { getTypeDisplayName } from '$lib/components/badge.svelte';
+	import { getTypeDisplayName } from '$lib/wwise/constants';
 
 	// Volume property types
 	type VolumeProperty = 'Volume' | 'BusVolume' | 'OutputBusVolume';
