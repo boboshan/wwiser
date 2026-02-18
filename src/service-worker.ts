@@ -20,6 +20,7 @@ const PRECACHE_ASSETS = [
 const APP_ROUTES = [
 	'/',
 	'/about',
+	'/faq',
 	'/wrap',
 	'/volume',
 	'/rename',
@@ -28,7 +29,8 @@ const APP_ROUTES = [
 	'/copy',
 	'/analyze',
 	'/explore',
-	'/trace'
+	'/trace',
+	'/batch'
 ];
 
 // External CDN resources - multiple sources for redundancy

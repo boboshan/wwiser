@@ -1,5 +1,7 @@
 # Wwiser - Wwise Tools
 # https://wwiser.net
-# Note: Cloudflare managed content prepends User-agent rules automatically.
+
+User-agent: *
+Allow: /
 
 Sitemap: https://wwiser.net/sitemap.xml

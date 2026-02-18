@@ -15,7 +15,7 @@
 		description = siteConfig.description,
 		canonical,
 		noindex = false,
-		ogImage = '/og-image.png',
+		ogImage = '/icon-512.png',
 		ogType = 'website'
 	}: Props = $props();
 
