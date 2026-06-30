@@ -31,7 +31,7 @@
 		}
 	] as const;
 
-	const techStack = ['SvelteKit', 'TypeScript', 'UnoCSS', 'WAAPI'] as const;
+	const techStack = ['SvelteKit', 'TypeScript', 'Tailwind CSS', 'WAAPI'] as const;
 </script>
 
 <div class="pb-8 flex flex-col gap-6 max-w-4xl">
