@@ -1,10 +1,135 @@
-/* Wwiser Global Styles */
+@import 'tailwindcss';
 
-/* Base Styles */
+/* Dark mode is driven by `.dark` on <html> (set by the theme store). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- Static palettes (do not theme-switch) ---- */
+@theme {
+	--color-wwise-50: #eff4ff;
+	--color-wwise-100: #dbe6ff;
+	--color-wwise-200: #bfd3ff;
+	--color-wwise-300: #93b4ff;
+	--color-wwise-400: #6090ff;
+	--color-wwise-500: #3069ff;
+	--color-wwise-600: #1a4ff5;
+	--color-wwise-700: #1340e1;
+	--color-wwise-800: #1635b6;
+	--color-wwise-900: #18318f;
+	--color-wwise-950: #141f57;
+	--color-wwise: #3069ff;
+
+	--color-surface-50: #fafafa;
+	--color-surface-100: #f4f4f5;
+	--color-surface-200: #e4e4e7;
+	--color-surface-300: #d4d4d8;
+	--color-surface-400: #a1a1aa;
+	--color-surface-500: #71717a;
+	--color-surface-600: #52525b;
+	--color-surface-700: #3f3f46;
+	--color-surface-800: #27272a;
+	--color-surface-900: #18181b;
+	--color-surface-950: #09090b;
+
+	--font-sans: 'Open Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---- Semantic tokens: raw vars flip on .dark (values = current palette) ---- */
+:root {
+	--page: #fafafa; /* surface-50 */
+	--base: #ffffff;
+	--fg: #18181b; /* surface-900 */
+	--muted: #71717a; /* surface-500 */
+	--fg-dim: #a1a1aa; /* surface-400 */
+	--line: #e4e4e7; /* surface-200 */
+	--line-strong: #e4e4e7; /* surface-200 */
+	--line-subtle: #f4f4f5; /* surface-100 */
+	--hover: #f4f4f5; /* surface-100 */
+}
+.dark {
+	--page: #18181b; /* surface-900 */
+	--base: #09090b; /* surface-950 */
+	--fg: #f4f4f5; /* surface-100 */
+	--muted: #a1a1aa; /* surface-400 */
+	--fg-dim: #71717a; /* surface-500 */
+	--line: #27272a; /* surface-800 */
+	--line-strong: #3f3f46; /* surface-700 */
+	--line-subtle: color-mix(in srgb, #27272a 50%, transparent); /* surface-800/50 */
+	--hover: #27272a; /* surface-800 */
+}
+
+/* Expose theme-aware semantic colors (inline => track .dark).
+   `base` is intentionally NOT here — a `--color-base` would generate a
+   `text-base` utility that collides with Tailwind's font-size `text-base`.
+   It is provided as a bg-only utility below. */
+@theme inline {
+	--color-page: var(--page);
+	--color-fg: var(--fg);
+	--color-muted: var(--muted);
+	--color-fg-dim: var(--fg-dim);
+	--color-line: var(--line);
+	--color-line-strong: var(--line-strong);
+	--color-line-subtle: var(--line-subtle);
+	--color-hover: var(--hover);
+}
+
+@utility bg-base {
+	background-color: var(--base);
+}
+
+/* Focus-ring composites (utilities so component classes can @apply them) */
+@utility ring-focus {
+	@apply focus-visible:border-wwise focus-visible:outline-none focus-visible:ring-2 ring-wwise/20 dark:focus-visible:ring-wwise/30;
+}
+@utility ring-accent {
+	@apply border-wwise ring-2 ring-wwise/20 dark:ring-wwise/30;
+}
+@utility ring-accent-selected {
+	@apply border-wwise bg-wwise/5 ring-2 ring-wwise/20 dark:ring-wwise/30;
+}
+
+@layer components {
+	.input-base {
+		@apply text-sm border border-line-strong rounded-lg bg-surface-50 w-full transition-all ring-focus dark:bg-surface-900;
+	}
+	.dropdown-content {
+		@apply mt-1.5 border rounded-xl max-h-72 w-full overflow-x-hidden overflow-y-auto p-1 border-line-strong ring-focus bg-white shadow-lg dark:bg-surface-900 dark:shadow-2xl dark:shadow-black/40;
+	}
+	.dropdown-item {
+		@apply text-sm px-2.5 py-1.5 cursor-pointer rounded-lg transition-colors data-[highlighted]:text-wwise data-[highlighted]:bg-wwise/10 dark:data-[highlighted]:bg-wwise/15 data-[state=checked]:text-wwise data-[state=checked]:font-medium data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed;
+	}
+	.menu-content {
+		@apply p-1 border rounded-xl min-w-48 border-line-strong bg-white shadow-lg dark:bg-surface-900 dark:shadow-2xl dark:shadow-black/40 ring-focus;
+	}
+	.menu-item {
+		@apply text-sm text-muted px-2.5 py-1.5 no-underline flex gap-3 rounded-lg transition-colors items-center data-[highlighted]:text-wwise hover:text-wwise data-[highlighted]:bg-wwise/10 hover:bg-wwise/10 dark:data-[highlighted]:bg-wwise/15 dark:hover:bg-wwise/15;
+	}
+	.btn-action {
+		@apply text-sm text-white font-medium px-5 rounded-lg bg-wwise flex gap-2 h-10 transition-colors items-center justify-center hover:bg-wwise-400 disabled:opacity-50 disabled:cursor-not-allowed;
+	}
+	.btn-secondary {
+		@apply text-sm text-fg font-medium px-4 rounded-lg bg-surface-200 flex gap-2 h-10 transition-colors items-center justify-center dark:bg-surface-800 hover:bg-surface-300 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-700;
+	}
+	.btn-accent-sm {
+		@apply text-xs text-wwise font-medium px-3 py-1.5 rounded-md bg-wwise/10 flex gap-1.5 transition-colors items-center hover:bg-wwise/20 disabled:opacity-50 disabled:cursor-not-allowed;
+	}
+	.btn-danger-sm {
+		@apply text-xs text-red-500 font-medium px-3 py-1.5 rounded-md bg-red-500/10 flex gap-1.5 transition-colors items-center hover:bg-red-500/20;
+	}
+	.btn-cancel {
+		@apply text-muted p-1.5 rounded-md transition-colors hover:bg-surface-200 dark:hover:bg-surface-700;
+	}
+	.card {
+		@apply bg-base border border-line rounded-2xl shadow-sm;
+	}
+}
+
+/* ===================================================================
+   Preserved base rules — verbatim from the pre-migration global.css.
+   =================================================================== */
+
 html {
 	color-scheme: light;
 }
-
 html.dark {
 	color-scheme: dark;
 }
@@ -18,62 +143,48 @@ body {
 		sans-serif;
 	line-height: 1.5;
 }
-
 html.dark body {
 	background: #09090b; /* surface-950 */
 	color: #f4f4f5; /* surface-100 */
 }
 
-/* Focus States */
 :focus-visible {
 	outline: 1px solid #3069ff;
 	outline-offset: 0;
 }
 
-/* Scrollbar Styling - Light Mode */
 ::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
 }
-
 ::-webkit-scrollbar-track {
 	background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
 	background: #d4d4d8; /* surface-300 */
 	border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
 	background: #a1a1aa; /* surface-400 */
 }
-
-/* Scrollbar Styling - Dark Mode */
 html.dark ::-webkit-scrollbar-track {
 	background: transparent;
 }
-
 html.dark ::-webkit-scrollbar-thumb {
 	background: #3f3f46; /* surface-700 */
 }
-
 html.dark ::-webkit-scrollbar-thumb:hover {
 	background: #52525b; /* surface-600 */
 }
 
-/* Selection */
 ::selection {
 	background: #3069ff;
 	color: #fafafa;
 }
 
-/* Zag.js dropdown stacking — feeds into --z-index on positioner */
 [data-scope][data-part='content'] {
 	z-index: 50;
 }
-
-/* Zag.js dropdown animations */
 @keyframes dropdown-in {
 	from {
 		opacity: 0;
@@ -84,16 +195,13 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 		scale: 1;
 	}
 }
-
 [data-scope][data-part='content'][data-state='open'] {
 	animation: dropdown-in 150ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-/* Zag.js toast */
 .toast-group {
 	z-index: 100;
 }
-
 .toast-root {
 	translate: var(--x) var(--y);
 	scale: var(--scale);
@@ -107,7 +215,6 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 		opacity 400ms;
 	transition-timing-function: cubic-bezier(0.21, 1.02, 0.73, 1);
 }
-
 .toast-root[data-state='closed'] {
 	transition:
 		translate 400ms,

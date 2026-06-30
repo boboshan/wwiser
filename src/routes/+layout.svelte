@@ -1,5 +1,4 @@
 <script lang="ts">
-	import 'virtual:uno.css';
 	import '$lib/styles/global.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { page } from '$app/state';
