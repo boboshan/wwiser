@@ -126,14 +126,14 @@
 				compact ? 'h-8' : 'h-10',
 				variant === 'accent' && api.value.length > 0
 					? 'text-wwise border-wwise/30'
-					: 'text-base border-input',
+					: 'text-fg border-line-strong',
 				inputClass
 			]}
 		/>
 		<button
 			{...api.getTriggerProps()}
 			tabindex={-1}
-			class="text-muted flex w-10 transition-colors items-center inset-y-0 right-0 justify-center absolute hover:text-base"
+			class="text-muted flex w-10 transition-colors items-center inset-y-0 right-0 justify-center absolute hover:text-fg"
 		>
 			<ChevronDown
 				size={15}

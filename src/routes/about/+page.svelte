@@ -31,13 +31,13 @@
 		}
 	] as const;
 
-	const techStack = ['SvelteKit', 'TypeScript', 'UnoCSS', 'WAAPI'] as const;
+	const techStack = ['SvelteKit', 'TypeScript', 'Tailwind CSS', 'WAAPI'] as const;
 </script>
 
 <div class="pb-8 flex flex-col gap-6 max-w-4xl">
 	<!-- Intro -->
 	<div class="space-y-4">
-		<p class="text-sm text-base leading-relaxed">
+		<p class="text-sm text-fg leading-relaxed">
 			<strong>Wwiser</strong> is a collection of browser-based productivity tools built for Wwise
 			sound designers. It connects to your local Wwise session through the
 			<a
@@ -70,7 +70,7 @@
 				>
 					<MonitorSmartphone class="text-surface-400 h-4 w-4 dark:text-surface-500" />
 				</div>
-				<p class="text-sm text-base font-medium">Open Wwiser</p>
+				<p class="text-sm text-fg font-medium">Open Wwiser</p>
 				<p class="text-xs text-muted/60 leading-relaxed mt-1">
 					Visit the site or launch the installed PWA. No login required.
 				</p>
@@ -83,7 +83,7 @@
 				>
 					<Zap class="text-surface-400 h-4 w-4 dark:text-surface-500" />
 				</div>
-				<p class="text-sm text-base font-medium">Connect to Wwise</p>
+				<p class="text-sm text-fg font-medium">Connect to Wwise</p>
 				<p class="text-xs text-muted/60 leading-relaxed mt-1">
 					Wwiser connects via WebSocket to Wwise's WAAPI on localhost. Make sure WAAPI is enabled in
 					your Wwise project settings.
@@ -97,7 +97,7 @@
 				>
 					<MousePointerClick class="text-surface-400 h-4 w-4 dark:text-surface-500" />
 				</div>
-				<p class="text-sm text-base font-medium">Use the Tools</p>
+				<p class="text-sm text-fg font-medium">Use the Tools</p>
 				<p class="text-xs text-muted/60 leading-relaxed mt-1">
 					Pick a tool, select objects in Wwise, and run. Changes are applied directly to your
 					project with full undo support.
@@ -128,7 +128,7 @@
 								class="text-surface-400 shrink-0 h-3.5 w-3.5 transition-colors duration-200 dark:text-surface-500 group-hover:text-wwise"
 							/>
 						</div>
-						<p class="text-sm text-base font-medium">{tool.name}</p>
+						<p class="text-sm text-fg font-medium">{tool.name}</p>
 					</div>
 					<p class="text-xs text-muted/60 leading-relaxed ml-9.5 mt-2">{tool.description}</p>
 				</a>
@@ -153,7 +153,7 @@
 					<ShieldCheck class="text-surface-400 h-4 w-4 dark:text-surface-500" />
 				</div>
 				<div class="space-y-2">
-					<p class="text-sm text-base leading-relaxed">
+					<p class="text-sm text-fg leading-relaxed">
 						Wwiser is a static site with no backend. All communication happens directly between your
 						browser and Wwise over a local WebSocket connection. Nothing is sent to any server —
 						there are no analytics, cookies, or tracking of any kind.
@@ -184,7 +184,7 @@
 					>
 						<feat.icon class="text-surface-400 h-4 w-4 dark:text-surface-500" />
 					</div>
-					<p class="text-sm text-base font-medium">{feat.title}</p>
+					<p class="text-sm text-fg font-medium">{feat.title}</p>
 					<p class="text-xs text-muted/60 leading-relaxed mt-1">{feat.desc}</p>
 				</div>
 			{/each}

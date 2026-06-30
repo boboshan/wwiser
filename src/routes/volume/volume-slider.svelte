@@ -87,7 +87,7 @@
 	function getVolumeColor(vol: number): string {
 		if (vol > 0) return 'text-red-500';
 		if (vol < -12) return 'text-muted';
-		return 'text-base';
+		return 'text-fg';
 	}
 
 	function handleNumberCommit(e: Event) {

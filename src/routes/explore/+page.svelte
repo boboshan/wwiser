@@ -599,7 +599,7 @@ declare const wwise: WwiseAPI;
 	{#if !wwise.isConnected}
 		<!-- Inline Connect Form -->
 		<div class="max-w-sm w-full">
-			<div class="p-6 border border-base rounded-2xl bg-base space-y-5">
+			<div class="p-6 border border-line rounded-2xl bg-base space-y-5">
 				<div class="flex gap-3 items-center">
 					<div
 						class="rounded-lg bg-surface-200 flex shrink-0 h-10 w-10 items-center justify-center dark:bg-surface-800"
@@ -607,7 +607,7 @@ declare const wwise: WwiseAPI;
 						<Plug size={20} class="text-muted" />
 					</div>
 					<div>
-						<p class="text-sm text-base font-medium m-0">Connect to Wwise</p>
+						<p class="text-sm text-fg font-medium m-0">Connect to Wwise</p>
 						<p class="text-xs text-muted m-0">Enter WAAPI server details</p>
 					</div>
 				</div>
@@ -620,7 +620,7 @@ declare const wwise: WwiseAPI;
 							type="text"
 							bind:value={host}
 							placeholder="localhost"
-							class="input-base text-base px-3 h-9"
+							class="input-base text-fg px-3 h-9"
 						/>
 					</div>
 					<div>
@@ -630,7 +630,7 @@ declare const wwise: WwiseAPI;
 							type="number"
 							bind:value={port}
 							placeholder="8080"
-							class="input-base text-base px-3 h-9"
+							class="input-base text-fg px-3 h-9"
 						/>
 					</div>
 				</div>
@@ -854,7 +854,7 @@ declare const wwise: WwiseAPI;
 						Clear
 					</button>
 				</div>
-				<div class="border border-base rounded-lg h-80 min-h-24 resize-y overflow-hidden">
+				<div class="border border-line rounded-lg h-80 min-h-24 resize-y overflow-hidden">
 					<div
 						class="text-xs font-mono p-3 bg-surface-100 h-full overflow-y-auto space-y-1 dark:bg-surface-950"
 					>

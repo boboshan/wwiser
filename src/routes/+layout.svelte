@@ -1,5 +1,4 @@
 <script lang="ts">
-	import 'virtual:uno.css';
 	import '$lib/styles/global.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { page } from '$app/state';
@@ -121,7 +120,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="text-base font-sans bg-elevated flex h-screen overflow-hidden">
+<div class="text-fg font-sans bg-page flex h-screen overflow-hidden">
 	<!-- Sidebar -->
 	<Sidebar
 		tools={navigation}
@@ -135,12 +134,12 @@
 	<div class="flex flex-1 flex-col min-w-0 overflow-hidden">
 		<!-- Desktop header -->
 		<header
-			class="px-6 py-3 border-b border-base bg-base hidden items-center justify-between lg:flex"
+			class="px-6 py-3 border-b border-line bg-base hidden items-center justify-between lg:flex"
 		>
 			<div class="flex gap-4 items-center">
-				<h1 class="text-lg text-base font-bold m-0">{currentToolName}</h1>
+				<h1 class="text-lg text-fg font-bold m-0">{currentToolName}</h1>
 				{#if wwise.isConnected && isToolPage}
-					<div class="border-l border-base h-5"></div>
+					<div class="border-l border-line h-5"></div>
 					<div class="flex gap-1 items-center">
 						{@render undoRedoButtons(
 							'text-muted p-1.5 rounded-md transition-colors hover:text-surface-900 hover:bg-surface-200 dark:hover:text-surface-100 dark:hover:bg-surface-800 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
@@ -152,30 +151,30 @@
 		</header>
 
 		<!-- Mobile header -->
-		<header class="px-4 py-3 border-b border-base bg-base flex gap-2 items-center lg:hidden">
+		<header class="px-4 py-3 border-b border-line bg-base flex gap-2 items-center lg:hidden">
 			<a href="/" class="flex shrink-0">
 				<img src={logo} alt="Wwiser" class="h-7 w-7" />
 			</a>
 			<button
-				class="text-muted px-2 py-1 rounded-lg bg-hover flex gap-1 transition-colors items-center hover:text-surface-900 -my-1 dark:hover:text-surface-100"
+				class="text-muted px-2 py-1 rounded-lg hover:bg-hover flex gap-1 transition-colors items-center hover:text-surface-900 -my-1 dark:hover:text-surface-100"
 				onclick={() => (sidebarOpen = true)}
 				aria-label="Open menu"
 			>
-				<span class="text-base font-semibold">{currentToolName}</span>
+				<span class="text-fg font-semibold">{currentToolName}</span>
 				<ChevronDown class="mt-0.5 h-4 w-4" />
 			</button>
 			<div class="flex-1"></div>
 			{#if wwise.isConnected && isToolPage}
 				<div class="flex gap-0.5 items-center">
 					{@render undoRedoButtons(
-						'text-muted p-2 rounded-lg bg-hover transition-colors hover:text-surface-900 dark:hover:text-surface-100'
+						'text-muted p-2 rounded-lg hover:bg-hover transition-colors hover:text-surface-900 dark:hover:text-surface-100'
 					)}
 				</div>
 			{/if}
 			<ConnectionPanel />
 			<button
 				onclick={() => themeStore.toggle()}
-				class="p-2 rounded-lg bg-hover"
+				class="p-2 rounded-lg hover:bg-hover"
 				aria-label="Toggle theme"
 			>
 				<ThemeIcon class="h-5 w-5" />

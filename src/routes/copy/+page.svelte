@@ -149,7 +149,7 @@
 	<!-- Source & Target panels -->
 	<div class="gap-4 grid grid-cols-1 lg:grid-cols-2">
 		<!-- Source Objects -->
-		<div class="p-5 border border-base rounded-xl bg-base space-y-4">
+		<div class="p-5 border border-line rounded-xl bg-base space-y-4">
 			<div class="flex items-center justify-between">
 				<span class="text-[10px] text-muted tracking-wider font-medium uppercase">
 					Source Objects
@@ -173,13 +173,13 @@
 			</div>
 
 			{#if sourceObjects.length > 0}
-				<div class="border border-base rounded-lg bg-base overflow-hidden">
+				<div class="border border-line rounded-lg bg-base overflow-hidden">
 					<div class="max-h-64 overflow-y-auto">
 						{#each sourceObjects as obj, i (obj.id)}
-							<div class="px-4 py-2.5 border-b border-base flex gap-3 items-center last:border-b-0">
+							<div class="px-4 py-2.5 border-b border-line flex gap-3 items-center last:border-b-0">
 								<span class="text-xs text-muted shrink-0 w-5">{i + 1}</span>
 								<Badge variant="wwise">{getTypeDisplayName(obj.type)}</Badge>
-								<span class="text-sm text-base font-mono truncate">{obj.name}</span>
+								<span class="text-sm text-fg font-mono truncate">{obj.name}</span>
 							</div>
 						{/each}
 					</div>
@@ -193,7 +193,7 @@
 		</div>
 
 		<!-- Target Objects -->
-		<div class="p-5 border border-base rounded-xl bg-base space-y-4">
+		<div class="p-5 border border-line rounded-xl bg-base space-y-4">
 			<div class="flex items-center justify-between">
 				<span class="text-[10px] text-muted tracking-wider font-medium uppercase">
 					Target Containers
@@ -217,13 +217,13 @@
 			</div>
 
 			{#if targetObjects.length > 0}
-				<div class="border border-base rounded-lg bg-base overflow-hidden">
+				<div class="border border-line rounded-lg bg-base overflow-hidden">
 					<div class="max-h-64 overflow-y-auto">
 						{#each targetObjects as obj, i (obj.id)}
-							<div class="px-4 py-2.5 border-b border-base flex gap-3 items-center last:border-b-0">
+							<div class="px-4 py-2.5 border-b border-line flex gap-3 items-center last:border-b-0">
 								<span class="text-xs text-muted shrink-0 w-5">{i + 1}</span>
 								<Badge variant="wwise">{getTypeDisplayName(obj.type)}</Badge>
-								<span class="text-sm text-base font-mono truncate">{obj.name}</span>
+								<span class="text-sm text-fg font-mono truncate">{obj.name}</span>
 							</div>
 						{/each}
 					</div>
@@ -238,7 +238,7 @@
 	</div>
 
 	<!-- Settings -->
-	<div class="p-5 border border-base rounded-xl bg-base space-y-5">
+	<div class="p-5 border border-line rounded-xl bg-base space-y-5">
 		<div class="space-y-2">
 			<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
 				Name Conflict
@@ -262,13 +262,13 @@
 					{totalCopies} copy operation{totalCopies !== 1 ? 's' : ''}
 				</span>
 			</div>
-			<div class="border border-base rounded-lg bg-base overflow-hidden">
+			<div class="border border-line rounded-lg bg-base overflow-hidden">
 				<div class="max-h-96 overflow-y-auto">
 					{#each targetObjects as target (target.id)}
-						<div class="px-4 py-3 border-b border-base last:border-b-0">
+						<div class="px-4 py-3 border-b border-line last:border-b-0">
 							<div class="mb-2 flex gap-2 items-center">
 								<Badge variant="wwise">{getTypeDisplayName(target.type)}</Badge>
-								<span class="text-sm text-base font-medium font-mono">{target.name}</span>
+								<span class="text-sm text-fg font-medium font-mono">{target.name}</span>
 								<span class="text-xs text-muted ml-auto">
 									receives {sourceObjects.length} object{sourceObjects.length !== 1 ? 's' : ''}
 								</span>

@@ -28,7 +28,7 @@
 
 <div
 	{...api.getRootProps()}
-	class="toast-root text-sm border border-base rounded-lg bg-base w-[min(28rem,calc(100vw-2rem))] pointer-events-auto shadow-lg"
+	class="toast-root text-sm border border-line rounded-lg bg-base w-[min(28rem,calc(100vw-2rem))] pointer-events-auto shadow-lg"
 >
 	<div class="px-3.5 py-3 flex gap-3 items-start">
 		{#if Icon}
@@ -49,7 +49,7 @@
 
 		<div class="flex-1 min-w-0">
 			{#if api.title}
-				<p {...api.getTitleProps()} class="text-base leading-snug font-medium">{api.title}</p>
+				<p {...api.getTitleProps()} class="text-fg leading-snug font-medium">{api.title}</p>
 			{/if}
 			{#if api.description}
 				<p {...api.getDescriptionProps()} class="text-muted leading-snug mt-0.5">
@@ -60,7 +60,7 @@
 
 		<button
 			onclick={() => api.dismiss()}
-			class="text-muted p-1 rounded-md shrink-0 transition-colors hover:text-base -mr-1 -mt-0.5 hover:bg-surface-200 dark:hover:bg-surface-800"
+			class="text-muted p-1 rounded-md shrink-0 transition-colors hover:text-fg -mr-1 -mt-0.5 hover:bg-surface-200 dark:hover:bg-surface-800"
 			aria-label="Dismiss toast"
 		>
 			<X size={14} />

@@ -83,12 +83,12 @@
 <aside
 	class={[
 		'fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out lg:relative lg:translate-x-0',
-		'bg-base border-r border-base flex flex-col shadow-xl lg:shadow-none',
+		'bg-base border-r border-line flex flex-col shadow-xl lg:shadow-none',
 		sidebarOpen ? 'translate-x-0' : '-translate-x-full'
 	]}
 >
 	<!-- Logo -->
-	<div class="p-5 border-b border-base flex items-center justify-between">
+	<div class="p-5 border-b border-line flex items-center justify-between">
 		<a href="/" class="group no-underline flex gap-3 items-center">
 			<div class="flex shrink-0 h-10 w-10">
 				<img src={logo} alt="Wwiser" class="h-full w-full" />
@@ -100,7 +100,7 @@
 		</a>
 		<!-- Mobile close button -->
 		<button
-			class="text-muted p-2 rounded-lg bg-hover transition-colors hover:text-surface-900 lg:hidden dark:hover:text-surface-100"
+			class="text-muted p-2 rounded-lg hover:bg-hover transition-colors hover:text-surface-900 lg:hidden dark:hover:text-surface-100"
 			onclick={closeSidebar}
 			aria-label="Close menu"
 		>
@@ -121,7 +121,7 @@
 					'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline mb-4',
 					currentTool === explore.id
 						? 'bg-wwise/10 text-wwise'
-						: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
+						: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 hover:bg-hover'
 				]}
 			>
 				<div
@@ -153,7 +153,7 @@
 						'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline',
 						currentTool === tool.id
 							? 'bg-wwise/10 text-wwise'
-							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 bg-hover'
+							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 hover:bg-hover'
 					]}
 				>
 					<div
@@ -176,7 +176,7 @@
 	</nav>
 
 	<!-- Footer -->
-	<div class="px-3 py-3 border-t border-base">
+	<div class="px-3 py-3 border-t border-line">
 		<!-- More menu & theme toggle -->
 		<div class="flex items-center justify-between">
 			<!-- More menu trigger -->
@@ -185,7 +185,7 @@
 					<button
 						{...props}
 						class={[
-							'text-sm text-muted px-2 py-1.5 rounded-lg bg-hover flex gap-1.5 transition-colors items-center ring-focus hover:text-surface-900 dark:hover:text-surface-100',
+							'text-sm text-muted px-2 py-1.5 rounded-lg hover:bg-hover flex gap-1.5 transition-colors items-center ring-focus hover:text-surface-900 dark:hover:text-surface-100',
 							open && 'text-surface-900 bg-surface-200 dark:text-surface-100 dark:bg-surface-800'
 						]}
 					>

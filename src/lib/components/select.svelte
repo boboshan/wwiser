@@ -67,7 +67,7 @@
 		<button
 			{...api.getTriggerProps()}
 			class={[
-				'text-sm text-base pl-3 pr-9 border rounded-lg bg-surface-50 flex w-full transition-all items-center disabled:opacity-50 disabled:cursor-not-allowed dark:bg-surface-900 border-input ring-focus',
+				'text-sm text-fg pl-3 pr-9 border rounded-lg bg-surface-50 flex w-full transition-all items-center disabled:opacity-50 disabled:cursor-not-allowed dark:bg-surface-900 border-line-strong ring-focus',
 				compact ? 'h-8' : 'h-10',
 				triggerClass
 			]}

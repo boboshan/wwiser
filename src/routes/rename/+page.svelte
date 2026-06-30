@@ -179,7 +179,7 @@
 	</div>
 
 	<!-- Clipboard Input -->
-	<div class="p-5 border border-base rounded-xl bg-base space-y-4">
+	<div class="p-5 border border-line rounded-xl bg-base space-y-4">
 		<div class="flex items-center justify-between">
 			<span class="text-[10px] text-muted tracking-wider font-medium uppercase">
 				New Names (from Clipboard)
@@ -204,7 +204,7 @@
 			placeholder="Paste new names here, one per line..."
 			spellcheck="false"
 			rows={6}
-			class="input-base text-base font-mono px-3 py-2 resize-y"></textarea>
+			class="input-base text-fg font-mono px-3 py-2 resize-y"></textarea>
 		<p class="text-xs text-muted m-0">
 			{clipboardNames.filter((n) => n.trim()).length} name(s) parsed
 		</p>
@@ -235,20 +235,20 @@
 						: ''} will be renamed
 				</span>
 			</div>
-			<div class="border border-base rounded-lg bg-base overflow-hidden">
+			<div class="border border-line rounded-lg bg-base overflow-hidden">
 				<div class="max-h-96 overflow-y-auto">
 					{#each selectedObjects as obj, i (obj.id)}
 						{@const newName = previewMapping.get(obj.id)}
 						{@const willRename = !!newName}
 						<div
-							class="px-4 py-3 border-b border-base flex gap-4 items-center last:border-b-0 {willRename
+							class="px-4 py-3 border-b border-line flex gap-4 items-center last:border-b-0 {willRename
 								? ''
 								: 'opacity-40'}"
 						>
 							<span class="text-xs text-muted shrink-0 w-6">{i + 1}</span>
 							<Badge variant="wwise">{getTypeDisplayName(obj.type)}</Badge>
 							<div class="flex flex-1 gap-3 min-w-0 items-center">
-								<span class="text-sm text-base font-mono truncate">{obj.name}</span>
+								<span class="text-sm text-fg font-mono truncate">{obj.name}</span>
 								{#if willRename}
 									<span class="text-wwise shrink-0">→</span>
 									<span class="text-sm text-wwise font-medium font-mono truncate">{newName}</span>

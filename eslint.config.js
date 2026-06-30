@@ -7,7 +7,6 @@ import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 import svelteConfig from './svelte.config.js';
-import unocss from '@unocss/eslint-config/flat';
 
 const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
@@ -18,7 +17,6 @@ export default defineConfig(
 	...svelte.configs.recommended,
 	prettier,
 	...svelte.configs.prettier,
-	unocss,
 	{
 		languageOptions: { globals: { ...globals.browser, ...globals.node } },
 

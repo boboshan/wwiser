@@ -656,7 +656,7 @@
 	</div>
 
 	<!-- Settings -->
-	<div class="p-5 border border-base rounded-xl bg-base space-y-5">
+	<div class="p-5 border border-line rounded-xl bg-base space-y-5">
 		<!-- Rules -->
 		<fieldset class="space-y-3">
 			<legend class="text-[10px] text-muted tracking-wider font-medium uppercase"
@@ -669,11 +669,11 @@
 							'p-3 border rounded-lg cursor-pointer transition-all',
 							rule === r.value
 								? 'ring-accent-selected'
-								: 'border-base bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
+								: 'border-line bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
 						]}
 					>
 						<input type="radio" bind:group={rule} value={r.value} class="sr-only" />
-						<p class="text-sm text-base font-medium m-0">{r.label}</p>
+						<p class="text-sm text-fg font-medium m-0">{r.label}</p>
 						<p class="text-xs text-muted m-0 mt-1">{r.desc}</p>
 					</label>
 				{/each}
@@ -735,7 +735,7 @@
 				<input
 					type="checkbox"
 					bind:checked={caseSensitive}
-					class="accent-wwise border-base rounded"
+					class="accent-wwise border-line rounded"
 				/>
 				<span class="text-muted">Case sensitive</span>
 			</label>
@@ -743,7 +743,7 @@
 				<input
 					type="checkbox"
 					bind:checked={ignoreExisting}
-					class="accent-wwise border-base rounded"
+					class="accent-wwise border-line rounded"
 				/>
 				<span class="text-muted">Ignore existing</span>
 			</label>
@@ -770,7 +770,7 @@
 							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors border',
 							bulkSwitchResolution === 'keep'
 								? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
-								: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+								: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 						]}
 					>
 						Keep All
@@ -781,7 +781,7 @@
 							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors border',
 							bulkSwitchResolution === 'replace'
 								? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-								: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+								: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 						]}
 					>
 						Replace All
@@ -810,7 +810,7 @@
 			<div class="space-y-3">
 				{#each unconfigured as sc (sc.container.id)}
 					{@const selectedGroupId = pendingGroups.get(sc.container.id)}
-					<div class="p-4 border border-base rounded-xl bg-base space-y-4">
+					<div class="p-4 border border-line rounded-xl bg-base space-y-4">
 						<div class="flex gap-2 items-center">
 							<Badge variant="wwise">Switch Container</Badge>
 							<span class="text-sm font-medium truncate">{sc.container.name}</span>
@@ -882,7 +882,7 @@
 				{#each configured as sc (sc.container.id)}
 					{@const items = previews.get(sc.container.id) ?? []}
 					{@const expanded = expandedIds.has(sc.container.id)}
-					<div class="border border-base rounded-xl bg-base overflow-hidden">
+					<div class="border border-line rounded-xl bg-base overflow-hidden">
 						<!-- Container header -->
 						<button
 							onclick={() => toggleExpand(sc.container.id)}
@@ -895,7 +895,7 @@
 							{/if}
 							<div class="flex flex-1 gap-2 min-w-0 items-center">
 								<Badge variant="wwise">Switch Container</Badge>
-								<span class="text-sm text-base font-medium truncate">{sc.container.name}</span>
+								<span class="text-sm text-fg font-medium truncate">{sc.container.name}</span>
 							</div>
 							<span class="text-xs text-muted shrink-0 hidden sm:inline"
 								>{sc.switchGroup?.name ?? '—'}</span
@@ -922,7 +922,7 @@
 							)}
 							{@const isEditingDefault = editingDefault === sc.container.id}
 							{@const defaultItems = sc.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
-							<div class="px-4 pb-4 pt-4 border-t border-base">
+							<div class="px-4 pb-4 pt-4 border-t border-line">
 								<!-- No default switch warning -->
 								{#if !sc.defaultSwitch}
 									<div class="mb-3">
@@ -981,12 +981,12 @@
 								{:else if sc.defaultSwitch}
 									<div class="mb-3">
 										<div
-											class="text-sm p-3 border-base rounded-lg bg-surface-50 dark:bg-surface-800/30"
+											class="text-sm p-3 border-line rounded-lg bg-surface-50 dark:bg-surface-800/30"
 										>
 											<div class="flex gap-2 items-center">
 												<Star size={12} class="text-green-500 shrink-0" />
 												<span class="text-muted">Default:</span>
-												<span class="text-base font-medium flex-1">{sc.defaultSwitch.name}</span>
+												<span class="text-fg font-medium flex-1">{sc.defaultSwitch.name}</span>
 												{#if !isEditingDefault}
 													<button
 														onclick={() => {
@@ -1000,7 +1000,7 @@
 												{/if}
 											</div>
 											{#if isEditingDefault}
-												<div class="mt-2 pt-2 border-t border-base flex gap-2 items-center">
+												<div class="mt-2 pt-2 border-t border-line flex gap-2 items-center">
 													<div class="flex-1">
 														<Combobox
 															items={defaultItems}
@@ -1117,7 +1117,7 @@
 																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
 																	switchRes !== 'replace'
 																		? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
-																		: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																		: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 																]}
 															>
 																Keep
@@ -1128,7 +1128,7 @@
 																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
 																	switchRes === 'replace'
 																		? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-																		: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																		: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 																]}
 															>
 																Replace
@@ -1152,7 +1152,7 @@
 																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
 																	itemRes !== 'replace'
 																		? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
-																		: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																		: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 																]}
 															>
 																Keep Both
@@ -1163,7 +1163,7 @@
 																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
 																	itemRes === 'replace'
 																		? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-																		: 'border-base bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																		: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
 																]}
 															>
 																Remove Old
@@ -1180,7 +1180,7 @@
 
 								<!-- Already assigned children (all matches fulfilled) -->
 								{#if fullyAssigned.length > 0}
-									<details class="mt-3 pt-3 border-t border-base">
+									<details class="mt-3 pt-3 border-t border-line">
 										<summary
 											class="text-xs text-green-600 cursor-pointer transition-colors dark:text-green-400 hover:text-green-500"
 										>
@@ -1203,7 +1203,7 @@
 
 								<!-- Unmatched children -->
 								{#if unmatched.length > 0}
-									<details class="mt-3 pt-3 border-t border-base">
+									<details class="mt-3 pt-3 border-t border-line">
 										<summary
 											class="text-xs text-muted cursor-pointer transition-colors hover:text-surface-900 dark:hover:text-surface-100"
 										>
