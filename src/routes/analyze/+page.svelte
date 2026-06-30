@@ -850,9 +850,7 @@
 													<span
 														class={[
 															'font-medium truncate',
-															row.status === 'empty'
-																? 'text-red-600 dark:text-red-400'
-																: 'text-fg'
+															row.status === 'empty' ? 'text-red-600 dark:text-red-400' : 'text-fg'
 														]}
 													>
 														{row.sw.name}

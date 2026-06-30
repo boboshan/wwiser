@@ -26,16 +26,12 @@ describe('tailwind migration: no stale tokens', () => {
 		.map((f) => [f, readFileSync(f, 'utf8')] as const);
 
 	it('has no renamed shortcut names left in markup', () => {
-		const offenders = files
-			.filter(([, c]) => RENAMED.some((t) => c.includes(t)))
-			.map(([f]) => f);
+		const offenders = files.filter(([, c]) => RENAMED.some((t) => c.includes(t))).map(([f]) => f);
 		expect(offenders).toEqual([]);
 	});
 
 	it('has no UnoCSS engine references', () => {
-		const offenders = files
-			.filter(([, c]) => ENGINE.some((t) => c.includes(t)))
-			.map(([f]) => f);
+		const offenders = files.filter(([, c]) => ENGINE.some((t) => c.includes(t))).map(([f]) => f);
 		expect(offenders).toEqual([]);
 	});
 });
