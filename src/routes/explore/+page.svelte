@@ -657,7 +657,7 @@ declare const wwise: WwiseAPI;
 				</button>
 
 				<p class="text-xs text-muted leading-relaxed m-0">
-					Add <code class="text-wwise px-1 py-0.5 rounded bg-wwise/10">https://wwiser.net</code>
+					Add <code class="text-wwise px-1 py-0.5 rounded bg-wwise/10">https://wwiser.app</code>
 					to
 					<strong>User Preferences → Allow browser connections from</strong>. Do not include
 					<code class="text-amber-500 px-1 py-0.5 rounded bg-amber-500/20">/</code> at the end.

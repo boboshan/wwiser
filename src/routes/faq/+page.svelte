@@ -15,11 +15,11 @@
 				{ text: 'In Wwise, go to ' },
 				{ bold: 'User Preferences → Allow browser connections from' },
 				{ text: ' and add ' },
-				{ code: 'https://wwiser.net' },
+				{ code: 'https://wwiser.app' },
 				{ text: '. Do not include ' },
 				{ code: '/' },
 				{ text: ' at the end — the address must be exactly ' },
-				{ code: 'https://wwiser.net' },
+				{ code: 'https://wwiser.app' },
 				{
 					text: ' with nothing after it. Then enter the same address in the connection panel on Wwiser and click Connect.'
 				}
