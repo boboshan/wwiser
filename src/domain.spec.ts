@@ -13,7 +13,7 @@ function walk(dir: string): string[] {
 }
 
 describe('no stale domain references', () => {
-	it('has no wwiser.net literal under src/ or static/', () => {
+	it(`has no ${STALE} literal under src/ or static/`, () => {
 		const offenders = ROOTS.flatMap(walk)
 			.filter((file) => !file.endsWith('domain.spec.ts'))
 			.filter((file) => readFileSync(file, 'utf8').includes(STALE));
