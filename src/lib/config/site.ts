@@ -24,7 +24,7 @@ export const siteConfig = {
 	title: 'Wwiser - Modern Wwise utilities',
 	description:
 		'A collection of productivity tools for Wwise sound designers. Wrap objects, calculate volumes, batch rename, and explore WAAPI - all in your browser.',
-	url: 'https://wwiser.net',
+	url: 'https://wwiser.app',
 	author: 'bbs',
 	version: '0.2.0',
 	keywords: [

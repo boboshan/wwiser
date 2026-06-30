@@ -51,7 +51,7 @@
 		{
 			value: 'roll',
 			label: 'Roll - Video toolset',
-			href: 'https://roll.wwiser.net/',
+			href: 'https://roll.wwiser.app/',
 			icon: Film,
 			external: true
 		}
