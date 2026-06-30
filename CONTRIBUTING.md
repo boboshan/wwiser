@@ -19,13 +19,13 @@ pushes; everything lands through a reviewed PR with green CI.
 
 Day-to-day work happens on short-lived branches off `main`:
 
-| Prefix      | For                                   |
-| ----------- | ------------------------------------- |
-| `feat/*`    | new features                          |
-| `fix/*`     | bug fixes                             |
-| `chore/*`   | tooling, deps, config                 |
-| `refactor/*`| internal restructuring, no behavior Δ |
-| `docs/*`    | documentation only                    |
+| Prefix       | For                                   |
+| ------------ | ------------------------------------- |
+| `feat/*`     | new features                          |
+| `fix/*`      | bug fixes                             |
+| `chore/*`    | tooling, deps, config                 |
+| `refactor/*` | internal restructuring, no behavior Δ |
+| `docs/*`     | documentation only                    |
 
 Long-running experiments live on their own branch (e.g. `chore/deps-and-vite-plus`)
 and are rebased onto `main` periodically. They are not part of the release flow
