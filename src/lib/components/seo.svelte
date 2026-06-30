@@ -99,7 +99,7 @@
 
 	<!-- Theme Color -->
 	<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
-	<meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+	<meta name="theme-color" content="#0a0c10" media="(prefers-color-scheme: dark)" />
 
 	<!-- App Meta -->
 	<meta name="application-name" content={siteConfig.name} />

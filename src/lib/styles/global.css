@@ -30,31 +30,31 @@
 	--color-surface-900: #18181b;
 	--color-surface-950: #09090b;
 
-	--font-sans: 'Open Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
-/* ---- Semantic tokens: raw vars flip on .dark (values = current palette) ---- */
+/* ---- Semantic tokens: raw vars flip on .dark (experiment palette) ---- */
 :root {
-	--page: #fafafa; /* surface-50 */
+	--page: #fafafa;
 	--base: #ffffff;
-	--fg: #18181b; /* surface-900 */
-	--muted: #71717a; /* surface-500 */
-	--fg-dim: #a1a1aa; /* surface-400 */
-	--line: #e4e4e7; /* surface-200 */
-	--line-strong: #e4e4e7; /* surface-200 */
-	--line-subtle: #f4f4f5; /* surface-100 */
-	--hover: #f4f4f5; /* surface-100 */
+	--fg: #3f4043; /* ink — from the logo's eyes */
+	--muted: #6b7079;
+	--fg-dim: #a1a4ad;
+	--line: rgba(0, 0, 0, 0.06);
+	--line-strong: rgba(0, 0, 0, 0.1);
+	--line-subtle: rgba(0, 0, 0, 0.04);
+	--hover: #f4f4f5;
 }
 .dark {
-	--page: #18181b; /* surface-900 */
-	--base: #09090b; /* surface-950 */
-	--fg: #f4f4f5; /* surface-100 */
-	--muted: #a1a1aa; /* surface-400 */
-	--fg-dim: #71717a; /* surface-500 */
-	--line: #27272a; /* surface-800 */
-	--line-strong: #3f3f46; /* surface-700 */
-	--line-subtle: color-mix(in srgb, #27272a 50%, transparent); /* surface-800/50 */
-	--hover: #27272a; /* surface-800 */
+	--page: #0a0c10;
+	--base: #11141b;
+	--fg: #ededed;
+	--muted: #8a8f98;
+	--fg-dim: #5a5e68;
+	--line: rgba(255, 255, 255, 0.06);
+	--line-strong: rgba(255, 255, 255, 0.1);
+	--line-subtle: rgba(255, 255, 255, 0.04);
+	--hover: #0e1117;
 }
 
 /* Expose theme-aware semantic colors (inline => track .dark).
@@ -135,17 +135,18 @@ html.dark {
 }
 
 body {
-	background: #fafafa; /* surface-50 */
-	color: #18181b; /* surface-900 */
+	background: #fafafa; /* page light */
+	color: #3f4043; /* fg light */
 	font-family:
+		'Inter',
 		system-ui,
 		-apple-system,
 		sans-serif;
 	line-height: 1.5;
 }
 html.dark body {
-	background: #09090b; /* surface-950 */
-	color: #f4f4f5; /* surface-100 */
+	background: #0a0c10; /* page dark */
+	color: #ededed; /* fg dark */
 }
 
 :focus-visible {
