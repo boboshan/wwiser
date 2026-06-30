@@ -46,7 +46,7 @@
 			<div {...api.getContentProps()} class="menu-content">
 				{#each items as item (item.value)}
 					{#if item.separator}
-						<div class="mx-1.5 my-2 border-t border-input"></div>
+						<div class="mx-1.5 my-2 border-t border-line-strong"></div>
 					{:else if item.href}
 						<a
 							{...api.getItemProps({ value: item.value })}

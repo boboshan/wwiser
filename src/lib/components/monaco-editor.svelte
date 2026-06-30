@@ -338,7 +338,7 @@
 </script>
 
 <div
-	class="monaco-editor-container border border-base rounded-lg overflow-hidden"
+	class="monaco-editor-container border border-line rounded-lg overflow-hidden"
 	class:resizable
 	style:height
 	use:mountEditor

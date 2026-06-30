@@ -52,7 +52,7 @@
 				<Terminal size={20} class="text-wwise" />
 			</div>
 			<div class="flex-1 min-w-0">
-				<span class="text-[15px] text-base font-semibold">{explore.name}</span>
+				<span class="text-[15px] text-fg font-semibold">{explore.name}</span>
 				<p class="text-xs text-muted m-0 mt-0.5 truncate">{explore.description}</p>
 			</div>
 			<ArrowRight

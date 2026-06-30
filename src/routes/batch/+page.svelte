@@ -366,7 +366,7 @@
 	</div>
 
 	<!-- Events panel -->
-	<div class="p-5 border border-base rounded-xl bg-base space-y-4">
+	<div class="p-5 border border-line rounded-xl bg-base space-y-4">
 		<div class="flex items-center justify-between">
 			<span class="text-[10px] text-muted tracking-wider font-medium uppercase">
 				Selected Events
@@ -390,13 +390,13 @@
 		</div>
 
 		{#if selectedEvents.length > 0}
-			<div class="border border-base rounded-lg bg-base overflow-hidden">
+			<div class="border border-line rounded-lg bg-base overflow-hidden">
 				<div class="max-h-64 overflow-y-auto">
 					{#each selectedEvents as obj, i (obj.id)}
-						<div class="px-4 py-3 border-b border-base flex gap-3 items-center last:border-b-0">
+						<div class="px-4 py-3 border-b border-line flex gap-3 items-center last:border-b-0">
 							<span class="text-xs text-muted shrink-0 w-5">{i + 1}</span>
 							<Badge variant="wwise">{getTypeDisplayName(obj.type)}</Badge>
-							<span class="text-sm text-base font-mono truncate">{obj.name}</span>
+							<span class="text-sm text-fg font-mono truncate">{obj.name}</span>
 						</div>
 					{/each}
 				</div>
@@ -410,7 +410,7 @@
 	</div>
 
 	<!-- Action Configuration -->
-	<div class="p-5 border border-base rounded-xl bg-base space-y-5">
+	<div class="p-5 border border-line rounded-xl bg-base space-y-5">
 		<span class="text-[10px] text-muted tracking-wider font-medium block uppercase">
 			Action Configuration
 		</span>
@@ -448,14 +448,14 @@
 					</div>
 				</div>
 				{#if selectedTarget}
-					<div class="px-4 py-2.5 border border-base rounded-lg bg-base flex gap-3 items-center">
+					<div class="px-4 py-2.5 border border-line rounded-lg bg-base flex gap-3 items-center">
 						<Badge variant="wwise">{getTypeDisplayName(selectedTarget.type)}</Badge>
-						<span class="text-sm text-base font-mono truncate">{selectedTarget.name}</span>
+						<span class="text-sm text-fg font-mono truncate">{selectedTarget.name}</span>
 						<span class="text-xs text-muted ml-auto truncate">{selectedTarget.path}</span>
 					</div>
 				{:else}
 					<div
-						class="text-sm text-muted py-4 text-center border border-base rounded-lg border-dashed"
+						class="text-sm text-muted py-4 text-center border border-line rounded-lg border-dashed"
 					>
 						Select a target object in Wwise, then click <strong>Get Target from Wwise</strong>
 					</div>
@@ -538,7 +538,7 @@
 						id="gameparam-value"
 						type="number"
 						bind:value={gameParamTargetValue}
-						class="text-sm px-3 border border-base rounded-lg bg-surface-50 h-10 w-full focus-visible:outline-none focus-visible:border-wwise dark:bg-surface-900 focus-visible:ring-2 dark:focus-visible:ring-wwise/30"
+						class="text-sm px-3 border border-line rounded-lg bg-surface-50 h-10 w-full focus-visible:outline-none focus-visible:border-wwise dark:bg-surface-900 focus-visible:ring-2 dark:focus-visible:ring-wwise/30"
 						step="any"
 					/>
 				</div>
@@ -555,13 +555,13 @@
 					{selectedEvents.length} action(s) to create
 				</span>
 			</div>
-			<div class="border border-base rounded-lg bg-base overflow-hidden">
+			<div class="border border-line rounded-lg bg-base overflow-hidden">
 				<div class="max-h-96 overflow-y-auto">
 					{#each selectedEvents as event, i (event.id)}
-						<div class="px-4 py-3 border-b border-base flex gap-3 items-center last:border-b-0">
+						<div class="px-4 py-3 border-b border-line flex gap-3 items-center last:border-b-0">
 							<span class="text-xs text-muted shrink-0 w-5">{i + 1}</span>
 							<Badge variant="wwise">{getTypeDisplayName(event.type)}</Badge>
-							<span class="text-sm text-base font-mono truncate">{event.name}</span>
+							<span class="text-sm text-fg font-mono truncate">{event.name}</span>
 							<ChevronRight size={14} class="text-muted shrink-0" />
 							<div class="flex shrink-0 gap-1.5 items-center">
 								<Plus size={12} class="text-wwise" />

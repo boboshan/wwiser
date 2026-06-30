@@ -59,7 +59,7 @@
 
 /* Expose theme-aware semantic colors (inline => track .dark).
    `base` is intentionally NOT here — a `--color-base` would generate a
-   `text-base` utility that collides with Tailwind's font-size `text-base`.
+   conflicting text utility that collides with Tailwind's font-size scale.
    It is provided as a bg-only utility below. */
 @theme inline {
 	--color-page: var(--page);

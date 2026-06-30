@@ -24,10 +24,10 @@
 		aria-label="Connection status"
 		class="p-2 rounded-lg flex cursor-pointer transition-all items-center justify-center lg:px-3 lg:border lg:gap-2 lg:h-9 {wwise.status ===
 		'connected'
-			? 'bg-hover lg:border-green-500/25 lg:bg-green-500/10 hover:lg:border-green-500/40 hover:lg:bg-green-500/15'
+			? 'hover:bg-hover lg:border-green-500/25 lg:bg-green-500/10 hover:lg:border-green-500/40 hover:lg:bg-green-500/15'
 			: wwise.status === 'connecting'
-				? 'bg-hover lg:border-wwise/25 lg:bg-wwise/10'
-				: 'bg-hover lg:border-surface-200 lg:bg-surface-100 hover:lg:border-surface-300 lg:dark:border-surface-700 lg:dark:bg-surface-800 lg:dark:hover:border-surface-600'}"
+				? 'hover:bg-hover lg:border-wwise/25 lg:bg-wwise/10'
+				: 'hover:bg-hover lg:border-surface-200 lg:bg-surface-100 hover:lg:border-surface-300 lg:dark:border-surface-700 lg:dark:bg-surface-800 lg:dark:hover:border-surface-600'}"
 	>
 		{#if wwise.status === 'connecting'}
 			<LoaderCircle size={14} class="text-wwise animate-spin" />
@@ -66,7 +66,7 @@
 			transition:fade={{ duration: 100 }}
 		></div>
 		<div
-			class="mt-2 border border-base rounded-xl bg-base w-72 shadow-xl right-0 top-full absolute z-50 overflow-hidden"
+			class="mt-2 border border-line rounded-xl bg-base w-72 shadow-xl right-0 top-full absolute z-50 overflow-hidden"
 			in:scale={{ duration: 150, start: 0.96, opacity: 0, easing: cubicOut }}
 			out:scale={{ duration: 100, start: 0.96, opacity: 0, easing: cubicIn }}
 		>
@@ -78,7 +78,7 @@
 							<PlugZap size={20} class="text-green-500" />
 						</div>
 						<div class="flex-1 min-w-0">
-							<p class="text-sm text-base font-medium m-0 truncate">
+							<p class="text-sm text-fg font-medium m-0 truncate">
 								{wwise.project?.name || 'Wwise Project'}
 							</p>
 							<p class="text-xs text-green-600 m-0 dark:text-green-400">
@@ -90,7 +90,7 @@
 					{#if wwise.project?.path}
 						<div class="mb-4 p-3 rounded-lg bg-surface-50 dark:bg-surface-800">
 							<p class="text-xs text-muted mb-1">Project Path</p>
-							<p class="text-xs text-base leading-relaxed m-0 break-all">{wwise.project.path}</p>
+							<p class="text-xs text-fg leading-relaxed m-0 break-all">{wwise.project.path}</p>
 						</div>
 					{/if}
 
@@ -111,7 +111,7 @@
 							<Plug size={20} class="text-muted" />
 						</div>
 						<div>
-							<p class="text-sm text-base font-medium m-0">Connect to Wwise</p>
+							<p class="text-sm text-fg font-medium m-0">Connect to Wwise</p>
 							<p class="text-xs text-muted m-0">Enter WAAPI server details</p>
 						</div>
 					</div>
@@ -124,7 +124,7 @@
 								type="text"
 								bind:value={host}
 								placeholder="localhost"
-								class="input-base text-base px-3 h-9"
+								class="input-base text-fg px-3 h-9"
 							/>
 						</div>
 						<div>
@@ -134,7 +134,7 @@
 								type="number"
 								bind:value={port}
 								placeholder="8080"
-								class="input-base text-base px-3 h-9"
+								class="input-base text-fg px-3 h-9"
 							/>
 						</div>
 					</div>

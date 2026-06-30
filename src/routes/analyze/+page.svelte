@@ -460,7 +460,7 @@
 
 	<!-- Filter bar + global summary -->
 	{#if configured.length > 0}
-		<div class="p-4 border border-base rounded-xl bg-base space-y-4">
+		<div class="p-4 border border-line rounded-xl bg-base space-y-4">
 			<div class="flex flex-wrap gap-2">
 				<button
 					onclick={() => toggleFilter('empty')}
@@ -468,7 +468,7 @@
 						'text-xs font-medium px-3 py-1.5 rounded-full border transition-all flex gap-1.5 items-center',
 						filters.empty
 							? 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400'
-							: 'border-base bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
+							: 'border-line bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
 					]}
 				>
 					<Circle size={10} />
@@ -486,7 +486,7 @@
 						'text-xs font-medium px-3 py-1.5 rounded-full border transition-all flex gap-1.5 items-center',
 						filters.unassigned
 							? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-							: 'border-base bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
+							: 'border-line bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
 					]}
 				>
 					<TriangleAlert size={10} />
@@ -504,7 +504,7 @@
 						'text-xs font-medium px-3 py-1.5 rounded-full border transition-all flex gap-1.5 items-center',
 						filters.multi
 							? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-							: 'border-base bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
+							: 'border-line bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
 					]}
 				>
 					<GitFork size={10} />
@@ -522,7 +522,7 @@
 						'text-xs font-medium px-3 py-1.5 rounded-full border transition-all flex gap-1.5 items-center',
 						filters.shared
 							? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
-							: 'border-base bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
+							: 'border-line bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
 					]}
 				>
 					<Layers size={10} />
@@ -540,7 +540,7 @@
 						'text-xs font-medium px-3 py-1.5 rounded-full border transition-all flex gap-1.5 items-center',
 						filters.noDefault
 							? 'border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400'
-							: 'border-base bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
+							: 'border-line bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
 					]}
 				>
 					<Star size={10} />
@@ -558,7 +558,7 @@
 						'text-xs font-medium px-3 py-1.5 rounded-full border transition-all flex gap-1.5 items-center',
 						filters.healthy
 							? 'border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400'
-							: 'border-base bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
+							: 'border-line bg-surface-50 text-muted dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700'
 					]}
 				>
 					<CircleCheck size={10} />
@@ -587,7 +587,7 @@
 				)}
 				{@const visibleMulti = cRows.filter((r) => r.status === 'multi' && filters.multi)}
 
-				<div class="border border-base rounded-xl bg-base overflow-hidden">
+				<div class="border border-line rounded-xl bg-base overflow-hidden">
 					<!-- Container header -->
 					<button
 						onclick={() => toggleExpand(c.container.id)}
@@ -601,7 +601,7 @@
 
 						<div class="flex flex-1 gap-2 min-w-0 items-center">
 							<Badge variant="wwise">Switch Container</Badge>
-							<span class="text-sm text-base font-medium truncate">{c.container.name}</span>
+							<span class="text-sm text-fg font-medium truncate">{c.container.name}</span>
 						</div>
 
 						<span class="text-xs text-muted shrink-0 hidden sm:inline"
@@ -632,15 +632,15 @@
 					{#if expanded && s}
 						{@const isEditingDefault = editingDefault === c.container.id}
 						{@const defaultItems = c.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
-						<div class="px-4 pb-4 pt-4 border-t border-base">
+						<div class="px-4 pb-4 pt-4 border-t border-line">
 							<!-- Stats row -->
 							<div class="gap-3 grid grid-cols-2 lg:grid-cols-6 sm:grid-cols-4">
 								<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
-									<p class="text-lg text-base font-semibold m-0 tabular-nums">{s.totalSwitches}</p>
+									<p class="text-lg text-fg font-semibold m-0 tabular-nums">{s.totalSwitches}</p>
 									<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Switches</p>
 								</div>
 								<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
-									<p class="text-lg text-base font-semibold m-0 tabular-nums">{s.totalChildren}</p>
+									<p class="text-lg text-fg font-semibold m-0 tabular-nums">{s.totalChildren}</p>
 									<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Children</p>
 								</div>
 								{#if s.emptySwitches > 0}
@@ -767,12 +767,12 @@
 							{:else if c.defaultSwitch}
 								<div class="mt-5">
 									<div
-										class="text-sm p-3 border-base rounded-lg bg-surface-50 dark:bg-surface-800/30"
+										class="text-sm p-3 border-line rounded-lg bg-surface-50 dark:bg-surface-800/30"
 									>
 										<div class="flex gap-2 items-center">
 											<Star size={12} class="text-green-500 shrink-0" />
 											<span class="text-muted">Default:</span>
-											<span class="text-base font-medium flex-1">{c.defaultSwitch.name}</span>
+											<span class="text-fg font-medium flex-1">{c.defaultSwitch.name}</span>
 											{#if !isEditingDefault}
 												<button
 													onclick={() => {
@@ -786,7 +786,7 @@
 											{/if}
 										</div>
 										{#if isEditingDefault}
-											<div class="mt-2 pt-2 border-t border-base flex gap-2 items-center">
+											<div class="mt-2 pt-2 border-t border-line flex gap-2 items-center">
 												<div class="flex-1">
 													<Combobox
 														items={defaultItems}
@@ -833,7 +833,7 @@
 														? 'border-red-500/15 bg-red-500/3'
 														: row.status === 'shared'
 															? 'border-blue-500/15 bg-blue-500/3'
-															: 'border-base bg-surface-50 dark:bg-surface-800/30'
+															: 'border-line bg-surface-50 dark:bg-surface-800/30'
 												]}
 											>
 												<div class="flex gap-2 items-center">
@@ -852,7 +852,7 @@
 															'font-medium truncate',
 															row.status === 'empty'
 																? 'text-red-600 dark:text-red-400'
-																: 'text-base'
+																: 'text-fg'
 														]}
 													>
 														{row.sw.name}
@@ -926,7 +926,7 @@
 																	: '';
 														return { label: child.name + suffix, value: child.id };
 													})}
-													<div class="mt-2 pt-2 border-t border-base flex gap-2 items-center">
+													<div class="mt-2 pt-2 border-t border-line flex gap-2 items-center">
 														<div class="flex-1">
 															<Combobox
 																items={comboItems}

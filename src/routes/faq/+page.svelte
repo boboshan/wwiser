@@ -59,7 +59,7 @@
 							? 'rotate-180'
 							: ''}"
 					/>
-					<span class="text-sm text-base leading-relaxed font-medium">{faq.question}</span>
+					<span class="text-sm text-fg leading-relaxed font-medium">{faq.question}</span>
 				</button>
 				{#if openIndex === i}
 					<div class="faq-answer px-4 pb-4 pl-11">

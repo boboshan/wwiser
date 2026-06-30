@@ -304,7 +304,7 @@
 	</div>
 
 	<!-- Settings Card -->
-	<div class="p-5 border border-base rounded-xl bg-base space-y-5">
+	<div class="p-5 border border-line rounded-xl bg-base space-y-5">
 		<!-- Naming Rule -->
 		<fieldset class="space-y-3">
 			<legend class="text-[10px] text-muted tracking-wider font-medium uppercase"
@@ -317,11 +317,11 @@
 							'p-3 border rounded-lg cursor-pointer transition-all',
 							namingRule === rule.value
 								? 'ring-accent-selected'
-								: 'border-base bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
+								: 'border-line bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
 						]}
 					>
 						<input type="radio" bind:group={namingRule} value={rule.value} class="sr-only" />
-						<p class="text-sm text-base font-medium m-0">{rule.label}</p>
+						<p class="text-sm text-fg font-medium m-0">{rule.label}</p>
 						<p class="text-xs text-muted m-0 mt-1">{rule.description}</p>
 					</label>
 				{/each}
@@ -343,7 +343,7 @@
 						type="text"
 						bind:value={customRegex}
 						placeholder="(.+)_\d+$"
-						class="input-base text-base font-mono px-3 py-2"
+						class="input-base text-fg font-mono px-3 py-2"
 					/>
 				</div>
 				<div class="space-y-1.5">
@@ -358,7 +358,7 @@
 						type="text"
 						bind:value={customReplacement}
 						placeholder="$1"
-						class="input-base text-base font-mono px-3 py-2"
+						class="input-base text-fg font-mono px-3 py-2"
 					/>
 				</div>
 			</div>
@@ -408,12 +408,12 @@
 			<div class="space-y-2">
 				{#each groupedByParent as [key, objects] (key)}
 					{@const parentPath = getParentPath(key)}
-					<div class="p-4 border border-base rounded-lg bg-base">
+					<div class="p-4 border border-line rounded-lg bg-base">
 						<div class="flex gap-2 items-center">
 							<Badge variant="wwise">
 								{CONTAINER_TYPES.find((t) => t.value === containerType)?.label}
 							</Badge>
-							<span class="text-sm text-base font-medium flex-1 truncate">
+							<span class="text-sm text-fg font-medium flex-1 truncate">
 								{previewNames.get(key) || 'NewContainer'}
 							</span>
 							<span class="text-xs text-wwise px-2 py-0.5 rounded-full bg-wwise/10 shrink-0">
@@ -426,8 +426,8 @@
 						<div class="pl-3 border-l-2 border-surface-200 space-y-1 dark:border-surface-700">
 							{#each objects as obj (obj.id)}
 								<div class="text-xs text-muted">
-									<span class="text-subtle">{getTypeDisplayName(obj.type)}:</span>
-									<span class="text-base ml-1">{obj.name}</span>
+									<span class="text-fg-dim">{getTypeDisplayName(obj.type)}:</span>
+									<span class="text-fg ml-1">{obj.name}</span>
 								</div>
 							{/each}
 						</div>

@@ -268,7 +268,7 @@
 			{@const bSum = bContribs.reduce((s, c) => s + c.total, 0)}
 			<div class="text-xs flex flex-wrap gap-2 items-center">
 				<Badge variant="wwise">{getTypeDisplayName(item.object.type)}</Badge>
-				<span class="text-base font-medium">{item.object.name}</span>
+				<span class="text-fg font-medium">{item.object.name}</span>
 				<span class="text-muted">—</span>
 				<span class="text-muted">Hierarchy</span>
 				<span class="font-mono {volColor(hSum)}">{formatVol(hSum)}</span>
@@ -283,7 +283,7 @@
 	</div>
 
 	<!-- Signal-flow graph -->
-	<div class="overscroll-x-contain border border-base rounded-lg overflow-x-auto overflow-y-hidden">
+	<div class="overscroll-x-contain border border-line rounded-lg overflow-x-auto overflow-y-hidden">
 		<div bind:this={containerEl} class="p-5 inline-flex gap-12 min-w-full items-start relative">
 			{#each graph.columns as column, colIdx (colIdx)}
 				{#if column.length > 0}
@@ -291,7 +291,7 @@
 						{#each column as node (node.id)}
 							<div
 								data-node-id={node.id}
-								class="p-3 border border-base rounded-lg bg-base {borderCls(
+								class="p-3 border border-line rounded-lg bg-base {borderCls(
 									node.contribution.category
 								)} border-l-3 space-y-2"
 							>
@@ -301,7 +301,7 @@
 										<Badge variant={node.contribution.badgeVariant}>
 											{node.contribution.typeName}
 										</Badge>
-										<span class="text-xs text-base font-medium truncate">
+										<span class="text-xs text-fg font-medium truncate">
 											{node.contribution.name}
 										</span>
 									</div>

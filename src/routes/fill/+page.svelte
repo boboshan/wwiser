@@ -401,7 +401,7 @@
 			<div class="space-y-3">
 				{#each unconfigured as sc (sc.container.id)}
 					{@const selectedGroupId = pendingGroups.get(sc.container.id)}
-					<div class="p-4 border border-base rounded-xl bg-base space-y-4">
+					<div class="p-4 border border-line rounded-xl bg-base space-y-4">
 						<div class="flex gap-2 items-center">
 							<Badge variant="wwise">Switch Container</Badge>
 							<span class="text-sm font-medium truncate">{sc.container.name}</span>
@@ -444,7 +444,7 @@
 					{@const expanded = expandedIds.has(sc.container.id)}
 					{@const selected = selectedChildren.get(sc.container.id)}
 					{@const selectedCount = selected?.size ?? 0}
-					<div class="border border-base rounded-xl bg-base overflow-hidden">
+					<div class="border border-line rounded-xl bg-base overflow-hidden">
 						<!-- Container header -->
 						<button
 							onclick={() => toggleExpand(sc.container.id)}
@@ -457,7 +457,7 @@
 							{/if}
 							<div class="flex flex-1 gap-2 min-w-0 items-center">
 								<Badge variant="wwise">Switch Container</Badge>
-								<span class="text-sm text-base font-medium truncate">{sc.container.name}</span>
+								<span class="text-sm text-fg font-medium truncate">{sc.container.name}</span>
 							</div>
 							<span class="text-xs text-muted shrink-0 hidden sm:inline"
 								>{sc.switchGroup?.name ?? '—'}</span
@@ -477,7 +477,7 @@
 						<!-- Expanded content -->
 						{#if expanded}
 							<div
-								class="px-4 pb-4 pt-4 border-t border-base"
+								class="px-4 pb-4 pt-4 border-t border-line"
 								class:space-y-4={sc.blankSwitches.length > 0}
 							>
 								{#if sc.blankSwitches.length === 0}
@@ -508,7 +508,7 @@
 										</div>
 										{#if sc.children.length > 0}
 											<div
-												class="border border-base rounded-lg max-h-48 overflow-y-auto divide-surface-200 divide-y dark:divide-surface-800"
+												class="border border-line rounded-lg max-h-48 overflow-y-auto divide-surface-200 divide-y dark:divide-surface-800"
 											>
 												{#each sc.children as child (child.id)}
 													{@const isSelected = selected?.has(child.id) ?? false}
@@ -569,7 +569,7 @@
 															<SkipForward size={16} class="hidden group-hover/skip:block" />
 														{/if}
 													</button>
-													<span class={isSkipped ? 'text-surface-400 line-through' : 'text-base'}>
+													<span class={isSkipped ? 'text-surface-400 line-through' : 'text-fg'}>
 														{sw.name}
 													</span>
 													{#if selectedCount > 0 && !isSkipped}
@@ -585,7 +585,7 @@
 
 								<!-- Already assigned (collapsible) -->
 								{#if sc.assignedSwitches.length > 0}
-									<details class="mt-3 pt-3 border-t border-base">
+									<details class="mt-3 pt-3 border-t border-line">
 										<summary
 											class="text-xs text-green-600 cursor-pointer transition-colors dark:text-green-400 hover:text-green-500"
 										>

@@ -674,7 +674,7 @@
 
 	<!-- Event picker -->
 	{#if wwise.isConnected && eventsLoaded}
-		<div class="p-5 border border-base rounded-xl bg-base">
+		<div class="p-5 border border-line rounded-xl bg-base">
 			<div class="flex gap-3 items-end">
 				<div class="flex-1">
 					<label
@@ -703,15 +703,15 @@
 
 	<!-- Stats summary -->
 	{#if traceRoot && traceStats}
-		<div class="p-5 border border-base rounded-xl bg-base">
+		<div class="p-5 border border-line rounded-xl bg-base">
 			<div class="flex gap-3 items-end">
 				<div class="flex-1 gap-3 grid grid-cols-2 lg:grid-cols-6 sm:grid-cols-4">
 					<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
-						<p class="text-lg text-base font-semibold m-0 tabular-nums">{traceStats.total}</p>
+						<p class="text-lg text-fg font-semibold m-0 tabular-nums">{traceStats.total}</p>
 						<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Nodes</p>
 					</div>
 					<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
-						<p class="text-lg text-base font-semibold m-0 tabular-nums">{traceStats.containers}</p>
+						<p class="text-lg text-fg font-semibold m-0 tabular-nums">{traceStats.containers}</p>
 						<p class="text-[10px] text-muted tracking-wider m-0 uppercase">Containers</p>
 					</div>
 					<div class="p-3 rounded-lg bg-surface-50 dark:bg-surface-800/50">
@@ -740,13 +740,13 @@
 				<div class="flex shrink-0 gap-1 self-end">
 					<button
 						onclick={expandAll}
-						class="text-xs text-muted px-2 py-1 rounded-md bg-hover transition-colors hover:text-base"
+						class="text-xs text-muted px-2 py-1 rounded-md hover:bg-hover transition-colors hover:text-fg"
 					>
 						Expand
 					</button>
 					<button
 						onclick={collapseAll}
-						class="text-xs text-muted px-2 py-1 rounded-md bg-hover transition-colors hover:text-base"
+						class="text-xs text-muted px-2 py-1 rounded-md hover:bg-hover transition-colors hover:text-fg"
 					>
 						Collapse
 					</button>
@@ -757,7 +757,7 @@
 
 	<!-- Trace tree -->
 	{#if traceRoot}
-		<div class="border border-base rounded-xl bg-base overflow-hidden">
+		<div class="border border-line rounded-xl bg-base overflow-hidden">
 			<div class="p-3">
 				{#snippet renderNode(node: TraceNode, depth: number)}
 					{@const nodeIcon = getNodeIcon(node)}
@@ -811,7 +811,7 @@
 											? 'text-red-600 dark:text-red-400'
 											: isWarning
 												? 'text-amber-600 dark:text-amber-400'
-												: 'text-base'
+												: 'text-fg'
 									]}
 								>
 									{node.object.name}
