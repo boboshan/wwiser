@@ -3,7 +3,7 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
-	import { RefreshCw, Pencil, ClipboardPaste, Copy } from 'lucide-svelte';
+	import { RefreshCw, Pencil, ClipboardPaste, Copy } from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import { getTypeDisplayName } from '$lib/wwise/constants';
 	import Badge from '$lib/components/badge.svelte';
@@ -204,8 +204,7 @@
 			placeholder="Paste new names here, one per line..."
 			spellcheck="false"
 			rows={6}
-			class="input-base text-base font-mono px-3 py-2 resize-y"
-		></textarea>
+			class="input-base text-base font-mono px-3 py-2 resize-y"></textarea>
 		<p class="text-xs text-muted m-0">
 			{clipboardNames.filter((n) => n.trim()).length} name(s) parsed
 		</p>

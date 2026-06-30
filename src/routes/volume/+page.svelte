@@ -120,7 +120,7 @@
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { wwise, type WwiseObject } from '$lib/wwise/connection.svelte';
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
-	import { Volume2 } from 'lucide-svelte';
+	import { Volume2 } from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import VolumeGraph from './volume-graph.svelte';
 	import { toaster } from '$lib/components/toast.svelte';

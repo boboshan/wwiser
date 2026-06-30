@@ -15,7 +15,7 @@ import {
 	Activity,
 	Network,
 	Layers
-} from 'lucide-svelte';
+} from '@lucide/svelte';
 import type { Component } from 'svelte';
 
 export const siteConfig = {

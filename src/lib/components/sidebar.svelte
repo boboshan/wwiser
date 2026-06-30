@@ -11,7 +11,7 @@
 		CircleHelp,
 		Globe,
 		Film
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 	import logo from '$lib/assets/logo.svg';
 	import wwiserTitle from '$lib/assets/wwiser.svg';
 	import { type NavItem, siteConfig, iconMap } from '$lib/config/site';

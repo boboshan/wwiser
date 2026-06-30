@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Plug, PlugZap, LoaderCircle, CircleAlert, ChevronDown, Circle } from 'lucide-svelte';
+	import { Plug, PlugZap, LoaderCircle, CircleAlert, ChevronDown, Circle } from '@lucide/svelte';
 	import { wwise } from '$lib/wwise/connection.svelte';
 	import { fade, scale } from 'svelte/transition';
 	import { cubicOut, cubicIn } from 'svelte/easing';

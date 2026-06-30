@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { TriangleAlert, Info, CircleCheck, CircleX } from 'lucide-svelte';
+	import { TriangleAlert, Info, CircleCheck, CircleX } from '@lucide/svelte';
 	import type { Snippet } from 'svelte';
 
 	type Variant = 'info' | 'success' | 'warning' | 'error';

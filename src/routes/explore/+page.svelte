@@ -11,7 +11,7 @@
 		LoaderCircle,
 		CircleAlert,
 		CircleStop
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 	import MonacoEditor from '$lib/components/monaco-editor.svelte';
 	import Combobox from '$lib/components/combobox.svelte';
 	import Select from '$lib/components/select.svelte';

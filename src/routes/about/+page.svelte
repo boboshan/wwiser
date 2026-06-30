@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { siteConfig, navigation, explore, iconMap } from '$lib/config/site';
 	import {
-		Github,
 		ExternalLink,
 		WifiOff,
 		Download,
@@ -9,7 +8,8 @@
 		MousePointerClick,
 		ShieldCheck,
 		MonitorSmartphone
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
+	import Github from '$lib/components/github-icon.svelte';
 
 	const tools = [explore, ...navigation];
 

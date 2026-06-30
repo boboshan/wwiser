@@ -5,7 +5,7 @@
 		value: string;
 		label: string;
 		href?: string;
-		icon?: typeof import('lucide-svelte').Info;
+		icon?: typeof import('@lucide/svelte').Info;
 		external?: boolean;
 		separator?: boolean;
 		onclick?: () => void;

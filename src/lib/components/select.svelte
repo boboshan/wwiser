@@ -10,7 +10,7 @@
 <script lang="ts">
 	import * as select from '@zag-js/select';
 	import { portal, useMachine, normalizeProps } from '@zag-js/svelte';
-	import { ChevronDown, Check } from 'lucide-svelte';
+	import { ChevronDown, Check } from '@lucide/svelte';
 
 	interface Props {
 		items: SelectItem[];

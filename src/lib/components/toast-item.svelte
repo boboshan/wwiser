@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as toast from '@zag-js/toast';
 	import { normalizeProps, useMachine } from '@zag-js/svelte';
-	import { CircleCheck, CircleX, Info, Loader, TriangleAlert, X } from 'lucide-svelte';
+	import { CircleCheck, CircleX, Info, Loader, TriangleAlert, X } from '@lucide/svelte';
 
 	interface Props {
 		toast: toast.Options;

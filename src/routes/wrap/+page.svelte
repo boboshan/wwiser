@@ -12,7 +12,7 @@
 	} from '$lib/wwise/constants';
 	import type { NamingRule } from '$lib/wwise/constants';
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
-	import { RefreshCw, Package } from 'lucide-svelte';
+	import { RefreshCw, Package } from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Select from '$lib/components/select.svelte';
 	import Badge from '$lib/components/badge.svelte';

@@ -3,7 +3,7 @@
 	import { wwise, type WwiseObject, type ConflictResolution } from '$lib/wwise/connection.svelte';
 	import { CONFLICT_RESOLUTION_ITEMS, getTypeDisplayName } from '$lib/wwise/constants';
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
-	import { RefreshCw, CopyPlus, Trash2 } from 'lucide-svelte';
+	import { RefreshCw, CopyPlus, Trash2 } from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
 	import Select from '$lib/components/select.svelte';

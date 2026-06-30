@@ -204,7 +204,7 @@ class WwiseConnection {
 			const err = e as WampError;
 			const message =
 				err?.args?.[0] ?? err?.kwargs?.message ?? err?.error ?? err?.message ?? 'Unknown error';
-			throw new Error(`WAAPI Error (${uri}): ${message}`);
+			throw new Error(`WAAPI Error (${uri}): ${message}`, { cause: e });
 		}
 	}
 
@@ -545,7 +545,7 @@ class WwiseConnection {
 			const err = e as WampError;
 			const message =
 				err?.args?.[0] ?? err?.kwargs?.message ?? err?.error ?? err?.message ?? 'Unknown error';
-			throw new Error(`WAAPI Subscribe Error (${topic}): ${message}`);
+			throw new Error(`WAAPI Subscribe Error (${topic}): ${message}`, { cause: e });
 		}
 	}
 
