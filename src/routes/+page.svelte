@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { siteConfig, navigation, explore, iconMap } from '$lib/config/site';
-	import { ArrowRight, Terminal, Zap, Github } from 'lucide-svelte';
+	import { ArrowRight, Terminal, Zap } from '@lucide/svelte';
+	import Github from '$lib/components/github-icon.svelte';
 	import logo from '$lib/assets/logo.svg';
 	import wordmark from '$lib/assets/wwiser.svg';
 	import { wwise } from '$lib/wwise/connection.svelte';

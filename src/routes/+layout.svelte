@@ -17,7 +17,7 @@
 		getPageDescription,
 		siteConfig
 	} from '$lib/config/site';
-	import { ChevronDown, Sun, Moon, Monitor, Undo2, Redo2 } from 'lucide-svelte';
+	import { ChevronDown, Sun, Moon, Monitor, Undo2, Redo2 } from '@lucide/svelte';
 	import logo from '$lib/assets/logo.svg';
 	import Toaster from '$lib/components/toaster.svelte';
 

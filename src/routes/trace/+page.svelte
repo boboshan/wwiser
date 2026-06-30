@@ -19,7 +19,7 @@
 		Blend,
 		Folder,
 		CircleQuestionMark
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import { getTypeDisplayName } from '$lib/wwise/constants';
 	import Combobox from '$lib/components/combobox.svelte';

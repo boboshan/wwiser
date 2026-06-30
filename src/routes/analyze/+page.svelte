@@ -16,7 +16,7 @@
 		GitFork,
 		Star,
 		FilePen
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
 	import Combobox from '$lib/components/combobox.svelte';

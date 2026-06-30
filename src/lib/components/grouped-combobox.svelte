@@ -14,7 +14,7 @@
 <script lang="ts">
 	import * as combobox from '@zag-js/combobox';
 	import { portal, useMachine, normalizeProps } from '@zag-js/svelte';
-	import { ChevronDown, Check } from 'lucide-svelte';
+	import { ChevronDown, Check } from '@lucide/svelte';
 
 	interface Props {
 		groups: GroupedComboboxGroup[];

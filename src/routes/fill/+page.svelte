@@ -12,7 +12,7 @@
 		Check,
 		SkipForward,
 		Settings2
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
 	import { toaster } from '$lib/components/toast.svelte';

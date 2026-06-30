@@ -17,7 +17,7 @@
 		FilePen,
 		Plus,
 		X
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
 	import { toaster } from '$lib/components/toast.svelte';
@@ -713,8 +713,7 @@
 					bind:value={customListText}
 					placeholder="Banana, Fruit"
 					rows="4"
-					class="input-base font-mono px-3 py-2 resize-y"
-				></textarea>
+					class="input-base font-mono px-3 py-2 resize-y"></textarea>
 				{#if customMappings.length > 0}
 					<p class="text-xs text-muted">
 						{customMappings.length} mapping{customMappings.length !== 1 ? 's' : ''}:

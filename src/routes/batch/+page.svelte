@@ -10,7 +10,7 @@
 		getTypeDisplayName
 	} from '$lib/wwise/constants';
 	import { watchUndoRedo } from '$lib/state/undo-watcher.svelte';
-	import { RefreshCw, Layers, Trash2, Plus, ChevronRight } from 'lucide-svelte';
+	import { RefreshCw, Layers, Trash2, Plus, ChevronRight } from '@lucide/svelte';
 	import Alert from '$lib/components/alert.svelte';
 	import Badge from '$lib/components/badge.svelte';
 	import Select from '$lib/components/select.svelte';
