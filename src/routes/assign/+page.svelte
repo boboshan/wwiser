@@ -852,9 +852,7 @@
 			{#if configured.length > 0}
 				<section class="space-y-3">
 					<div class="flex gap-3 items-center justify-between">
-						<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">
-							Preview
-						</h3>
+						<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">Preview</h3>
 						<div class="flex gap-3 items-center">
 							<!-- Skip controls -->
 							{#if totalAssignments > 0 || totalSkipped > 0}
@@ -930,7 +928,10 @@
 											!fullyAssigned.some((fa) => fa.child.id === c.id)
 									)}
 									{@const isEditingDefault = editingDefault === sc.container.id}
-									{@const defaultItems = sc.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
+									{@const defaultItems = sc.switches.map((sw) => ({
+										label: sw.name,
+										value: sw.id
+									}))}
 									<div class="px-4 pb-4 pt-4 border-t border-line">
 										<!-- No default switch warning -->
 										{#if !sc.defaultSwitch}
@@ -1041,7 +1042,9 @@
 										{/if}
 
 										{#if items.length > 0}
-											<div class="pl-3 border-l-2 border-surface-200 space-y-2 dark:border-surface-700">
+											<div
+												class="pl-3 border-l-2 border-surface-200 space-y-2 dark:border-surface-700"
+											>
 												{#each items as p (p.childId)}
 													{@const switchRes = switchResolutions.get(p.childId)}
 													{@const hasMultipleMatches = p.matchedSwitches.length > 1}
@@ -1115,9 +1118,8 @@
 														{#if hasSwitchConflict && !p.isSkipped}
 															<div class="text-xs mt-2 flex flex-wrap gap-2 items-center">
 																<span class="text-amber-600 dark:text-amber-400">
-																	<span class="font-medium">{p.selectedSwitchName}</span> already has: {selectedSwitchExisting.join(
-																		', '
-																	)}
+																	<span class="font-medium">{p.selectedSwitchName}</span> already
+																	has: {selectedSwitchExisting.join(', ')}
 																</span>
 																<div class="ml-auto flex shrink-0 gap-1.5">
 																	<button

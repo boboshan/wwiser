@@ -115,7 +115,9 @@
 			{#if FULL_BLEED_TOOLS.has(currentToolId)}
 				{@render children()}
 			{:else}
-				<div class="mx-auto flex w-full flex-col max-w-6xl p-4 pb-8 lg:p-8 lg:pb-12 md:p-6 md:pb-10">
+				<div
+					class="mx-auto flex w-full flex-col max-w-6xl p-4 pb-8 lg:p-8 lg:pb-12 md:p-6 md:pb-10"
+				>
 					{@render children()}
 				</div>
 			{/if}

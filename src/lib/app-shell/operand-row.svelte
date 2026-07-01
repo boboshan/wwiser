@@ -29,9 +29,7 @@
 	{/if}
 	<span class="text-fg font-medium flex-1 min-w-0 truncate">{name}</span>
 	{#if badge}
-		<span
-			class="text-xs text-muted px-2 py-0.5 border border-line-strong rounded bg-base shrink-0"
-		>
+		<span class="text-xs text-muted px-2 py-0.5 border border-line-strong rounded bg-base shrink-0">
 			{badge}
 		</span>
 	{/if}
