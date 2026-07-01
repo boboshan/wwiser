@@ -30,6 +30,9 @@
 	--color-surface-900: #18181b;
 	--color-surface-950: #09090b;
 
+	--color-green: #26d472;
+	--color-warn: #f59e0b;
+
 	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 

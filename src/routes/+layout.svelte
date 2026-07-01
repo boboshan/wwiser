@@ -4,10 +4,8 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import Sidebar from '$lib/components/sidebar.svelte';
-	import ConnectionPanel from '$lib/components/connection-panel.svelte';
 	import Seo from '$lib/components/seo.svelte';
 	import { themeStore } from '$lib/state/theme.svelte';
-	import { historyStore } from '$lib/state/history.svelte';
 	import { wwise } from '$lib/wwise/connection.svelte';
 	import {
 		navigation,
@@ -16,9 +14,11 @@
 		getPageDescription,
 		siteConfig
 	} from '$lib/config/site';
-	import { ChevronDown, Sun, Moon, Monitor, Undo2, Redo2 } from '@lucide/svelte';
-	import logo from '$lib/assets/logo.svg';
 	import Toaster from '$lib/components/toaster.svelte';
+	import AppHeader from '$lib/app-shell/app-header.svelte';
+	import StatusBar from '$lib/app-shell/status-bar.svelte';
+
+	const FULL_BLEED_TOOLS = new Set(['assign']);
 
 	const { children } = $props();
 
@@ -61,15 +61,6 @@
 			currentToolId !== explore.id
 	);
 
-	// Theme icon component based on current theme
-	const ThemeIcon = $derived(
-		themeStore.theme === 'light' ? Sun : themeStore.theme === 'dark' ? Moon : Monitor
-	);
-
-	const undoTitle = $derived(historyStore.undoLabel ? `Undo: ${historyStore.undoLabel}` : 'Undo');
-
-	const redoTitle = $derived(historyStore.redoLabel ? `Redo: ${historyStore.redoLabel}` : 'Redo');
-
 	// Global keyboard shortcut handler
 	function handleKeydown(e: KeyboardEvent) {
 		const mod = e.metaKey || e.ctrlKey;
@@ -93,35 +84,15 @@
 <Seo title={pageTitle} description={pageDescription} canonical={canonicalUrl} />
 <Toaster />
 
-{#snippet undoRedoButtons(btnClass: string)}
-	<button
-		onclick={() => wwise.undo()}
-		disabled={historyStore.isUndoing}
-		title={undoTitle}
-		class="{btnClass} disabled:opacity-30 disabled:cursor-not-allowed"
-		aria-label={undoTitle}
-	>
-		<Undo2 class="h-4 w-4" />
-	</button>
-	<button
-		onclick={() => wwise.redo()}
-		disabled={historyStore.isRedoing}
-		title={redoTitle}
-		class="{btnClass} disabled:opacity-30 disabled:cursor-not-allowed"
-		aria-label={redoTitle}
-	>
-		<Redo2 class="h-4 w-4" />
-	</button>
-{/snippet}
-
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="text-fg font-sans bg-page flex h-screen overflow-hidden">
-	<!-- Sidebar -->
+<div
+	class="text-fg font-sans bg-page grid grid-cols-[1fr] grid-rows-[minmax(0,1fr)_24px] h-screen overflow-hidden lg:grid-cols-[18rem_1fr]"
+>
 	<Sidebar
 		tools={navigation}
 		{explore}
@@ -131,63 +102,27 @@
 		onThemeChange={themeStore.setTheme}
 	/>
 
-	<div class="flex flex-1 flex-col min-w-0 overflow-hidden">
-		<!-- Desktop header -->
-		<header
-			class="px-6 py-3 border-b border-line bg-base hidden items-center justify-between lg:flex"
-		>
-			<div class="flex gap-4 items-center">
-				<h1 class="text-lg text-fg font-bold m-0">{currentToolName}</h1>
-				{#if wwise.isConnected && isToolPage}
-					<div class="border-l border-line h-5"></div>
-					<div class="flex gap-1 items-center">
-						{@render undoRedoButtons(
-							'text-muted p-1.5 rounded-md transition-colors hover:text-surface-900 hover:bg-surface-200 dark:hover:text-surface-100 dark:hover:bg-surface-800 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
-						)}
-					</div>
-				{/if}
-			</div>
-			<ConnectionPanel />
-		</header>
+	<div class="flex flex-col min-w-0 overflow-hidden">
+		<AppHeader
+			{currentToolName}
+			{isToolPage}
+			bind:sidebarOpen
+			theme={themeStore.theme}
+			onThemeToggle={themeStore.toggle}
+		/>
 
-		<!-- Mobile header -->
-		<header class="px-4 py-3 border-b border-line bg-base flex gap-2 items-center lg:hidden">
-			<a href="/" class="flex shrink-0">
-				<img src={logo} alt="Wwiser" class="h-7 w-7" />
-			</a>
-			<button
-				class="text-muted px-2 py-1 rounded-lg hover:bg-hover flex gap-1 transition-colors items-center hover:text-surface-900 -my-1 dark:hover:text-surface-100"
-				onclick={() => (sidebarOpen = true)}
-				aria-label="Open menu"
-			>
-				<span class="text-fg font-semibold">{currentToolName}</span>
-				<ChevronDown class="mt-0.5 h-4 w-4" />
-			</button>
-			<div class="flex-1"></div>
-			{#if wwise.isConnected && isToolPage}
-				<div class="flex gap-0.5 items-center">
-					{@render undoRedoButtons(
-						'text-muted p-2 rounded-lg hover:bg-hover transition-colors hover:text-surface-900 dark:hover:text-surface-100'
-					)}
+		<main class="bg-page flex flex-1 flex-col min-h-0 overflow-y-auto">
+			{#if FULL_BLEED_TOOLS.has(currentToolId)}
+				{@render children()}
+			{:else}
+				<div
+					class="mx-auto flex w-full flex-col max-w-6xl p-4 pb-8 lg:p-8 lg:pb-12 md:p-6 md:pb-10"
+				>
+					{@render children()}
 				</div>
 			{/if}
-			<ConnectionPanel />
-			<button
-				onclick={() => themeStore.toggle()}
-				class="p-2 rounded-lg hover:bg-hover"
-				aria-label="Toggle theme"
-			>
-				<ThemeIcon class="h-5 w-5" />
-			</button>
-		</header>
-
-		<!-- Scrollable Content Area -->
-		<main
-			class="p-4 pb-8 bg-surface-50 flex-1 overflow-y-auto lg:p-8 md:p-6 lg:pb-12 md:pb-10 dark:bg-surface-900"
-		>
-			<div class="mx-auto flex flex-col max-w-6xl">
-				{@render children()}
-			</div>
 		</main>
 	</div>
+
+	<StatusBar />
 </div>
