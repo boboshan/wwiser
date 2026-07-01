@@ -58,7 +58,7 @@
 
 <!-- Desktop · 44px chrome row, aligned with sidebar header -->
 <header
-	class="px-4 border-b border-line bg-base shrink-0 h-11 hidden items-center justify-between md:flex"
+	class="px-4 border-b border-line bg-base shrink-0 h-11 hidden items-center justify-between lg:flex"
 >
 	<div class="text-[13px] flex gap-2 items-center">
 		<span class="text-fg-dim">Tools</span>
@@ -75,7 +75,7 @@
 </header>
 
 <!-- Mobile · 44px chrome row -->
-<header class="px-3 border-b border-line bg-base flex shrink-0 gap-2 h-11 items-center md:hidden">
+<header class="px-3 border-b border-line bg-base flex shrink-0 gap-2 h-11 items-center lg:hidden">
 	<a href="/" class="flex shrink-0">
 		<img src={logo} alt="Wwiser" class="h-6 w-6" />
 	</a>
