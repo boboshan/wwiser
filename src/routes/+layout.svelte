@@ -91,7 +91,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div
-	class="text-fg font-sans bg-page grid grid-cols-[1fr] h-screen overflow-hidden lg:grid-cols-[18rem_1fr]"
+	class="text-fg font-sans bg-page grid grid-cols-[1fr] grid-rows-[minmax(0,1fr)_24px] h-screen overflow-hidden lg:grid-cols-[18rem_1fr]"
 >
 	<Sidebar
 		tools={navigation}
@@ -122,7 +122,7 @@
 				</div>
 			{/if}
 		</main>
-
-		<StatusBar />
 	</div>
+
+	<StatusBar />
 </div>
