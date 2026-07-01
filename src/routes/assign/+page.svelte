@@ -27,6 +27,7 @@
 	import Combobox from '$lib/components/combobox.svelte';
 	import ToolPage from '$lib/app-shell/tool-page.svelte';
 	import ToolToolbar from '$lib/app-shell/tool-toolbar.svelte';
+	import ActionBar from '$lib/app-shell/action-bar.svelte';
 
 	// Types
 	interface SwitchContainerInfo {
@@ -634,8 +635,8 @@
 		>
 			{#snippet counters()}
 				{#if totalSkipped > 0}
-					<span class="text-surface-500">{totalSkipped} skipped</span>
-					<span class="text-surface-300 dark:text-surface-600">·</span>
+					<span class="text-muted">{totalSkipped} skipped</span>
+					<span class="text-fg-dim">·</span>
 				{/if}
 				<span>{totalAssignments} to assign</span>
 			{/snippet}
@@ -643,23 +644,11 @@
 				<button
 					onclick={loadSelection}
 					disabled={!wwise.isConnected || isLoading}
-					class="btn-secondary"
+					title="Get selection from Wwise"
+					aria-label="Get selection"
+					class="text-muted rounded-md bg-hover flex h-7 w-7 transition-colors items-center justify-center hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed"
 				>
-					<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
-					{isLoading ? 'Loading...' : 'Get Selection'}
-				</button>
-				<button
-					onclick={execute}
-					disabled={!wwise.isConnected ||
-						totalAssignments === 0 ||
-						isExecuting ||
-						unconfigured.length > 0}
-					class="btn-action"
-				>
-					<GitBranch size={16} />
-					{isExecuting
-						? 'Assigning...'
-						: `Assign${totalAssignments > 0 ? ` (${totalAssignments})` : ''}`}
+					<RefreshCw size={14} class={isLoading ? 'animate-spin' : ''} />
 				</button>
 			{/snippet}
 		</ToolToolbar>
@@ -1242,5 +1231,38 @@
 				<Alert variant="warning">Connect to Wwise to use this tool</Alert>
 			{/if}
 		</div>
+	{/snippet}
+
+	{#snippet action()}
+		<ActionBar>
+			{#snippet summary()}
+				{#if unconfigured.length > 0}
+					{unconfigured.length} container{unconfigured.length === 1 ? '' : 's'} need a switch group before
+					assigning.
+				{:else if totalAssignments === 0}
+					No new assignments — adjust the matching rule or pick switches.
+				{:else}
+					Will assign <strong class="text-fg">{totalAssignments}</strong>
+					child{totalAssignments === 1 ? '' : 'ren'}{totalSkipped > 0
+						? `, ${totalSkipped} skipped`
+						: ''}.
+				{/if}
+			{/snippet}
+			{#snippet actions()}
+				<button
+					onclick={execute}
+					disabled={!wwise.isConnected ||
+						totalAssignments === 0 ||
+						isExecuting ||
+						unconfigured.length > 0}
+					class="btn-action"
+				>
+					<GitBranch size={14} />
+					{isExecuting
+						? 'Assigning…'
+						: `Assign${totalAssignments > 0 ? ` ${totalAssignments}` : ''}`}
+				</button>
+			{/snippet}
+		</ActionBar>
 	{/snippet}
 </ToolPage>
