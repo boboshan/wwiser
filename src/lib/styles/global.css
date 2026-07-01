@@ -124,6 +124,17 @@
 	.card {
 		@apply bg-base border border-line rounded-2xl shadow-sm;
 	}
+
+	/* Compact IDE chrome buttons — sized to sit inside toolbars / action bars */
+	.btn-ide-primary {
+		@apply text-[13px] font-medium h-7 px-3 rounded-md inline-flex gap-1.5 items-center justify-center transition-colors bg-wwise text-white hover:bg-wwise-600 disabled:opacity-40 disabled:cursor-not-allowed;
+	}
+	.btn-ide-ghost {
+		@apply text-[13px] font-medium h-7 px-2.5 rounded-md inline-flex gap-1.5 items-center justify-center transition-colors text-muted bg-hover hover:text-fg disabled:opacity-40 disabled:cursor-not-allowed;
+	}
+	.btn-ide-icon {
+		@apply text-muted rounded-md bg-hover flex shrink-0 h-7 w-7 transition-colors items-center justify-center hover:text-fg disabled:opacity-40 disabled:cursor-not-allowed;
+	}
 }
 
 /* ===================================================================

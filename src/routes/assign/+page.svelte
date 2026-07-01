@@ -629,10 +629,7 @@
 
 <ToolPage>
 	{#snippet toolbar()}
-		<ToolToolbar
-			title="Assign"
-			tagline="Assign switch container children to switches based on naming patterns."
-		>
+		<ToolToolbar tagline="Match switch container children to switches by naming rules">
 			{#snippet counters()}
 				{#if totalSkipped > 0}
 					<span class="text-muted">{totalSkipped} skipped</span>
@@ -646,7 +643,7 @@
 					disabled={!wwise.isConnected || isLoading}
 					title="Get selection from Wwise"
 					aria-label="Get selection"
-					class="text-muted rounded-md bg-hover flex h-7 w-7 transition-colors items-center justify-center hover:text-fg disabled:opacity-30 disabled:cursor-not-allowed"
+					class="btn-ide-icon"
 				>
 					<RefreshCw size={14} class={isLoading ? 'animate-spin' : ''} />
 				</button>
@@ -1255,7 +1252,7 @@
 						totalAssignments === 0 ||
 						isExecuting ||
 						unconfigured.length > 0}
-					class="btn-action"
+					class="btn-ide-primary"
 				>
 					<GitBranch size={14} />
 					{isExecuting

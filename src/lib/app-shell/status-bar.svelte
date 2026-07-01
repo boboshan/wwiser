@@ -27,7 +27,7 @@
 </script>
 
 <footer
-	class="text-[11px] text-muted px-3 border-t border-line bg-base flex shrink-0 gap-4 col-span-full h-[24px] items-center"
+	class="text-[11px] text-muted px-3 border-t border-line bg-base flex shrink-0 gap-4 h-[24px] items-center"
 >
 	<span class="flex gap-1.5 items-center">
 		<span class="rounded-full h-1.5 w-1.5 {dotColor}" aria-hidden="true"></span>
