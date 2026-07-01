@@ -89,7 +89,7 @@
 >
 	<!-- Brand — height = app-header (44) + tool-toolbar (36) so its border aligns
 	     with the bottom of the workspace's two-bar header stack -->
-	<div class="px-5 border-b border-line flex shrink-0 h-[88px] items-center justify-between">
+	<div class="px-5 border-b border-line flex shrink-0 h-20 items-center justify-between">
 		<a href="/" class="group no-underline flex gap-3 items-center">
 			<img src={logo} alt="Wwiser" class="shrink-0 h-10 w-10" />
 			<div class="mt-1 flex flex-col gap-1.5 items-start">
