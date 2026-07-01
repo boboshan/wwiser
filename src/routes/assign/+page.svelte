@@ -25,6 +25,8 @@
 		type GroupedComboboxGroup
 	} from '$lib/components/grouped-combobox.svelte';
 	import Combobox from '$lib/components/combobox.svelte';
+	import ToolPage from '$lib/app-shell/tool-page.svelte';
+	import ToolToolbar from '$lib/app-shell/tool-toolbar.svelte';
 
 	// Types
 	interface SwitchContainerInfo {
@@ -624,610 +626,619 @@
 	}
 </script>
 
-<div class="flex flex-col gap-6">
-	<!-- Header -->
-	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-		<p class="text-sm text-muted leading-relaxed m-0">
-			Assign switch container children to switches based on naming patterns.
-		</p>
-		<div class="flex shrink-0 gap-3 items-center">
-			<button
-				onclick={loadSelection}
-				disabled={!wwise.isConnected || isLoading}
-				class="btn-secondary flex-1 sm:flex-none"
-			>
-				<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
-				{isLoading ? 'Loading...' : 'Get Selection'}
-			</button>
-			<button
-				onclick={execute}
-				disabled={!wwise.isConnected ||
-					totalAssignments === 0 ||
-					isExecuting ||
-					unconfigured.length > 0}
-				class="btn-action flex-1 sm:flex-none"
-			>
-				<GitBranch size={16} />
-				{isExecuting
-					? 'Assigning...'
-					: `Assign${totalAssignments > 0 ? ` (${totalAssignments})` : ''}`}
-			</button>
-		</div>
-	</div>
-
-	<!-- Settings -->
-	<div class="p-5 border border-line rounded-xl bg-base space-y-5">
-		<!-- Rules -->
-		<fieldset class="space-y-3">
-			<legend class="text-[10px] text-muted tracking-wider font-medium uppercase"
-				>Assignment Rule</legend
-			>
-			<div class="gap-2 grid sm:grid-cols-4">
-				{#each RULES as r (r.value)}
-					<label
-						class={[
-							'p-3 border rounded-lg cursor-pointer transition-all',
-							rule === r.value
-								? 'ring-accent-selected'
-								: 'border-line bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
-						]}
-					>
-						<input type="radio" bind:group={rule} value={r.value} class="sr-only" />
-						<p class="text-sm text-fg font-medium m-0">{r.label}</p>
-						<p class="text-xs text-muted m-0 mt-1">{r.desc}</p>
-					</label>
-				{/each}
-			</div>
-		</fieldset>
-
-		<!-- Rule-specific options -->
-		{#if rule === 'custom_regex'}
-			<div class="space-y-2">
-				<label
-					for="{uid}-regex"
-					class="text-[10px] text-muted tracking-wider font-medium block uppercase"
-					>Regex Pattern</label
-				>
-				<input
-					id="{uid}-regex"
-					type="text"
-					bind:value={customRegex}
-					placeholder="(.+)_\d+$"
-					class="input-base font-mono px-3 py-2"
-				/>
-				<p class="text-xs text-muted">
-					Use capture groups. Example: <code
-						class="text-xs px-1 py-0.5 rounded bg-surface-200 dark:bg-surface-700">(.+)_var\d+</code
-					> extracts "Grass" from "Grass_var01"
-				</p>
-			</div>
-		{:else if rule === 'custom_list'}
-			<div class="space-y-2">
-				<label
-					for="{uid}-list"
-					class="text-[10px] text-muted tracking-wider font-medium block uppercase"
-					>Mappings (ChildPattern, SwitchPattern)</label
-				>
-				<textarea
-					id="{uid}-list"
-					bind:value={customListText}
-					placeholder="Banana, Fruit"
-					rows="4"
-					class="input-base font-mono px-3 py-2 resize-y"></textarea>
-				{#if customMappings.length > 0}
-					<p class="text-xs text-muted">
-						{customMappings.length} mapping{customMappings.length !== 1 ? 's' : ''}:
-						{#each customMappings.slice(0, 3) as m, i (i)}
-							<span class="text-xs ml-1 px-1 py-0.5 rounded bg-surface-200 dark:bg-surface-700"
-								>{m.child}→{m.sw}</span
-							>
-						{/each}
-						{#if customMappings.length > 3}<span class="ml-1">+{customMappings.length - 3}</span
-							>{/if}
-					</p>
+<ToolPage>
+	{#snippet toolbar()}
+		<ToolToolbar
+			title="Assign"
+			tagline="Assign switch container children to switches based on naming patterns."
+		>
+			{#snippet counters()}
+				{#if totalSkipped > 0}
+					<span class="text-surface-500">{totalSkipped} skipped</span>
+					<span class="text-surface-300 dark:text-surface-600">·</span>
 				{/if}
-			</div>
-		{/if}
-
-		<!-- Options row -->
-		<div class="text-sm flex flex-wrap gap-x-6 gap-y-2">
-			<label class="flex gap-2 cursor-pointer items-center">
-				<input
-					type="checkbox"
-					bind:checked={caseSensitive}
-					class="accent-wwise border-line rounded"
-				/>
-				<span class="text-muted">Case sensitive</span>
-			</label>
-			<label class="flex gap-2 cursor-pointer items-center">
-				<input
-					type="checkbox"
-					bind:checked={ignoreExisting}
-					class="accent-wwise border-line rounded"
-				/>
-				<span class="text-muted">Ignore existing</span>
-			</label>
-		</div>
-
-		<!-- Bulk switch conflict resolution -->
-		{#if totalSwitchConflicts > 0}
-			<div
-				class="text-sm p-3 border border-amber-500/30 rounded-lg bg-amber-500/5 flex flex-wrap gap-3 items-center"
-			>
-				<div class="text-amber-600 flex gap-2 items-center dark:text-amber-400">
-					<CircleAlert size={16} />
-					<span class="font-medium"
-						>{totalSwitchConflicts} conflict{totalSwitchConflicts !== 1 ? 's' : ''}</span
-					>
-				</div>
-				<span class="text-xs text-amber-600/70 dark:text-amber-400/70"
-					>Switches already have other children</span
+				<span>{totalAssignments} to assign</span>
+			{/snippet}
+			{#snippet actions()}
+				<button
+					onclick={loadSelection}
+					disabled={!wwise.isConnected || isLoading}
+					class="btn-secondary"
 				>
-				<div class="ml-auto flex gap-1.5">
-					<button
-						onclick={() => setAllSwitchResolutions('keep')}
-						class={[
-							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors border',
-							bulkSwitchResolution === 'keep'
-								? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
-								: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
-						]}
-					>
-						Keep All
-					</button>
-					<button
-						onclick={() => setAllSwitchResolutions('replace')}
-						class={[
-							'text-xs font-medium px-3 py-1.5 rounded-md transition-colors border',
-							bulkSwitchResolution === 'replace'
-								? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-								: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
-						]}
-					>
-						Replace All
-					</button>
+					<RefreshCw size={16} class={isLoading ? 'animate-spin' : ''} />
+					{isLoading ? 'Loading...' : 'Get Selection'}
+				</button>
+				<button
+					onclick={execute}
+					disabled={!wwise.isConnected ||
+						totalAssignments === 0 ||
+						isExecuting ||
+						unconfigured.length > 0}
+					class="btn-action"
+				>
+					<GitBranch size={16} />
+					{isExecuting
+						? 'Assigning...'
+						: `Assign${totalAssignments > 0 ? ` (${totalAssignments})` : ''}`}
+				</button>
+			{/snippet}
+		</ToolToolbar>
+	{/snippet}
+
+	{#snippet config()}
+		<div class="p-5 space-y-5">
+			<!-- Rules -->
+			<fieldset class="space-y-3">
+				<legend class="text-[10px] text-muted tracking-wider font-medium uppercase"
+					>Assignment Rule</legend
+				>
+				<div class="gap-2 grid sm:grid-cols-4">
+					{#each RULES as r (r.value)}
+						<label
+							class={[
+								'p-3 border rounded-lg cursor-pointer transition-all',
+								rule === r.value
+									? 'ring-accent-selected'
+									: 'border-line bg-surface-50 hover:border-surface-300 dark:bg-surface-800 dark:hover:border-surface-600'
+							]}
+						>
+							<input type="radio" bind:group={rule} value={r.value} class="sr-only" />
+							<p class="text-sm text-fg font-medium m-0">{r.label}</p>
+							<p class="text-xs text-muted m-0 mt-1">{r.desc}</p>
+						</label>
+					{/each}
 				</div>
-			</div>
-		{/if}
-	</div>
+			</fieldset>
 
-	<!-- Skipped warning -->
-	{#if skippedObjects.length > 0}
-		<Alert variant="warning">
-			{skippedObjects.length} non-switch-container object(s) skipped
-		</Alert>
-	{/if}
-
-	<!-- Unconfigured containers -->
-	{#if unconfigured.length > 0}
-		<section>
-			<h3
-				class="text-[10px] text-muted tracking-wider font-medium mb-4 flex gap-1.5 uppercase items-center"
-			>
-				<Settings2 size={14} />
-				Needs Configuration ({unconfigured.length})
-			</h3>
-			<div class="space-y-3">
-				{#each unconfigured as sc (sc.container.id)}
-					{@const selectedGroupId = pendingGroups.get(sc.container.id)}
-					<div class="p-4 border border-line rounded-xl bg-base space-y-4">
-						<div class="flex gap-2 items-center">
-							<Badge variant="wwise">Switch Container</Badge>
-							<span class="text-sm font-medium truncate">{sc.container.name}</span>
-						</div>
-						<div class="space-y-1.5">
-							<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
-								>Switch/State Group</span
-							>
-							<GroupedCombobox
-								groups={groupOptions}
-								value={selectedGroupId}
-								placeholder="Select group..."
-								id="{uid}-grp-{sc.container.id}"
-								onchange={(v) => handleGroupSelect(sc.container.id, v)}
-								compact
-							/>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</section>
-	{/if}
-
-	<!-- Preview -->
-	{#if configured.length > 0}
-		<section class="space-y-3">
-			<div class="flex gap-3 items-center justify-between">
-				<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">Preview</h3>
-				<div class="flex gap-3 items-center">
-					<div class="text-xs flex gap-2 items-center">
-						{#if totalSkipped > 0}
-							<span class="text-surface-500">{totalSkipped} skipped</span>
-							<span class="text-surface-300 dark:text-surface-600">·</span>
-						{/if}
-						<span class="text-muted">{totalAssignments} to assign</span>
-					</div>
-					<!-- Skip controls -->
-					{#if totalAssignments > 0 || totalSkipped > 0}
-						<div class="p-1 rounded-lg bg-surface-100 flex gap-1 dark:bg-surface-800">
-							<button
-								onclick={unskipAll}
-								disabled={totalSkipped === 0}
-								class={[
-									'text-xs font-medium px-2.5 py-1 rounded-md transition-colors',
-									totalSkipped === 0
-										? 'bg-green-500 text-white shadow-sm'
-										: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-200 dark:hover:bg-surface-700 disabled:opacity-50'
-								]}
-							>
-								Include All
-							</button>
-							<button
-								onclick={skipAll}
-								disabled={totalAssignments === 0}
-								class={[
-									'text-xs font-medium px-2.5 py-1 rounded-md transition-colors',
-									totalAssignments === 0 && totalSkipped > 0
-										? 'bg-surface-400 text-white shadow-sm'
-										: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-200 dark:hover:bg-surface-700 disabled:opacity-50'
-								]}
-							>
-								Skip All
-							</button>
-						</div>
+			<!-- Rule-specific options -->
+			{#if rule === 'custom_regex'}
+				<div class="space-y-2">
+					<label
+						for="{uid}-regex"
+						class="text-[10px] text-muted tracking-wider font-medium block uppercase"
+						>Regex Pattern</label
+					>
+					<input
+						id="{uid}-regex"
+						type="text"
+						bind:value={customRegex}
+						placeholder="(.+)_\d+$"
+						class="input-base font-mono px-3 py-2"
+					/>
+					<p class="text-xs text-muted">
+						Use capture groups. Example: <code
+							class="text-xs px-1 py-0.5 rounded bg-surface-200 dark:bg-surface-700"
+							>(.+)_var\d+</code
+						> extracts "Grass" from "Grass_var01"
+					</p>
+				</div>
+			{:else if rule === 'custom_list'}
+				<div class="space-y-2">
+					<label
+						for="{uid}-list"
+						class="text-[10px] text-muted tracking-wider font-medium block uppercase"
+						>Mappings (ChildPattern, SwitchPattern)</label
+					>
+					<textarea
+						id="{uid}-list"
+						bind:value={customListText}
+						placeholder="Banana, Fruit"
+						rows="4"
+						class="input-base font-mono px-3 py-2 resize-y"></textarea>
+					{#if customMappings.length > 0}
+						<p class="text-xs text-muted">
+							{customMappings.length} mapping{customMappings.length !== 1 ? 's' : ''}:
+							{#each customMappings.slice(0, 3) as m, i (i)}
+								<span class="text-xs ml-1 px-1 py-0.5 rounded bg-surface-200 dark:bg-surface-700"
+									>{m.child}→{m.sw}</span
+								>
+							{/each}
+							{#if customMappings.length > 3}<span class="ml-1">+{customMappings.length - 3}</span
+								>{/if}
+						</p>
 					{/if}
 				</div>
+			{/if}
+
+			<!-- Options row -->
+			<div class="text-sm flex flex-wrap gap-x-6 gap-y-2">
+				<label class="flex gap-2 cursor-pointer items-center">
+					<input
+						type="checkbox"
+						bind:checked={caseSensitive}
+						class="accent-wwise border-line rounded"
+					/>
+					<span class="text-muted">Case sensitive</span>
+				</label>
+				<label class="flex gap-2 cursor-pointer items-center">
+					<input
+						type="checkbox"
+						bind:checked={ignoreExisting}
+						class="accent-wwise border-line rounded"
+					/>
+					<span class="text-muted">Ignore existing</span>
+				</label>
 			</div>
-			<div class="space-y-3">
-				{#each configured as sc (sc.container.id)}
-					{@const items = previews.get(sc.container.id) ?? []}
-					{@const expanded = expandedIds.has(sc.container.id)}
-					<div class="border border-line rounded-xl bg-base overflow-hidden">
-						<!-- Container header -->
-						<button
-							onclick={() => toggleExpand(sc.container.id)}
-							class="p-4 text-left flex gap-3 w-full transition-colors items-center hover:bg-surface-50 dark:hover:bg-surface-800/50"
+
+			<!-- Bulk switch conflict resolution -->
+			{#if totalSwitchConflicts > 0}
+				<div
+					class="text-sm p-3 border border-amber-500/30 rounded-lg bg-amber-500/5 flex flex-wrap gap-3 items-center"
+				>
+					<div class="text-amber-600 flex gap-2 items-center dark:text-amber-400">
+						<CircleAlert size={16} />
+						<span class="font-medium"
+							>{totalSwitchConflicts} conflict{totalSwitchConflicts !== 1 ? 's' : ''}</span
 						>
-							{#if expanded}
-								<ChevronDown size={14} class="text-muted shrink-0" />
-							{:else}
-								<ChevronRight size={14} class="text-muted shrink-0" />
-							{/if}
-							<div class="flex flex-1 gap-2 min-w-0 items-center">
-								<Badge variant="wwise">Switch Container</Badge>
-								<span class="text-sm text-fg font-medium truncate">{sc.container.name}</span>
-							</div>
-							<span class="text-xs text-muted shrink-0 hidden sm:inline"
-								>{sc.switchGroup?.name ?? '—'}</span
-							>
-							<span
-								class={[
-									'text-xs px-2 py-0.5 rounded-full shrink-0',
-									items.length > 0
-										? 'bg-wwise/10 text-wwise'
-										: 'bg-surface-100 text-muted dark:bg-surface-700'
-								]}
-							>
-								{items.length} match{items.length !== 1 ? 'es' : ''}
-							</span>
+					</div>
+					<span class="text-xs text-amber-600/70 dark:text-amber-400/70"
+						>Switches already have other children</span
+					>
+					<div class="ml-auto flex gap-1.5">
+						<button
+							onclick={() => setAllSwitchResolutions('keep')}
+							class={[
+								'text-xs font-medium px-3 py-1.5 rounded-md transition-colors border',
+								bulkSwitchResolution === 'keep'
+									? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+									: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+							]}
+						>
+							Keep All
 						</button>
+						<button
+							onclick={() => setAllSwitchResolutions('replace')}
+							class={[
+								'text-xs font-medium px-3 py-1.5 rounded-md transition-colors border',
+								bulkSwitchResolution === 'replace'
+									? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+									: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+							]}
+						>
+							Replace All
+						</button>
+					</div>
+				</div>
+			{/if}
+		</div>
+	{/snippet}
 
-						<!-- Expanded content -->
-						{#if expanded}
-							{@const fullyAssigned = fullyAssignedByContainer.get(sc.container.id) ?? []}
-							{@const unmatched = sc.children.filter(
-								(c) =>
-									!items.some((p) => p.childId === c.id) &&
-									!fullyAssigned.some((fa) => fa.child.id === c.id)
-							)}
-							{@const isEditingDefault = editingDefault === sc.container.id}
-							{@const defaultItems = sc.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
-							<div class="px-4 pb-4 pt-4 border-t border-line">
-								<!-- No default switch warning -->
-								{#if !sc.defaultSwitch}
-									<div class="mb-3">
-										<div
-											class="text-sm p-3 border border-orange-500/20 rounded-lg bg-orange-500/8 dark:bg-orange-500/10"
-										>
-											<div class="flex gap-2 items-center">
-												<Star size={12} class="text-orange-500 shrink-0" />
-												<span class="text-orange-700 flex-1 dark:text-orange-300"
-													>No default switch/state assigned</span
-												>
-												{#if !isEditingDefault}
-													<button
-														onclick={() => {
-															editingDefault = sc.container.id;
-														}}
-														class="text-orange-500 p-1 rounded-full transition-colors hover:text-orange-700 hover:bg-orange-500/10 dark:hover:text-orange-300"
-														title="Set default"
-													>
-														<Plus size={14} />
-													</button>
-												{/if}
-											</div>
-											{#if isEditingDefault}
+	{#snippet list()}
+		<div class="flex flex-col gap-6 p-5">
+			<!-- Skipped warning -->
+			{#if skippedObjects.length > 0}
+				<Alert variant="warning">
+					{skippedObjects.length} non-switch-container object(s) skipped
+				</Alert>
+			{/if}
+
+			<!-- Unconfigured containers -->
+			{#if unconfigured.length > 0}
+				<section>
+					<h3
+						class="text-[10px] text-muted tracking-wider font-medium mb-4 flex gap-1.5 uppercase items-center"
+					>
+						<Settings2 size={14} />
+						Needs Configuration ({unconfigured.length})
+					</h3>
+					<div class="space-y-3">
+						{#each unconfigured as sc (sc.container.id)}
+							{@const selectedGroupId = pendingGroups.get(sc.container.id)}
+							<div class="p-4 border border-line rounded-xl bg-base space-y-4">
+								<div class="flex gap-2 items-center">
+									<Badge variant="wwise">Switch Container</Badge>
+									<span class="text-sm font-medium truncate">{sc.container.name}</span>
+								</div>
+								<div class="space-y-1.5">
+									<span class="text-[10px] text-muted tracking-wider font-medium block uppercase"
+										>Switch/State Group</span
+									>
+									<GroupedCombobox
+										groups={groupOptions}
+										value={selectedGroupId}
+										placeholder="Select group..."
+										id="{uid}-grp-{sc.container.id}"
+										onchange={(v) => handleGroupSelect(sc.container.id, v)}
+										compact
+									/>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			<!-- Preview -->
+			{#if configured.length > 0}
+				<section class="space-y-3">
+					<div class="flex gap-3 items-center justify-between">
+						<h3 class="text-[10px] text-muted tracking-wider font-medium m-0 uppercase">
+							Preview
+						</h3>
+						<div class="flex gap-3 items-center">
+							<!-- Skip controls -->
+							{#if totalAssignments > 0 || totalSkipped > 0}
+								<div class="p-1 rounded-lg bg-surface-100 flex gap-1 dark:bg-surface-800">
+									<button
+										onclick={unskipAll}
+										disabled={totalSkipped === 0}
+										class={[
+											'text-xs font-medium px-2.5 py-1 rounded-md transition-colors',
+											totalSkipped === 0
+												? 'bg-green-500 text-white shadow-sm'
+												: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-200 dark:hover:bg-surface-700 disabled:opacity-50'
+										]}
+									>
+										Include All
+									</button>
+									<button
+										onclick={skipAll}
+										disabled={totalAssignments === 0}
+										class={[
+											'text-xs font-medium px-2.5 py-1 rounded-md transition-colors',
+											totalAssignments === 0 && totalSkipped > 0
+												? 'bg-surface-400 text-white shadow-sm'
+												: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 hover:bg-surface-200 dark:hover:bg-surface-700 disabled:opacity-50'
+										]}
+									>
+										Skip All
+									</button>
+								</div>
+							{/if}
+						</div>
+					</div>
+					<div class="space-y-3">
+						{#each configured as sc (sc.container.id)}
+							{@const items = previews.get(sc.container.id) ?? []}
+							{@const expanded = expandedIds.has(sc.container.id)}
+							<div class="border border-line rounded-xl bg-base overflow-hidden">
+								<!-- Container header -->
+								<button
+									onclick={() => toggleExpand(sc.container.id)}
+									class="p-4 text-left flex gap-3 w-full transition-colors items-center hover:bg-surface-50 dark:hover:bg-surface-800/50"
+								>
+									{#if expanded}
+										<ChevronDown size={14} class="text-muted shrink-0" />
+									{:else}
+										<ChevronRight size={14} class="text-muted shrink-0" />
+									{/if}
+									<div class="flex flex-1 gap-2 min-w-0 items-center">
+										<Badge variant="wwise">Switch Container</Badge>
+										<span class="text-sm text-fg font-medium truncate">{sc.container.name}</span>
+									</div>
+									<span class="text-xs text-muted shrink-0 hidden sm:inline"
+										>{sc.switchGroup?.name ?? '—'}</span
+									>
+									<span
+										class={[
+											'text-xs px-2 py-0.5 rounded-full shrink-0',
+											items.length > 0
+												? 'bg-wwise/10 text-wwise'
+												: 'bg-surface-100 text-muted dark:bg-surface-700'
+										]}
+									>
+										{items.length} match{items.length !== 1 ? 'es' : ''}
+									</span>
+								</button>
+
+								<!-- Expanded content -->
+								{#if expanded}
+									{@const fullyAssigned = fullyAssignedByContainer.get(sc.container.id) ?? []}
+									{@const unmatched = sc.children.filter(
+										(c) =>
+											!items.some((p) => p.childId === c.id) &&
+											!fullyAssigned.some((fa) => fa.child.id === c.id)
+									)}
+									{@const isEditingDefault = editingDefault === sc.container.id}
+									{@const defaultItems = sc.switches.map((sw) => ({ label: sw.name, value: sw.id }))}
+									<div class="px-4 pb-4 pt-4 border-t border-line">
+										<!-- No default switch warning -->
+										{#if !sc.defaultSwitch}
+											<div class="mb-3">
 												<div
-													class="mt-2 pt-2 border-t border-orange-500/20 flex gap-2 items-center"
+													class="text-sm p-3 border border-orange-500/20 rounded-lg bg-orange-500/8 dark:bg-orange-500/10"
 												>
-													<div class="flex-1">
-														<Combobox
-															items={defaultItems}
-															bind:value={editingDefaultValue}
-															placeholder="Search switches…"
-															id="{uid}-default-{sc.container.id}"
-															allowCustomValue={false}
-															disabled={inlineLoading === `default-${sc.container.id}`}
-															compact
-															onchange={(val) => {
-																if (val) setDefaultSwitch(sc.container.id, val);
-															}}
-														/>
-													</div>
-													<button
-														onclick={() => {
-															editingDefault = null;
-															editingDefaultValue = undefined;
-														}}
-														class="btn-cancel"
-														title="Cancel"
-													>
-														<X size={14} />
-													</button>
-												</div>
-											{/if}
-										</div>
-									</div>
-								{:else if sc.defaultSwitch}
-									<div class="mb-3">
-										<div
-											class="text-sm p-3 border-line rounded-lg bg-surface-50 dark:bg-surface-800/30"
-										>
-											<div class="flex gap-2 items-center">
-												<Star size={12} class="text-green-500 shrink-0" />
-												<span class="text-muted">Default:</span>
-												<span class="text-fg font-medium flex-1">{sc.defaultSwitch.name}</span>
-												{#if !isEditingDefault}
-													<button
-														onclick={() => {
-															editingDefault = sc.container.id;
-														}}
-														class="text-muted/50 p-1 rounded-full transition-colors hover:text-muted hover:bg-surface-200 dark:hover:bg-surface-600"
-														title="Change default"
-													>
-														<FilePen size={12} />
-													</button>
-												{/if}
-											</div>
-											{#if isEditingDefault}
-												<div class="mt-2 pt-2 border-t border-line flex gap-2 items-center">
-													<div class="flex-1">
-														<Combobox
-															items={defaultItems}
-															bind:value={editingDefaultValue}
-															placeholder="Search switches…"
-															id="{uid}-default-edit-{sc.container.id}"
-															allowCustomValue={false}
-															disabled={inlineLoading === `default-${sc.container.id}`}
-															compact
-															onchange={(val) => {
-																if (val) setDefaultSwitch(sc.container.id, val);
-															}}
-														/>
-													</div>
-													<button
-														onclick={() => {
-															editingDefault = null;
-															editingDefaultValue = undefined;
-														}}
-														class="btn-cancel"
-														title="Cancel"
-													>
-														<X size={14} />
-													</button>
-												</div>
-											{/if}
-										</div>
-									</div>
-								{/if}
-
-								{#if items.length > 0}
-									<div class="pl-3 border-l-2 border-surface-200 space-y-2 dark:border-surface-700">
-										{#each items as p (p.childId)}
-											{@const switchRes = switchResolutions.get(p.childId)}
-											{@const hasMultipleMatches = p.matchedSwitches.length > 1}
-											{@const selectedSwitchExisting =
-												p.switchExistingChildren.get(p.selectedSwitchId) ?? []}
-											{@const hasSwitchConflict = selectedSwitchExisting.length > 0}
-											<div class={['text-sm py-1.5', p.isSkipped && 'opacity-50']}>
-												<div class="flex flex-wrap gap-2 items-center">
-													<!-- Skip toggle button -->
-													<button
-														onclick={() => toggleSkip(p.childId)}
-														aria-label={p.isSkipped
-															? 'Include this assignment'
-															: 'Skip this assignment'}
-														class={[
-															'p-1 rounded transition-colors shrink-0 group/skip',
-															p.isSkipped
-																? 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300'
-																: 'text-green-500 hover:text-green-600 dark:hover:text-green-400'
-														]}
-														title={p.isSkipped
-															? 'Click to include this assignment'
-															: 'Click to skip — will not be assigned'}
-													>
-														{#if p.isSkipped}
-															<SkipForward size={16} />
-														{:else}
-															<Check size={16} class="group-hover/skip:hidden" />
-															<SkipForward size={16} class="hidden group-hover/skip:block" />
+													<div class="flex gap-2 items-center">
+														<Star size={12} class="text-orange-500 shrink-0" />
+														<span class="text-orange-700 flex-1 dark:text-orange-300"
+															>No default switch/state assigned</span
+														>
+														{#if !isEditingDefault}
+															<button
+																onclick={() => {
+																	editingDefault = sc.container.id;
+																}}
+																class="text-orange-500 p-1 rounded-full transition-colors hover:text-orange-700 hover:bg-orange-500/10 dark:hover:text-orange-300"
+																title="Set default"
+															>
+																<Plus size={14} />
+															</button>
 														{/if}
-													</button>
-													<span
-														class={[
-															'truncate',
-															p.isSkipped ? 'text-surface-400 line-through' : 'text-muted'
-														]}>{p.childName}</span
-													>
-													<span class={p.isSkipped ? 'text-surface-400' : 'text-wwise'}>→</span>
-													{#if hasMultipleMatches && !p.isSkipped}
-														<!-- Switch selector dropdown for multiple matches -->
-														<select
-															value={p.selectedSwitchId}
-															onchange={(e) => selectSwitch(p.childId, e.currentTarget.value)}
-															class="text-sm text-wwise font-medium py-1 pl-2.5 pr-7 appearance-none border border-wwise/30 rounded-lg bg-wwise/5 cursor-pointer transition-all focus-visible:outline-none focus-visible:border-wwise dark:bg-wwise/10 focus-visible:ring-2 dark:focus-visible:ring-wwise/30"
-															style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%233069ff%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.4rem center;"
+													</div>
+													{#if isEditingDefault}
+														<div
+															class="mt-2 pt-2 border-t border-orange-500/20 flex gap-2 items-center"
 														>
-															{#each p.matchedSwitches as sw (sw.id)}
-																{@const swExisting = p.switchExistingChildren.get(sw.id) ?? []}
-																<option value={sw.id}
-																	>{sw.name}{swExisting.length > 0
-																		? ` (${swExisting.length} assigned)`
-																		: ''}</option
-																>
-															{/each}
-														</select>
-														<span
-															class="text-[10px] text-muted px-1.5 py-0.5 rounded bg-surface-100 dark:bg-surface-700"
-														>
-															{p.matchedSwitches.length} matches
-														</span>
-													{:else}
-														<span
-															class={[
-																'font-medium',
-																p.isSkipped ? 'text-surface-400 line-through' : 'text-wwise'
-															]}>{p.selectedSwitchName}</span
-														>
+															<div class="flex-1">
+																<Combobox
+																	items={defaultItems}
+																	bind:value={editingDefaultValue}
+																	placeholder="Search switches…"
+																	id="{uid}-default-{sc.container.id}"
+																	allowCustomValue={false}
+																	disabled={inlineLoading === `default-${sc.container.id}`}
+																	compact
+																	onchange={(val) => {
+																		if (val) setDefaultSwitch(sc.container.id, val);
+																	}}
+																/>
+															</div>
+															<button
+																onclick={() => {
+																	editingDefault = null;
+																	editingDefaultValue = undefined;
+																}}
+																class="btn-cancel"
+																title="Cancel"
+															>
+																<X size={14} />
+															</button>
+														</div>
 													{/if}
 												</div>
-												<!-- Show which children are already assigned to the selected switch -->
-												{#if hasSwitchConflict && !p.isSkipped}
-													<div class="text-xs mt-2 flex flex-wrap gap-2 items-center">
-														<span class="text-amber-600 dark:text-amber-400">
-															<span class="font-medium">{p.selectedSwitchName}</span> already has: {selectedSwitchExisting.join(
-																', '
-															)}
-														</span>
-														<div class="ml-auto flex shrink-0 gap-1.5">
-															<button
-																onclick={() => setSwitchResolution(p.childId, 'keep')}
-																class={[
-																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
-																	switchRes !== 'replace'
-																		? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
-																		: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
-																]}
-															>
-																Keep
-															</button>
-															<button
-																onclick={() => setSwitchResolution(p.childId, 'replace')}
-																class={[
-																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
-																	switchRes === 'replace'
-																		? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-																		: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
-																]}
-															>
-																Replace
-															</button>
-														</div>
-													</div>
-												{/if}
-												<!-- Show existing assignments to non-matching switches -->
-												{#if p.existingOtherSwitchNames.length > 0 && !p.isSkipped}
-													{@const itemRes = itemResolutions.get(p.childId)}
-													<div class="text-xs mt-2 flex flex-wrap gap-2 items-center">
-														<span class="text-purple-600 dark:text-purple-400">
-															Also assigned to: <span class="font-medium"
-																>{p.existingOtherSwitchNames.join(', ')}</span
-															>
-														</span>
-														<div class="ml-auto flex shrink-0 gap-1.5">
-															<button
-																onclick={() => setItemResolution(p.childId, 'keep')}
-																class={[
-																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
-																	itemRes !== 'replace'
-																		? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
-																		: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
-																]}
-															>
-																Keep Both
-															</button>
-															<button
-																onclick={() => setItemResolution(p.childId, 'replace')}
-																class={[
-																	'px-2.5 py-1 rounded-md font-medium border transition-colors',
-																	itemRes === 'replace'
-																		? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
-																		: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
-																]}
-															>
-																Remove Old
-															</button>
-														</div>
-													</div>
-												{/if}
 											</div>
-										{/each}
-									</div>
-								{:else}
-									<p class="text-sm text-muted m-0 py-2 text-center">No matches found</p>
-								{/if}
-
-								<!-- Already assigned children (all matches fulfilled) -->
-								{#if fullyAssigned.length > 0}
-									<details class="mt-3 pt-3 border-t border-line">
-										<summary
-											class="text-xs text-green-600 cursor-pointer transition-colors dark:text-green-400 hover:text-green-500"
-										>
-											{fullyAssigned.length} already assigned
-										</summary>
-										<div class="mt-2 pl-3 border-l-2 border-green-500/20 space-y-1">
-											{#each fullyAssigned as fa (fa.child.id)}
-												<div class="text-xs flex gap-2 items-center">
-													<span class="text-muted truncate">{fa.child.name}</span>
-													<span class="text-green-500">&rarr;</span>
-													<span class="text-green-600 font-medium dark:text-green-400"
-														>{fa.switchNames.join(', ')}</span
-													>
-													<Check size={12} class="text-green-500 shrink-0" />
+										{:else if sc.defaultSwitch}
+											<div class="mb-3">
+												<div
+													class="text-sm p-3 border-line rounded-lg bg-surface-50 dark:bg-surface-800/30"
+												>
+													<div class="flex gap-2 items-center">
+														<Star size={12} class="text-green-500 shrink-0" />
+														<span class="text-muted">Default:</span>
+														<span class="text-fg font-medium flex-1">{sc.defaultSwitch.name}</span>
+														{#if !isEditingDefault}
+															<button
+																onclick={() => {
+																	editingDefault = sc.container.id;
+																}}
+																class="text-muted/50 p-1 rounded-full transition-colors hover:text-muted hover:bg-surface-200 dark:hover:bg-surface-600"
+																title="Change default"
+															>
+																<FilePen size={12} />
+															</button>
+														{/if}
+													</div>
+													{#if isEditingDefault}
+														<div class="mt-2 pt-2 border-t border-line flex gap-2 items-center">
+															<div class="flex-1">
+																<Combobox
+																	items={defaultItems}
+																	bind:value={editingDefaultValue}
+																	placeholder="Search switches…"
+																	id="{uid}-default-edit-{sc.container.id}"
+																	allowCustomValue={false}
+																	disabled={inlineLoading === `default-${sc.container.id}`}
+																	compact
+																	onchange={(val) => {
+																		if (val) setDefaultSwitch(sc.container.id, val);
+																	}}
+																/>
+															</div>
+															<button
+																onclick={() => {
+																	editingDefault = null;
+																	editingDefaultValue = undefined;
+																}}
+																class="btn-cancel"
+																title="Cancel"
+															>
+																<X size={14} />
+															</button>
+														</div>
+													{/if}
 												</div>
-											{/each}
-										</div>
-									</details>
-								{/if}
+											</div>
+										{/if}
 
-								<!-- Unmatched children -->
-								{#if unmatched.length > 0}
-									<details class="mt-3 pt-3 border-t border-line">
-										<summary
-											class="text-xs text-muted cursor-pointer transition-colors hover:text-surface-900 dark:hover:text-surface-100"
-										>
-											{unmatched.length} unmatched child{unmatched.length !== 1 ? 'ren' : ''}
-										</summary>
-										<div
-											class="mt-2 pl-3 border-l-2 border-surface-200 space-y-1 dark:border-surface-700"
-										>
-											{#each unmatched as c (c.id)}
-												<div class="text-xs text-muted truncate">{c.name}</div>
-											{/each}
-										</div>
-									</details>
+										{#if items.length > 0}
+											<div class="pl-3 border-l-2 border-surface-200 space-y-2 dark:border-surface-700">
+												{#each items as p (p.childId)}
+													{@const switchRes = switchResolutions.get(p.childId)}
+													{@const hasMultipleMatches = p.matchedSwitches.length > 1}
+													{@const selectedSwitchExisting =
+														p.switchExistingChildren.get(p.selectedSwitchId) ?? []}
+													{@const hasSwitchConflict = selectedSwitchExisting.length > 0}
+													<div class={['text-sm py-1.5', p.isSkipped && 'opacity-50']}>
+														<div class="flex flex-wrap gap-2 items-center">
+															<!-- Skip toggle button -->
+															<button
+																onclick={() => toggleSkip(p.childId)}
+																aria-label={p.isSkipped
+																	? 'Include this assignment'
+																	: 'Skip this assignment'}
+																class={[
+																	'p-1 rounded transition-colors shrink-0 group/skip',
+																	p.isSkipped
+																		? 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300'
+																		: 'text-green-500 hover:text-green-600 dark:hover:text-green-400'
+																]}
+																title={p.isSkipped
+																	? 'Click to include this assignment'
+																	: 'Click to skip — will not be assigned'}
+															>
+																{#if p.isSkipped}
+																	<SkipForward size={16} />
+																{:else}
+																	<Check size={16} class="group-hover/skip:hidden" />
+																	<SkipForward size={16} class="hidden group-hover/skip:block" />
+																{/if}
+															</button>
+															<span
+																class={[
+																	'truncate',
+																	p.isSkipped ? 'text-surface-400 line-through' : 'text-muted'
+																]}>{p.childName}</span
+															>
+															<span class={p.isSkipped ? 'text-surface-400' : 'text-wwise'}>→</span>
+															{#if hasMultipleMatches && !p.isSkipped}
+																<!-- Switch selector dropdown for multiple matches -->
+																<select
+																	value={p.selectedSwitchId}
+																	onchange={(e) => selectSwitch(p.childId, e.currentTarget.value)}
+																	class="text-sm text-wwise font-medium py-1 pl-2.5 pr-7 appearance-none border border-wwise/30 rounded-lg bg-wwise/5 cursor-pointer transition-all focus-visible:outline-none focus-visible:border-wwise dark:bg-wwise/10 focus-visible:ring-2 dark:focus-visible:ring-wwise/30"
+																	style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%233069ff%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.4rem center;"
+																>
+																	{#each p.matchedSwitches as sw (sw.id)}
+																		{@const swExisting = p.switchExistingChildren.get(sw.id) ?? []}
+																		<option value={sw.id}
+																			>{sw.name}{swExisting.length > 0
+																				? ` (${swExisting.length} assigned)`
+																				: ''}</option
+																		>
+																	{/each}
+																</select>
+																<span
+																	class="text-[10px] text-muted px-1.5 py-0.5 rounded bg-surface-100 dark:bg-surface-700"
+																>
+																	{p.matchedSwitches.length} matches
+																</span>
+															{:else}
+																<span
+																	class={[
+																		'font-medium',
+																		p.isSkipped ? 'text-surface-400 line-through' : 'text-wwise'
+																	]}>{p.selectedSwitchName}</span
+																>
+															{/if}
+														</div>
+														<!-- Show which children are already assigned to the selected switch -->
+														{#if hasSwitchConflict && !p.isSkipped}
+															<div class="text-xs mt-2 flex flex-wrap gap-2 items-center">
+																<span class="text-amber-600 dark:text-amber-400">
+																	<span class="font-medium">{p.selectedSwitchName}</span> already has: {selectedSwitchExisting.join(
+																		', '
+																	)}
+																</span>
+																<div class="ml-auto flex shrink-0 gap-1.5">
+																	<button
+																		onclick={() => setSwitchResolution(p.childId, 'keep')}
+																		class={[
+																			'px-2.5 py-1 rounded-md font-medium border transition-colors',
+																			switchRes !== 'replace'
+																				? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+																				: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																		]}
+																	>
+																		Keep
+																	</button>
+																	<button
+																		onclick={() => setSwitchResolution(p.childId, 'replace')}
+																		class={[
+																			'px-2.5 py-1 rounded-md font-medium border transition-colors',
+																			switchRes === 'replace'
+																				? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+																				: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																		]}
+																	>
+																		Replace
+																	</button>
+																</div>
+															</div>
+														{/if}
+														<!-- Show existing assignments to non-matching switches -->
+														{#if p.existingOtherSwitchNames.length > 0 && !p.isSkipped}
+															{@const itemRes = itemResolutions.get(p.childId)}
+															<div class="text-xs mt-2 flex flex-wrap gap-2 items-center">
+																<span class="text-purple-600 dark:text-purple-400">
+																	Also assigned to: <span class="font-medium"
+																		>{p.existingOtherSwitchNames.join(', ')}</span
+																	>
+																</span>
+																<div class="ml-auto flex shrink-0 gap-1.5">
+																	<button
+																		onclick={() => setItemResolution(p.childId, 'keep')}
+																		class={[
+																			'px-2.5 py-1 rounded-md font-medium border transition-colors',
+																			itemRes !== 'replace'
+																				? 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+																				: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																		]}
+																	>
+																		Keep Both
+																	</button>
+																	<button
+																		onclick={() => setItemResolution(p.childId, 'replace')}
+																		class={[
+																			'px-2.5 py-1 rounded-md font-medium border transition-colors',
+																			itemRes === 'replace'
+																				? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400'
+																				: 'border-line bg-surface-50 text-muted hover:bg-surface-100 dark:bg-surface-800 dark:hover:bg-surface-700'
+																		]}
+																	>
+																		Remove Old
+																	</button>
+																</div>
+															</div>
+														{/if}
+													</div>
+												{/each}
+											</div>
+										{:else}
+											<p class="text-sm text-muted m-0 py-2 text-center">No matches found</p>
+										{/if}
+
+										<!-- Already assigned children (all matches fulfilled) -->
+										{#if fullyAssigned.length > 0}
+											<details class="mt-3 pt-3 border-t border-line">
+												<summary
+													class="text-xs text-green-600 cursor-pointer transition-colors dark:text-green-400 hover:text-green-500"
+												>
+													{fullyAssigned.length} already assigned
+												</summary>
+												<div class="mt-2 pl-3 border-l-2 border-green-500/20 space-y-1">
+													{#each fullyAssigned as fa (fa.child.id)}
+														<div class="text-xs flex gap-2 items-center">
+															<span class="text-muted truncate">{fa.child.name}</span>
+															<span class="text-green-500">&rarr;</span>
+															<span class="text-green-600 font-medium dark:text-green-400"
+																>{fa.switchNames.join(', ')}</span
+															>
+															<Check size={12} class="text-green-500 shrink-0" />
+														</div>
+													{/each}
+												</div>
+											</details>
+										{/if}
+
+										<!-- Unmatched children -->
+										{#if unmatched.length > 0}
+											<details class="mt-3 pt-3 border-t border-line">
+												<summary
+													class="text-xs text-muted cursor-pointer transition-colors hover:text-surface-900 dark:hover:text-surface-100"
+												>
+													{unmatched.length} unmatched child{unmatched.length !== 1 ? 'ren' : ''}
+												</summary>
+												<div
+													class="mt-2 pl-3 border-l-2 border-surface-200 space-y-1 dark:border-surface-700"
+												>
+													{#each unmatched as c (c.id)}
+														<div class="text-xs text-muted truncate">{c.name}</div>
+													{/each}
+												</div>
+											</details>
+										{/if}
+									</div>
 								{/if}
 							</div>
-						{/if}
+						{/each}
 					</div>
-				{/each}
-			</div>
-		</section>
-	{/if}
+				</section>
+			{/if}
 
-	<!-- Not connected -->
-	{#if !wwise.isConnected}
-		<Alert variant="warning">Connect to Wwise to use this tool</Alert>
-	{/if}
-</div>
+			<!-- Not connected -->
+			{#if !wwise.isConnected}
+				<Alert variant="warning">Connect to Wwise to use this tool</Alert>
+			{/if}
+		</div>
+	{/snippet}
+</ToolPage>
