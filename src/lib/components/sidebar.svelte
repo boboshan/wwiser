@@ -188,10 +188,10 @@
 		</div>
 	</nav>
 
-	<!-- Footer -->
-	<div class="px-3 py-3 border-t border-line">
+	<!-- Footer — h-11 to match the workspace ActionBar/footer so both align above the status bar -->
+	<div class="px-3 border-t border-line flex shrink-0 h-11 items-center">
 		<!-- More menu & theme toggle -->
-		<div class="flex items-center justify-between">
+		<div class="flex flex-1 items-center justify-between">
 			<!-- More menu trigger -->
 			<Menu id="footer-menu" items={menuItems}>
 				{#snippet trigger({ props, open })}
