@@ -87,12 +87,11 @@
 		sidebarOpen ? 'translate-x-0' : '-translate-x-full'
 	]}
 >
-	<!-- Logo -->
-	<div class="p-5 border-b border-line flex items-center justify-between">
+	<!-- Brand — height = app-header (44) + tool-toolbar (36) so its border aligns
+	     with the bottom of the workspace's two-bar header stack -->
+	<div class="px-5 border-b border-line flex shrink-0 h-20 items-center justify-between">
 		<a href="/" class="group no-underline flex gap-3 items-center">
-			<div class="flex shrink-0 h-10 w-10">
-				<img src={logo} alt="Wwiser" class="h-full w-full" />
-			</div>
+			<img src={logo} alt="Wwiser" class="shrink-0 h-10 w-10" />
 			<div class="mt-1 flex flex-col gap-1.5 items-start">
 				<img src={wwiserTitle} alt="Wwiser" class="h-4 w-auto dark:invert" />
 				<p class="text-xs text-muted leading-none m-0">{siteConfig.tagline}</p>
