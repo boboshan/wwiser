@@ -100,7 +100,7 @@
 		</a>
 		<!-- Mobile close button -->
 		<button
-			class="text-muted p-2 rounded-lg hover:bg-hover transition-colors hover:text-surface-900 lg:hidden dark:hover:text-surface-100"
+			class="text-muted p-2 rounded-lg hover:bg-hover transition-colors hover:text-fg lg:hidden"
 			onclick={closeSidebar}
 			aria-label="Close menu"
 		>
@@ -113,23 +113,30 @@
 		<!-- Explore Section -->
 		{#if explore}
 			{@const Icon = iconMap[explore.icon] ?? Terminal}
-			<p class="text-xs text-muted tracking-wider font-semibold mb-2 px-3 uppercase">Explore</p>
+			<p class="text-xs text-fg-dim tracking-wider font-semibold mb-2 px-3 uppercase">Explore</p>
 			<a
 				href={explore.href}
 				onclick={closeSidebar}
 				class={[
-					'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline mb-4',
+					'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out no-underline mb-4',
 					currentTool === explore.id
 						? 'bg-wwise/10 text-wwise'
-						: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 hover:bg-hover'
+						: 'text-muted hover:text-fg hover:bg-hover'
 				]}
 			>
+				<span
+					class={[
+						'absolute left-0 top-1/2 -mt-2.5 h-5 w-0.5 rounded-full bg-wwise origin-center transition-transform duration-200 ease-out',
+						currentTool === explore.id ? 'scale-y-100' : 'scale-y-0'
+					]}
+					aria-hidden="true"
+				></span>
 				<div
 					class={[
-						'rounded-md p-2 transition-colors',
+						'rounded-md p-2 transition-all duration-200 ease-out',
 						currentTool === explore.id
 							? 'bg-wwise/15 text-wwise'
-							: 'bg-surface-200 dark:bg-surface-800 text-surface-500 group-hover:bg-surface-300 dark:group-hover:bg-surface-700 group-hover:text-surface-700 dark:group-hover:text-surface-300'
+							: 'bg-hover text-muted group-hover:text-fg group-hover:scale-[1.06]'
 					]}
 				>
 					<Icon class="h-4 w-4" />
@@ -142,7 +149,7 @@
 		{/if}
 
 		<!-- Tools Section -->
-		<p class="text-xs text-muted tracking-wider font-semibold mb-2 px-3 uppercase">Tools</p>
+		<p class="text-xs text-fg-dim tracking-wider font-semibold mb-2 px-3 uppercase">Tools</p>
 		<div class="space-y-1">
 			{#each tools as tool (tool.id)}
 				{@const Icon = iconMap[tool.icon] ?? Package}
@@ -150,18 +157,25 @@
 					href={tool.href}
 					onclick={closeSidebar}
 					class={[
-						'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all no-underline',
+						'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out no-underline',
 						currentTool === tool.id
 							? 'bg-wwise/10 text-wwise'
-							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100 hover:bg-hover'
+							: 'text-muted hover:text-fg hover:bg-hover'
 					]}
 				>
+					<span
+						class={[
+							'absolute left-0 top-1/2 -mt-2.5 h-5 w-0.5 rounded-full bg-wwise origin-center transition-transform duration-200 ease-out',
+							currentTool === tool.id ? 'scale-y-100' : 'scale-y-0'
+						]}
+						aria-hidden="true"
+					></span>
 					<div
 						class={[
-							'rounded-md p-2 transition-colors',
+							'rounded-md p-2 transition-all duration-200 ease-out',
 							currentTool === tool.id
 								? 'bg-wwise/15 text-wwise'
-								: 'bg-surface-200 dark:bg-surface-800 text-surface-500 group-hover:bg-surface-300 dark:group-hover:bg-surface-700 group-hover:text-surface-700 dark:group-hover:text-surface-300'
+								: 'bg-hover text-muted group-hover:text-fg group-hover:scale-[1.06]'
 						]}
 					>
 						<Icon class="h-4 w-4" />
@@ -185,8 +199,8 @@
 					<button
 						{...props}
 						class={[
-							'text-sm text-muted px-2 py-1.5 rounded-lg hover:bg-hover flex gap-1.5 transition-colors items-center ring-focus hover:text-surface-900 dark:hover:text-surface-100',
-							open && 'text-surface-900 bg-surface-200 dark:text-surface-100 dark:bg-surface-800'
+							'text-sm text-muted px-2 py-1.5 rounded-lg hover:bg-hover flex gap-1.5 transition-colors items-center ring-focus hover:text-fg',
+							open && 'text-fg bg-hover'
 						]}
 					>
 						<Ellipsis class="h-4 w-4" />
@@ -196,14 +210,12 @@
 			</Menu>
 
 			<!-- Theme toggle -->
-			<div class="p-0.5 rounded-lg bg-surface-200 flex dark:bg-surface-800">
+			<div class="p-0.5 rounded-lg bg-hover flex">
 				<button
 					onclick={() => setTheme('light')}
 					class={[
-						'p-1.5 rounded-md transition-all',
-						theme === 'light'
-							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
-							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+						'p-1.5 rounded-md transition-all duration-200 ease-out',
+						theme === 'light' ? 'bg-base text-fg shadow-sm' : 'text-muted hover:text-fg'
 					]}
 					aria-label="Light theme"
 				>
@@ -212,10 +224,8 @@
 				<button
 					onclick={() => setTheme('dark')}
 					class={[
-						'p-1.5 rounded-md transition-all',
-						theme === 'dark'
-							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
-							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+						'p-1.5 rounded-md transition-all duration-200 ease-out',
+						theme === 'dark' ? 'bg-base text-fg shadow-sm' : 'text-muted hover:text-fg'
 					]}
 					aria-label="Dark theme"
 				>
@@ -224,10 +234,8 @@
 				<button
 					onclick={() => setTheme('system')}
 					class={[
-						'p-1.5 rounded-md transition-all',
-						theme === 'system'
-							? 'bg-base text-surface-900 dark:text-surface-100 shadow-sm'
-							: 'text-muted hover:text-surface-900 dark:hover:text-surface-100'
+						'p-1.5 rounded-md transition-all duration-200 ease-out',
+						theme === 'system' ? 'bg-base text-fg shadow-sm' : 'text-muted hover:text-fg'
 					]}
 					aria-label="System theme"
 				>
