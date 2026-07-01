@@ -12,7 +12,7 @@
 	let { tagline, counters, actions }: Props = $props();
 </script>
 
-<div class="px-4 border-b border-line bg-base flex shrink-0 gap-3 h-9 items-center">
+<div class="px-4 border-b border-line bg-base flex shrink-0 gap-3 h-11 items-center">
 	{#if tagline}
 		<span class="text-[13px] text-muted hidden truncate sm:block">{tagline}</span>
 	{/if}
